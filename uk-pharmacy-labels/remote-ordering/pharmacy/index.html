@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:"
+    />
+    <title>Pharmacy Supply Management</title>
+    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/autocomplete.css" />
+    <link rel="stylesheet" href="../../css/user-auth.css" />
+    <link rel="icon" type="image/x-icon" href="../../favicon_io/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../favicon_io/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../favicon_io/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="../../favicon_io/apple-touch-icon.png" />
+    <link rel="preload" href="../../images/nhs_trust_logo.png" as="image" />
+  </head>
+  <body>
+    <nav class="main-nav">
+      <img src="../../images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
+      <ul>
+        <a href="../ward/index.html" class="nav-link">Ward Orders</a>
+        <a href="index.html" class="nav-link active">Pharmacy Supply</a>
+        <a href="../../index.html" class="nav-link">Label Generator</a>
+        <a href="../../admin/index.html" class="nav-link" id="admin-link" style="display: none;">Admin</a>
+      </ul>
+      <div class="user-info">
+        <span id="current-user">Not logged in</span>
+        <button id="logout-btn" class="logout-button">Logout</button>
+      </div>
+    </nav>
+    <header>
+      <div class="nhs-header">
+        <div class="header-content">
+          <h1>Pharmacy Medication Supply Management</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+        <div class="pharmacy-dashboard">
+          <div class="order-filters">
+            <h2>Incoming Orders</h2>
+            <div class="filter-controls">
+              <div class="filter-group">
+                <label for="filter-urgency">Filter by Urgency:</label>
+                <select id="filter-urgency">
+                  <option value="all">All</option>
+                  <option value="emergency">Emergency</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="routine">Routine</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filter-type">Order Type:</label>
+                <select id="filter-type">
+                  <option value="all">All</option>
+                  <option value="patient">Patient</option>
+                  <option value="ward-stock">Ward Stock</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filter-ward">Ward:</label>
+                <select id="filter-ward">
+                  <option value="all">All</option>
+                  <option value="ward-1">Ward 1</option>
+                  <option value="ward-2">Ward 2</option>
+                  <option value="ward-3">Ward 3</option>
+                  <option value="ward-4">Ward 4</option>
+                  <option value="ward-5">Ward 5</option>
+                  <option value="ward-6">Ward 6</option>
+                  <option value="ward-7">Ward 7</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filter-status">Status:</label>
+                <select id="filter-status">
+                  <option value="all">All</option>
+                  <option value="pending" selected>Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="orders-list">
+            <div id="orders-container">
+              <div class="orders-table">
+                <div class="table-header">
+                  <div class="col col-id">ID</div>
+                  <div class="col col-time">Time</div>
+                  <div class="col col-ward">Ward</div>
+                  <div class="col col-type">Type</div>
+                  <div class="col col-urgency">Urgency</div>
+                  <div class="col col-patient">Patient</div>
+                  <div class="col col-status">Status</div>
+                  <div class="col col-actions">Actions</div>
+                </div>
+                <div id="orders-list">
+                  <!-- Orders will be populated here -->
+                  <p class="empty-state">No orders to display</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Details Panel -->
+          <div id="order-details-panel" class="panel hidden">
+            <div class="panel-header">
+              <h2>Order Details</h2>
+              <button id="close-panel-btn" class="close-btn">&times;</button>
+            </div>
+            <div id="order-details-content" class="panel-content">
+              <!-- Order details will be loaded here -->
+            </div>
+            <div class="panel-actions">
+              <button id="process-order-btn" class="primary-btn">Process Order</button>
+              <button id="generate-labels-btn" class="secondary-btn">Generate Labels</button>
+              <button id="reject-order-btn" class="danger-btn">Reject Order</button>
+            </div>
+          </div>
+          
+          <!-- Processing Panel -->
+          <div id="processing-panel" class="panel hidden">
+            <div class="panel-header">
+              <h2>Process Order</h2>
+              <button id="close-processing-btn" class="close-btn">&times;</button>
+            </div>
+            <div id="processing-content" class="panel-content">
+              <div class="processing-form">
+                <h3>Medications to Supply</h3>
+                <div id="medications-to-supply">
+                  <!-- Medication items will be loaded here -->
+                </div>
+                
+                <div class="form-group">
+                  <h3>Supply Details</h3>
+                  <div class="form-row">
+                    <div class="form-column">
+                      <label for="supplied-by">Supplied By:</label>
+                      <input type="text" id="supplied-by" required />
+                    </div>
+                    <div class="form-column">
+                      <label for="checked-by">Checked By:</label>
+                      <input type="text" id="checked-by" />
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-column full-width">
+                      <label for="supply-notes">Supply Notes:</label>
+                      <textarea id="supply-notes" rows="2" placeholder="Any additional notes"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <button id="complete-order-btn" class="primary-btn">Complete Order</button>
+              <button id="save-progress-btn" class="secondary-btn">Save Progress</button>
+              <button id="cancel-process-btn" class="secondary-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Statistics Panel -->
+        <div class="statistics-panel">
+          <h2>Today's Statistics</h2>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="pending-count">0</div>
+              <div class="stat-label">Pending Orders</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="urgent-count">0</div>
+              <div class="stat-label">Urgent Orders</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="completed-count">0</div>
+              <div class="stat-label">Completed Today</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="processing-time">0m</div>
+              <div class="stat-label">Avg. Processing Time</div>
+            </div>
+          </div>
+          
+          <!-- Quick Links Section -->
+          <div class="quick-links">
+            <h3>Quick Links</h3>
+            <div class="links-grid">
+              <a href="../../index.html" class="quick-link">
+                <span class="link-icon">🏷️</span>
+                <span class="link-text">Label Generator</span>
+              </a>
+              <a href="reports.html" class="quick-link">
+                <span class="link-icon">📊</span>
+                <span class="link-text">Reports</span>
+              </a>
+              <a href="inventory.html" class="quick-link">
+                <span class="link-icon">📦</span>
+                <span class="link-text">Inventory</span>
+              </a>
+              <a href="settings.html" class="quick-link">
+                <span class="link-icon">⚙️</span>
+                <span class="link-text">Settings</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Hospital Pharmacy Management System</p>
+    </footer>
+
+    <!-- Load shared dependencies first -->
+    <script src="../../js/user-manager.js" defer></script>
+    <script src="../../js/data-manager.js" defer></script>
+    <script src="../../js/medication-manager.js" defer></script>
+    <!-- Load module-specific scripts -->
+    <script src="../js/order-manager.js" defer></script>
+    <script src="../js/pharmacy-supply.js" defer></script>
+    
+    <script>
+      // Check if user is logged in and has pharmacy access
+      document.addEventListener('DOMContentLoaded', () => {
+        const currentUser = UserManager.getCurrentUser();
+        if (!currentUser) {
+          // Redirect to login page if not logged in
+          window.location.href = '../../login.html';
+          return;
+        }
+        
+        // Check if user has pharmacy access
+        if (!UserManager.hasAccess(UserManager.ACCESS_LEVELS.PHARMACY)) {
+          alert('You do not have access to the pharmacy supply system');
+          window.location.href = '../../index.html';
+          return;
+        }
+        
+        // Display current user
+        document.getElementById('current-user').textContent = `Logged in as: ${currentUser.username}`;
+        
+        // Show admin link if user has admin access
+        if (UserManager.hasAccess(UserManager.ACCESS_LEVELS.ADMIN)) {
+          document.getElementById('admin-link').style.display = 'inline-block';
+        }
+        
+        // Handle logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+          UserManager.logout();
+        });
+      });
+    </script>
+  </body>
+</html>

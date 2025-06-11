@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000;"
+    />
+    <title>Login - Pharmacy System</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link rel="manifest" href="manifest.json" />
+    <!-- Favicon links -->
+    <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="favicon_io/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon_io/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="favicon_io/android-chrome-512x512.png" />
+  </head>
+  <body>
+    <header>
+      <div class="nhs-header">
+        <div class="header-content">
+          <h1>Pharmacy System Login</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="login-container">
+      <div class="login-box">
+        <div class="login-logo">
+          <img src="images/nhs_trust_logo.png" alt="NHS Trust Logo" />
+        </div>
+        
+        <div id="login-error" class="error-message"></div>
+        
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autocomplete="username" />
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password" />
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="primary-button">Login</button>
+          </div>
+        </form>
+        
+        <div class="login-help">
+          <p>Default admin credentials: username: admin, password: admin</p>
+          <p>Please change the default password after first login.</p>
+        </div>
+      </div>
+    </main>
+
+    <script src="js/api-client.js"></script>
+    <script src="js/secure-user-manager.js"></script>
+    <script src="js/secure-login.js"></script>
+  </body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:"
+    />
+    <title>Ward Medication Ordering System</title>
+    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/autocomplete.css" />
+    <link rel="stylesheet" href="../../css/user-auth.css" />
+    <link rel="icon" type="image/x-icon" href="../../favicon_io/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../favicon_io/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../favicon_io/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="../../favicon_io/apple-touch-icon.png" />
+    <link rel="preload" href="../../images/nhs_trust_logo.png" as="image" />
+  </head>
+  <body>
+    <nav class="main-nav">
+      <img src="../../images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
+      <ul>
+        <a href="index.html" class="nav-link active">Ward Orders</a>
+        <a href="../pharmacy/index.html" class="nav-link">Pharmacy Supply</a>
+        <a href="../../index.html" class="nav-link">Label Generator</a>
+        <a href="../../admin/index.html" class="nav-link" id="admin-link" style="display: none;">Admin</a>
+      </ul>
+      <div class="user-info">
+        <span id="current-user">Not logged in</span>
+        <button id="logout-btn" class="logout-button">Logout</button>
+      </div>
+    </nav>
+    <header>
+      <div class="nhs-header">
+        <div class="header-content">
+          <h1>Ward Medication Ordering System</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="tabs">
+        <button id="patient-tab" class="tab-btn active">Patient Medication</button>
+        <button id="ward-stock-tab" class="tab-btn">Ward Stock</button>
+      </div>
+
+        <div id="patient-order-form" class="order-form active">
+          <h2>Patient Medication Order</h2>
+          <form id="patient-med-form">
+            <div class="form-group">
+              <h3>Ward Details</h3>
+              <div class="form-row">
+                <div class="form-column">
+                  <label for="ward-name">Ward Name/Number:</label>
+                  <select id="ward-name" required>
+                    <option value="">Select Ward</option>
+                    <option value="ward-1">Ward 1</option>
+                    <option value="ward-2">Ward 2</option>
+                    <option value="ward-3">Ward 3</option>
+                    <option value="ward-4">Ward 4</option>
+                    <option value="ward-5">Ward 5</option>
+                    <option value="ward-6">Ward 6</option>
+                    <option value="ward-7">Ward 7</option>
+                  </select>
+                </div>
+                <div class="form-column">
+                  <label for="order-urgency">Urgency:</label>
+                  <select id="order-urgency" required>
+                    <option value="routine">Routine</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="emergency">Emergency</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <h3>Patient Details</h3>
+              <div class="form-row">
+                <div class="form-column">
+                  <label for="patient-name">Full Name:</label>
+                  <input type="text" id="patient-name" required />
+                </div>
+                <div class="form-column">
+                  <label for="patient-dob">Date of Birth:</label>
+                  <input type="date" id="patient-dob" required />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-column">
+                  <label for="patient-nhs">NHS Number:</label>
+                  <input
+                    type="text"
+                    id="patient-nhs"
+                    pattern="[0-9]{10}"
+                    placeholder="10 digits"
+                  />
+                </div>
+                <div class="form-column">
+                  <label for="hospital-id">Hospital ID:</label>
+                  <input type="text" id="hospital-id" placeholder="Hospital ID" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-column full-width">
+                  <label for="patient-location">Bed/Bay:</label>
+                  <input type="text" id="patient-location" placeholder="e.g., Bay 2, Bed 4" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <h3>Medication Details</h3>
+              <div id="medications-container">
+                <div class="medication-item">
+                  <div class="form-row">
+                    <div class="form-column">
+                      <label for="med-name-1">Medicine Name:</label>
+                      <input type="text" id="med-name-1" class="med-name" required />
+                    </div>
+                    <div class="form-column">
+                      <label for="med-form-1">Form:</label>
+                      <input type="text" id="med-form-1" class="med-form" placeholder="e.g., tablets, capsules" />
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-column">
+                      <label for="med-strength-1">Strength:</label>
+                      <input type="text" id="med-strength-1" class="med-strength" placeholder="e.g., 500mg" />
+                    </div>
+                    <div class="form-column">
+                      <label for="med-quantity-1">Quantity:</label>
+                      <input type="text" id="med-quantity-1" class="med-quantity" placeholder="e.g., 28" required />
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-column full-width">
+                      <label for="med-notes-1">Special Instructions:</label>
+                      <textarea id="med-notes-1" class="med-notes" rows="2" placeholder="Any special instructions or notes"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="add-medication-btn" class="secondary-btn">+ Add Another Medication</button>
+            </div>
+
+            <div class="form-group">
+              <h3>Order Details</h3>
+              <div class="form-row">
+                <div class="form-column">
+                  <label for="requester-name">Requested By:</label>
+                  <input type="text" id="requester-name" required placeholder="Your Name" />
+                </div>
+                <div class="form-column">
+                  <label for="requester-role">Role:</label>
+                  <select id="requester-role" required>
+                    <option value="">Select Role</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="nurse">Nurse</option>
+                    <option value="pharmacist">Pharmacist</option>
+                    <option value="pharmacy-tech">Pharmacy Technician</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-column full-width">
+                  <label for="order-notes">Order Notes:</label>
+                  <textarea id="order-notes" rows="2" placeholder="Any additional notes for pharmacy"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="button-group">
+              <button type="submit" id="submit-order-btn">Submit Order</button>
+              <button type="button" id="save-draft-btn">Save as Draft</button>
+              <button type="reset" id="clear-form-btn">Clear Form</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="ward-stock-form" class="order-form">
+          <h2>Ward Stock Order</h2>
+          <form id="ward-stock-med-form">
+            <div class="form-group">
+              <h3>Ward Details</h3>
+              <div class="form-row">
+                <div class="form-column">
+                  <label for="ws-ward-name">Ward Name/Number:</label>
+                  <select id="ws-ward-name" required>
+                    <option value="">Select Ward</option>
+                    <option value="ward-1">Ward 1</option>
+                    <option value="ward-2">Ward 2</option>
+                    <option value="ward-3">Ward 3</option>
+                    <option value="ward-4">Ward 4</option>
+                    <option value="ward-5">Ward 5</option>
+                    <option value="ward-6">Ward 6</option>
+                    <option value="ward-7">Ward 7</option>
+                  </select>
+                </div>
+                <div class="form-column">
+                  <label for="ws-order-urgency">Urgency:</label>
+                  <select id="ws-order-urgency" required>
+                    <option value="routine">Routine</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="emergency">Emergency</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <h3>Stock Medications</h3>
+              <div id="ws-medications-container">
+                <div class="medication-item">
+                  <div class="form-row">
+                    <div class="form-column">
+                      <label for="ws-med-name-1">Medicine Name:</label>
+                      <input type="text" id="ws-med-name-1" class="med-name" required />
+                    </div>
+                    <div class="form-column">
+                      <label for="ws-med-form-1">Form:</label>
+                      <input type="text" id="ws-med-form-1" class="med-form" placeholder="e.g., tablets, capsules" />
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-column">
+                      <label for="ws-med-strength-1">Strength:</label>
+                      <input type="text" id="ws-med-strength-1" class="med-strength" placeholder="e.g., 500mg" />
+                    </div>
+                    <div class="form-column">
+                      <label for="ws-med-quantity-1">Quantity:</label>
+                      <input type="text" id="ws-med-quantity-1" class="med-quantity" placeholder="e.g., 28" required />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="ws-add-medication-btn" class="secondary-btn">+ Add Another Medication</button>
+            </div>
+
+            <div class="form-group">
+              <h3>Order Details</h3>
+              <div class="form-row">
+                <div class="form-column">
+                  <label for="ws-requester-name">Requested By:</label>
+                  <input type="text" id="ws-requester-name" required placeholder="Your Name" />
+                </div>
+                <div class="form-column">
+                  <label for="ws-requester-role">Role:</label>
+                  <select id="ws-requester-role" required>
+                    <option value="">Select Role</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="nurse">Nurse</option>
+                    <option value="pharmacist">Pharmacist</option>
+                    <option value="pharmacy-tech">Pharmacy Technician</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-column full-width">
+                  <label for="ws-order-notes">Order Notes:</label>
+                  <textarea id="ws-order-notes" rows="2" placeholder="Any additional notes for pharmacy"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="button-group">
+              <button type="submit" id="ws-submit-order-btn">Submit Order</button>
+              <button type="button" id="ws-save-draft-btn">Save as Draft</button>
+              <button type="reset" id="ws-clear-form-btn">Clear Form</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="recent-orders">
+          <h2>Recent Orders</h2>
+          <div id="recent-orders-list">
+            <p class="empty-state">No recent orders to display</p>
+            <!-- Orders will be populated here -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Hospital Pharmacy Management System</p>
+    </footer>
+
+    <!-- Load shared dependencies first -->
+    <script src="../../js/user-manager.js" defer></script>
+    <script src="../../js/data-manager.js" defer></script>
+    <script src="../../js/medication-manager.js" defer></script>
+    <!-- Load module-specific scripts -->
+    <script src="../js/order-manager.js" defer></script>
+    <script src="../js/ward-orders.js" defer></script>
+    
+    <script>
+      // Check if user is logged in and has ordering access
+      document.addEventListener('DOMContentLoaded', () => {
+        const currentUser = UserManager.getCurrentUser();
+        if (!currentUser) {
+          // Redirect to login page if not logged in
+          window.location.href = '../../login.html';
+          return;
+        }
+        
+        // Check if user has ordering access
+        if (!UserManager.hasAccess(UserManager.ACCESS_LEVELS.ORDERING)) {
+          alert('You do not have access to the ordering system');
+          window.location.href = '../../index.html';
+          return;
+        }
+        
+        // Display current user
+        document.getElementById('current-user').textContent = `Logged in as: ${currentUser.username}`;
+        
+        // Show admin link if user has admin access
+        if (UserManager.hasAccess(UserManager.ACCESS_LEVELS.ADMIN)) {
+          document.getElementById('admin-link').style.display = 'inline-block';
+        }
+        
+        // Handle logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+          UserManager.logout();
+        });
+        
+        // Pre-fill requester name with current user's username
+        document.getElementById('requester-name').value = currentUser.username;
+        document.getElementById('ws-requester-name').value = currentUser.username;
+      });
+    </script>
+  </body>
+</html>

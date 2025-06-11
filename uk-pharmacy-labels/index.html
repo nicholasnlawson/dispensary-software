@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000;"
     />
     <title>Downtime Pharmacy Label Generator</title>
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/autocomplete.css" />
+    <link rel="stylesheet" href="css/user-auth.css" />
     <link rel="manifest" href="manifest.json" />
     <!-- Favicon links -->
     <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico" />
@@ -18,17 +19,34 @@
     <link rel="apple-touch-icon" href="favicon_io/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="favicon_io/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="favicon_io/android-chrome-512x512.png" />
+    <link rel="preload" href="images/nhs_trust_logo.png" as="image" />
   </head>
   <body>
+    <nav class="main-nav">
+      <img src="images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
+      <ul>
+        <a href="remote-ordering/ward/index.html" class="nav-link" id="ordering-link" style="display: none;">Ward Orders</a>
+        <a href="remote-ordering/pharmacy/index.html" class="nav-link" id="pharmacy-link" style="display: none;">Pharmacy Supply</a>
+        <a href="index.html" class="nav-link active">Label Generator</a>
+        <a href="admin/index.html" class="nav-link" id="admin-link" style="display: none;">Admin</a>
+      </ul>
+      <div class="user-info">
+        <span id="current-user">Not logged in</span>
+        <button id="logout-btn" class="logout-button">Logout</button>
+      </div>
+    </nav>
     <header>
       <div class="nhs-header">
-        <img src="images/nhs_trust_logo.png" alt="NHS Logo" class="nhs-logo" />
-        <h1>Downtime Pharmacy Label Generator</h1>
+        <div class="header-content">
+          <h1>Downtime Pharmacy Label Generator</h1>
+          <a href="remote-ordering/pharmacy/index.html" class="return-button">
+            <span class="return-icon">←</span> Return to Pharmacy Supply
+          </a>
+        </div>
       </div>
     </header>
 
-    <main>
-      <div class="container">
+    <main class="container">
         <div class="input-section">
           <h2>Label Information</h2>
           <form id="label-form">
@@ -185,10 +203,48 @@
       </div>
     </main>
 
+    <script src="js/api-client.js"></script>
+    <script src="js/secure-user-manager.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/medication-manager.js"></script>
     <script src="js/shorthand-codes.js"></script>
     <script src="js/label-generator.js"></script>
     <script src="js/app.js"></script>
+    <script>
+      // Check if user is logged in and display user info
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initialize user manager
+        UserManager.init();
+        
+        // Check authentication status and redirect if not logged in
+        UserManager.requireAuthentication()
+          .then(() => {
+            const currentUser = UserManager.getCurrentUser();
+            if (currentUser) {
+              document.getElementById('current-user').textContent = `Logged in as: ${currentUser.username}`;
+              
+              // Show admin link if user has admin access
+              if (UserManager.hasAccess('admin')) {
+                document.getElementById('admin-link').style.display = 'inline-block';
+              }
+              
+              // Show pharmacy link if user has pharmacy access
+              if (UserManager.hasAccess('pharmacy')) {
+                document.getElementById('pharmacy-link').style.display = 'inline-block';
+              }
+              
+              // Show ordering link if user has ordering access
+              if (UserManager.hasAccess('ordering')) {
+                document.getElementById('ordering-link').style.display = 'inline-block';
+              }
+            }
+          });
+          
+        // Handle logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+          UserManager.logout();
+        });
+      });
+    </script>
   </body>
 </html>

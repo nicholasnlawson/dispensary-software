@@ -29,33 +29,36 @@ body {
 }
 
 header {
-    background-color: var(--nhs-white);
+    background-color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 1rem;
+    padding: 0;
+    width: 100%;
 }
 
-.nhs-header {
-    display: flex;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-}
 
 .nhs-logo {
-    height: 40px;
-    margin-right: 1rem;
+    height: 50px;
+    margin-right: 1.5rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
 }
 
 h1 {
-    color: var(--nhs-blue);
-    font-size: 1.5rem;
-    font-weight: bold;
+    color: #212b32;
+    font-size: 1.8rem;
+    margin: 0;
+    font-weight: 600;
 }
 
 main {
     max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    margin: 0 auto;
+    padding: 20px;
 }
 
 .container {
@@ -344,6 +347,86 @@ button[type="reset"]:hover {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+}
+
+/* NHS Header */
+.nhs-header {
+    background-color: white;
+    color: #212b32;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+}
+
+/* Main Navigation */
+.main-nav {
+  background-color: white;
+  padding: 10px 20px;
+  margin-bottom: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Added shadow as it's now white */
+}
+
+.main-nav ul {
+  display: flex;
+  list-style: none;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  color: var(--nhs-blue);
+  text-decoration: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  font-weight: 500; /* Slightly bolder for readability */
+}
+
+.nav-link:hover {
+  background-color: var(--nhs-light-grey);
+  color: var(--nhs-dark-blue);
+}
+
+.nav-link.active {
+  background-color: var(--nhs-blue);
+  font-weight: bold;
+  color: white;
+}
+
+/* Return Button Styles */
+.return-button {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--nhs-blue);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-left: 15px;
+  font-size: 14px;
+}
+
+.return-button:hover {
+  background-color: var(--nhs-dark-blue);
+}
+
+.return-icon {
+  margin-right: 8px;
+  font-size: 16px;
 }
 
 /* Split Label Warning */

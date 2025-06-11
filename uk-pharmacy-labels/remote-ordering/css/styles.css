@@ -1,0 +1,479 @@
+/* Remote Ordering System Styles */
+
+/* Base Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f4f5;
+  color: #212b32;
+}
+
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+:root {
+  --primary-color: #005eb8; /* NHS Blue */
+  --secondary-color: #41b6e6; /* NHS Light Blue */
+  --accent-color: #ffb81c; /* NHS Yellow */
+  --success-color: #009639; /* NHS Green */
+  --danger-color: #da291c; /* NHS Red */
+  --warning-color: #ed8b00; /* NHS Orange */
+  --gray-light: #f0f4f5;
+  --gray-mid: #768692;
+  --gray-dark: #425563;
+  --text-color: #212b32;
+  --border-radius: 4px;
+  --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+
+/* Container Layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .container {
+    grid-template-columns: 2fr 1fr;
+  }
+  
+  .pharmacy-dashboard {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* Tabs */
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--gray-light);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+  background-color: var(--gray-light);
+}
+
+.tab-btn.active {
+  border-bottom-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* Order Forms */
+.order-form {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  display: none;
+}
+
+.order-form.active {
+  display: block;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-column {
+  flex: 1;
+  min-width: 0; /* Fix for flex items that don't shrink properly */
+}
+
+.form-column.full-width {
+  flex-basis: 100%;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-mid);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Medication Items */
+.medication-item {
+  background-color: var(--gray-light);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.medication-item:last-child {
+  margin-bottom: 0;
+}
+
+.remove-med-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--danger-color);
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+
+/* Button Styles */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button[type="submit"],
+.primary-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+button[type="submit"]:hover,
+.primary-btn:hover {
+  background-color: #003d78;
+}
+
+.secondary-btn {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.secondary-btn:hover {
+  background-color: #2e9fcc;
+}
+
+button[type="reset"],
+.cancel-btn {
+  background-color: var(--gray-mid);
+  color: white;
+}
+
+button[type="reset"]:hover,
+.cancel-btn:hover {
+  background-color: var(--gray-dark);
+}
+
+.danger-btn {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.danger-btn:hover {
+  background-color: #b91e12;
+}
+
+/* Recent Orders */
+.recent-orders {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.order-item {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gray-light);
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.order-id {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.order-time {
+  color: var(--gray-mid);
+  font-size: 0.9rem;
+}
+
+.order-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.status-pending {
+  background-color: var(--gray-light);
+  color: var(--gray-dark);
+}
+
+.status-urgent {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.status-emergency {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.status-completed {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.status-cancelled {
+  background-color: var(--gray-dark);
+  color: white;
+}
+
+/* Pharmacy Dashboard */
+.pharmacy-dashboard {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .pharmacy-dashboard {
+    grid-template-columns: 1fr 3fr;
+  }
+  
+  .order-filters {
+    grid-column: 1;
+  }
+  
+  .orders-list {
+    grid-column: 1 / -1;
+    overflow-x: auto;
+  }
+  
+  .panel {
+    grid-column: 1 / -1;
+  }
+}
+
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.filter-group {
+  min-width: 200px;
+  flex-grow: 1;
+}
+
+/* Order Tables */
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 0.5fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr;
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 0;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 0.5fr 1fr 1fr 1fr 1fr 2fr 1fr 1fr;
+  border-bottom: 1px solid var(--gray-light);
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.table-row:hover {
+  background-color: var(--gray-light);
+}
+
+.col {
+  padding: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Panels */
+.panel {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-top: 1rem;
+  display: none;
+}
+
+.panel.visible {
+  display: block;
+}
+
+.panel-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--gray-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-content {
+  padding: 1.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.panel-actions {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--gray-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Statistics Panel */
+.statistics-panel {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background-color: var(--gray-light);
+  border-radius: var(--border-radius);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.stat-label {
+  margin-top: 0.5rem;
+  color: var(--gray-dark);
+}
+
+/* Quick Links */
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.quick-link {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--gray-light);
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: var(--transition);
+}
+
+.quick-link:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.link-icon {
+  font-size: 1.5rem;
+  margin-right: 0.75rem;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  color: var(--gray-mid);
+  padding: 2rem;
+}
