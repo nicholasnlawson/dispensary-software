@@ -50,6 +50,25 @@ function initApp() {
     if (dispensaryLocation) {
         dispensaryLocation.value = 'south-tyneside';
     }
+    
+    // Check authentication and manage admin link visibility
+    manageAuthUI();
+}
+
+/**
+ * Manage authentication-related UI elements
+ */
+function manageAuthUI() {
+    // Get the admin link element
+    const adminLink = document.getElementById('admin-nav-link');
+    if (adminLink) {
+        // Only show admin link if user has admin role
+        if (AuthUtils.isAuthenticated() && AuthUtils.hasRole('admin')) {
+            adminLink.style.display = 'inline-block';
+        } else {
+            adminLink.style.display = 'none';
+        }
+    }
 }
 
 /**

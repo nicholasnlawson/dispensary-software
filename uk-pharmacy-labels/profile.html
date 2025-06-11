@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile | NHS Pharmacy System</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="icon" href="favicon_io/favicon.ico" type="image/x-icon">
+  <style>
+    .profile-container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .profile-form {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .profile-section {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #e5e5e5;
+      padding-bottom: 20px;
+    }
+    
+    .profile-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    
+    .profile-section h2 {
+      color: #005EB8;
+      margin-bottom: 20px;
+    }
+    
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
+    }
+    
+    .form-row label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .form-row input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .btn-update {
+      background-color: #007f3b;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    
+    .btn-update:hover {
+      background-color: #00662e;
+    }
+    
+    .alert {
+      margin-bottom: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .alert.show {
+      display: block;
+    }
+    
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .user-info {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .user-info p {
+      margin: 5px 0;
+    }
+    
+    .user-info .label {
+      font-weight: bold;
+      display: inline-block;
+      width: 100px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="main-nav">
+    <img src="images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
+    <ul>
+      <a href="remote-ordering/ward/index.html" class="nav-link">Ward Orders</a>
+      <a href="remote-ordering/pharmacy/index.html" class="nav-link">Pharmacy Supply</a>
+      <a href="admin/index.html" class="nav-link" id="admin-nav-link">Admin</a>
+      <a href="profile.html" class="nav-link active">My Profile</a>
+      <a href="#" class="nav-link logout-link" id="logout-link">Logout</a>
+    </ul>
+  </nav>
+  <header>
+    <div class="nhs-header">
+      <div class="header-content">
+        <h1>My Profile</h1>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="profile-container">
+      <div id="alert-box" class="alert"></div>
+      
+      <div class="user-info" id="user-info">
+        <h2>Account Information</h2>
+        <p><span class="label">Username:</span> <span id="display-username"></span></p>
+        <p><span class="label">Email:</span> <span id="display-email"></span></p>
+        <p><span class="label">Role(s):</span> <span id="display-roles"></span></p>
+      </div>
+      
+      <div class="profile-form">
+        <div class="profile-section">
+          <h2>Update Email</h2>
+          <form id="email-form">
+            <div class="form-row">
+              <label for="email">New Email Address</label>
+              <input type="email" id="email" name="email" required>
+            </div>
+            <button type="submit" class="btn-update">Update Email</button>
+          </form>
+        </div>
+        
+        <div class="profile-section">
+          <h2>Change Password</h2>
+          <form id="password-form">
+            <div class="form-row">
+              <label for="current-password">Current Password</label>
+              <input type="password" id="current-password" name="current-password" required>
+            </div>
+            <div class="form-row">
+              <label for="new-password">New Password</label>
+              <input type="password" id="new-password" name="new-password" required>
+            </div>
+            <div class="form-row">
+              <label for="confirm-password">Confirm New Password</label>
+              <input type="password" id="confirm-password" name="confirm-password" required>
+            </div>
+            <button type="submit" class="btn-update">Change Password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="node_modules/crypto-js/crypto-js.js"></script>
+  <script src="js/auth-utils.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

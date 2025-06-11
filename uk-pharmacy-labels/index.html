@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000;"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:"
     />
     <title>Downtime Pharmacy Label Generator</title>
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/autocomplete.css" />
-    <link rel="stylesheet" href="css/user-auth.css" />
     <link rel="manifest" href="manifest.json" />
     <!-- Favicon links -->
     <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico" />
@@ -25,15 +24,12 @@
     <nav class="main-nav">
       <img src="images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
       <ul>
-        <a href="remote-ordering/ward/index.html" class="nav-link" id="ordering-link" style="display: none;">Ward Orders</a>
-        <a href="remote-ordering/pharmacy/index.html" class="nav-link" id="pharmacy-link" style="display: none;">Pharmacy Supply</a>
-        <a href="index.html" class="nav-link active">Label Generator</a>
-        <a href="admin/index.html" class="nav-link" id="admin-link" style="display: none;">Admin</a>
+        <a href="remote-ordering/ward/index.html" class="nav-link">Ward Orders</a>
+        <a href="remote-ordering/pharmacy/index.html" class="nav-link">Pharmacy Supply</a>
+        <a href="admin/index.html" class="nav-link" id="admin-nav-link">Admin</a>
+        <a href="profile.html" class="nav-link">My Profile</a>
+        <a href="#" class="nav-link logout-link" id="logout-link">Logout</a>
       </ul>
-      <div class="user-info">
-        <span id="current-user">Not logged in</span>
-        <button id="logout-btn" class="logout-button">Logout</button>
-      </div>
     </nav>
     <header>
       <div class="nhs-header">
@@ -203,48 +199,12 @@
       </div>
     </main>
 
-    <script src="js/api-client.js"></script>
-    <script src="js/secure-user-manager.js"></script>
+    <script src="node_modules/crypto-js/crypto-js.js"></script>
+    <script src="js/auth-utils.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/medication-manager.js"></script>
     <script src="js/shorthand-codes.js"></script>
     <script src="js/label-generator.js"></script>
     <script src="js/app.js"></script>
-    <script>
-      // Check if user is logged in and display user info
-      document.addEventListener('DOMContentLoaded', () => {
-        // Initialize user manager
-        UserManager.init();
-        
-        // Check authentication status and redirect if not logged in
-        UserManager.requireAuthentication()
-          .then(() => {
-            const currentUser = UserManager.getCurrentUser();
-            if (currentUser) {
-              document.getElementById('current-user').textContent = `Logged in as: ${currentUser.username}`;
-              
-              // Show admin link if user has admin access
-              if (UserManager.hasAccess('admin')) {
-                document.getElementById('admin-link').style.display = 'inline-block';
-              }
-              
-              // Show pharmacy link if user has pharmacy access
-              if (UserManager.hasAccess('pharmacy')) {
-                document.getElementById('pharmacy-link').style.display = 'inline-block';
-              }
-              
-              // Show ordering link if user has ordering access
-              if (UserManager.hasAccess('ordering')) {
-                document.getElementById('ordering-link').style.display = 'inline-block';
-              }
-            }
-          });
-          
-        // Handle logout
-        document.getElementById('logout-btn').addEventListener('click', () => {
-          UserManager.logout();
-        });
-      });
-    </script>
   </body>
 </html>

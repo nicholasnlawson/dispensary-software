@@ -1,340 +1,373 @@
-/**
- * User management routes for NHS Pharmacy System
- */
-
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const { db } = require('../db/init');
+const { verifyToken, hasRole } = require('../middleware/auth');
 
-// Import middleware
-const { validateToken, isAdmin, validateUser } = require('../middleware/validation');
+// Apply authentication middleware to all routes
+router.use(verifyToken);
 
-/**
- * @route   GET /api/users
- * @desc    Get all users
- * @access  Private/Admin
- */
-router.get('/', validateToken, isAdmin, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    
-    // Get all users, excluding password hashes
-    const result = await db.query(
-      `SELECT id, username, email, access_levels, is_active, 
-       is_default, last_login, created_at, updated_at 
-       FROM users ORDER BY username`
-    );
-    
-    res.json(result.rows);
-    
-  } catch (err) {
-    console.error('Error fetching users:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+// Get all users (admin only)
+router.get('/', hasRole('admin'), (req, res) => {
+  db.all(
+    `SELECT u.id, u.username, u.email, u.created_at, u.last_login, u.is_active
+     FROM users u
+     ORDER BY u.username`,
+    [],
+    (err, users) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+      
+      // Get roles for each user
+      const userPromises = users.map(user => {
+        return new Promise((resolve, reject) => {
+          db.all(
+            `SELECT r.name
+             FROM roles r
+             JOIN user_roles ur ON r.id = ur.role_id
+             WHERE ur.user_id = ?`,
+            [user.id],
+            (err, roles) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve({
+                  ...user,
+                  roles: roles.map(role => role.name)
+                });
+              }
+            }
+          );
+        });
+      });
+      
+      Promise.all(userPromises)
+        .then(usersWithRoles => {
+          res.json({
+            success: true,
+            users: usersWithRoles
+          });
+        })
+        .catch(err => {
+          res.status(500).json({ success: false, message: 'Error retrieving user roles' });
+        });
+    }
+  );
 });
 
-/**
- * @route   GET /api/users/:id
- * @desc    Get user by ID
- * @access  Private/Admin
- */
-router.get('/:id', validateToken, isAdmin, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const userId = req.params.id;
-    
-    // Get user by ID, excluding password hash
-    const result = await db.query(
-      `SELECT id, username, email, access_levels, is_active, 
-       is_default, last_login, created_at, updated_at 
-       FROM users WHERE id = $1`,
-      [userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+// Get specific user by ID (admin only)
+router.get('/:id', hasRole('admin'), (req, res) => {
+  const userId = req.params.id;
+  
+  db.get(
+    `SELECT u.id, u.username, u.email, u.created_at, u.last_login, u.is_active
+     FROM users u
+     WHERE u.id = ?`,
+    [userId],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      // Get user roles
+      db.all(
+        `SELECT r.name
+         FROM roles r
+         JOIN user_roles ur ON r.id = ur.role_id
+         WHERE ur.user_id = ?`,
+        [userId],
+        (err, roles) => {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Error retrieving user roles' });
+          }
+          
+          const userRoles = roles.map(role => role.name);
+          
+          res.json({
+            success: true,
+            user: {
+              ...user,
+              roles: userRoles
+            }
+          });
+        }
+      );
     }
-    
-    res.json(result.rows[0]);
-    
-  } catch (err) {
-    console.error(`Error fetching user ${req.params.id}:`, err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  );
 });
 
-/**
- * @route   POST /api/users
- * @desc    Create a new user
- * @access  Private/Admin
- */
-router.post('/', validateToken, isAdmin, validateUser, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const { username, email, password, access_levels, is_active } = req.body;
-    
-    // Check if username already exists
-    const existingUser = await db.query(
-      'SELECT id FROM users WHERE username = $1',
-      [username]
-    );
-    
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Username already exists' });
+// Update user (admin only)
+router.put('/:id', hasRole('admin'), async (req, res) => {
+  const userId = req.params.id;
+  const { username, email, password, roles, is_active } = req.body;
+  
+  // Check if user exists
+  db.get('SELECT id FROM users WHERE id = ?', [userId], async (err, user) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
     
-    // Hash password
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
     
-    // Insert new user
-    const result = await db.query(
-      `INSERT INTO users 
-       (username, email, password_hash, access_levels, is_active) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, username, email, access_levels, is_active, created_at`,
-      [username, email, passwordHash, JSON.stringify(access_levels), is_active]
-    );
-    
-    // Create audit log entry
-    await db.query(
-      'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES ($1, $2, $3, $4, $5, $6)',
-      [
-        req.user.id, 
-        'create', 
-        'user', 
-        result.rows[0].id, 
-        JSON.stringify({ username, email, access_levels, is_active }), 
-        req.ip
-      ]
-    );
-    
-    res.status(201).json(result.rows[0]);
-    
-  } catch (err) {
-    console.error('Error creating user:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+    // Begin transaction
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION');
+      
+      // Update user information
+      const updateFields = [];
+      const updateParams = [];
+      
+      if (username) {
+        updateFields.push('username = ?');
+        updateParams.push(username);
+      }
+      
+      if (email) {
+        updateFields.push('email = ?');
+        updateParams.push(email);
+      }
+      
+      if (password) {
+        // Hash the new password
+        bcrypt.hash(password, 10, (err, passwordHash) => {
+          if (err) {
+            db.run('ROLLBACK');
+            return res.status(500).json({ success: false, message: 'Error hashing password' });
+          }
+          
+          updateFields.push('password_hash = ?');
+          updateParams.push(passwordHash);
+          
+          continueUpdate();
+        });
+      } else {
+        continueUpdate();
+      }
+      
+      function continueUpdate() {
+        if (is_active !== undefined) {
+          updateFields.push('is_active = ?');
+          updateParams.push(is_active ? 1 : 0);
+        }
+        
+        // Only update if there are fields to update
+        if (updateFields.length > 0) {
+          const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+          updateParams.push(userId);
+          
+          db.run(query, updateParams, function(err) {
+            if (err) {
+              db.run('ROLLBACK');
+              return res.status(500).json({ success: false, message: 'Error updating user' });
+            }
+            
+            // Update roles if provided
+            if (roles && Array.isArray(roles)) {
+              // Delete existing roles
+              db.run('DELETE FROM user_roles WHERE user_id = ?', [userId], (err) => {
+                if (err) {
+                  db.run('ROLLBACK');
+                  return res.status(500).json({ success: false, message: 'Error updating roles' });
+                }
+                
+                // Get role IDs for the requested roles
+                const rolePromises = roles.map(role => {
+                  return new Promise((resolve, reject) => {
+                    db.get('SELECT id FROM roles WHERE name = ?', [role], (err, row) => {
+                      if (err || !row) {
+                        reject(new Error(`Role ${role} not found`));
+                      } else {
+                        resolve(row.id);
+                      }
+                    });
+                  });
+                });
+                
+                Promise.all(rolePromises)
+                  .then(roleIds => {
+                    // Insert user roles
+                    const userRoleInserts = roleIds.map(roleId => {
+                      return new Promise((resolve, reject) => {
+                        db.run('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+                          [userId, roleId],
+                          (err) => {
+                            if (err) {
+                              reject(err);
+                            } else {
+                              resolve();
+                            }
+                          });
+                      });
+                    });
+                    
+                    Promise.all(userRoleInserts)
+                      .then(() => {
+                        db.run('COMMIT');
+                        res.json({
+                          success: true,
+                          message: 'User updated successfully'
+                        });
+                      })
+                      .catch(err => {
+                        db.run('ROLLBACK');
+                        res.status(500).json({ success: false, message: 'Error assigning roles' });
+                      });
+                  })
+                  .catch(err => {
+                    db.run('ROLLBACK');
+                    res.status(400).json({ success: false, message: err.message });
+                  });
+              });
+            } else {
+              db.run('COMMIT');
+              res.json({
+                success: true,
+                message: 'User updated successfully'
+              });
+            }
+          });
+        } else if (roles && Array.isArray(roles)) {
+          // Only update roles
+          // Delete existing roles
+          db.run('DELETE FROM user_roles WHERE user_id = ?', [userId], (err) => {
+            if (err) {
+              db.run('ROLLBACK');
+              return res.status(500).json({ success: false, message: 'Error updating roles' });
+            }
+            
+            // Get role IDs for the requested roles
+            const rolePromises = roles.map(role => {
+              return new Promise((resolve, reject) => {
+                db.get('SELECT id FROM roles WHERE name = ?', [role], (err, row) => {
+                  if (err || !row) {
+                    reject(new Error(`Role ${role} not found`));
+                  } else {
+                    resolve(row.id);
+                  }
+                });
+              });
+            });
+            
+            Promise.all(rolePromises)
+              .then(roleIds => {
+                // Insert user roles
+                const userRoleInserts = roleIds.map(roleId => {
+                  return new Promise((resolve, reject) => {
+                    db.run('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+                      [userId, roleId],
+                      (err) => {
+                        if (err) {
+                          reject(err);
+                        } else {
+                          resolve();
+                        }
+                      });
+                  });
+                });
+                
+                Promise.all(userRoleInserts)
+                  .then(() => {
+                    db.run('COMMIT');
+                    res.json({
+                      success: true,
+                      message: 'User roles updated successfully'
+                    });
+                  })
+                  .catch(err => {
+                    db.run('ROLLBACK');
+                    res.status(500).json({ success: false, message: 'Error assigning roles' });
+                  });
+              })
+              .catch(err => {
+                db.run('ROLLBACK');
+                res.status(400).json({ success: false, message: err.message });
+              });
+          });
+        } else {
+          db.run('COMMIT');
+          res.json({
+            success: true,
+            message: 'No changes made to user'
+          });
+        }
+      }
+    });
+  });
 });
 
-/**
- * @route   PUT /api/users/:id
- * @desc    Update a user
- * @access  Private/Admin
- */
-router.put('/:id', validateToken, isAdmin, validateUser, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const userId = req.params.id;
-    const { username, email, access_levels, is_active } = req.body;
-    
-    // Check if user exists
-    const userCheck = await db.query(
-      'SELECT id, is_default FROM users WHERE id = $1',
-      [userId]
-    );
-    
-    if (userCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Check if trying to deactivate a default admin user
-    const user = userCheck.rows[0];
-    if (user.is_default && !is_active) {
-      return res.status(400).json({ error: 'Cannot deactivate default admin user' });
-    }
-    
-    // Update user
-    const result = await db.query(
-      `UPDATE users 
-       SET username = $1, email = $2, access_levels = $3, is_active = $4, updated_at = NOW() 
-       WHERE id = $5 
-       RETURNING id, username, email, access_levels, is_active, updated_at`,
-      [username, email, JSON.stringify(access_levels), is_active, userId]
-    );
-    
-    // Create audit log entry
-    await db.query(
-      'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES ($1, $2, $3, $4, $5, $6)',
-      [
-        req.user.id, 
-        'update', 
-        'user', 
-        userId, 
-        JSON.stringify({ username, email, access_levels, is_active }), 
-        req.ip
-      ]
-    );
-    
-    res.json(result.rows[0]);
-    
-  } catch (err) {
-    console.error(`Error updating user ${req.params.id}:`, err);
-    res.status(500).json({ error: 'Server error' });
+// Delete user (admin only)
+router.delete('/:id', hasRole('admin'), (req, res) => {
+  const userId = req.params.id;
+  
+  // Prevent deleting yourself
+  if (userId === req.user.id.toString()) {
+    return res.status(400).json({ success: false, message: 'Cannot delete your own account' });
   }
+  
+  db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Error deleting user' });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  });
 });
 
-/**
- * @route   DELETE /api/users/:id
- * @desc    Delete a user
- * @access  Private/Admin
- */
-router.delete('/:id', validateToken, isAdmin, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const userId = req.params.id;
-    
-    // Check if user exists and is not default admin
-    const userCheck = await db.query(
-      'SELECT id, is_default, username FROM users WHERE id = $1',
-      [userId]
-    );
-    
-    if (userCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Prevent deletion of default admin user
-    const user = userCheck.rows[0];
-    if (user.is_default) {
-      return res.status(400).json({ error: 'Cannot delete default admin user' });
-    }
-    
-    // Prevent self-deletion
-    if (user.id === req.user.id) {
-      return res.status(400).json({ error: 'Cannot delete your own account' });
-    }
-    
-    // Delete user
-    await db.query('DELETE FROM users WHERE id = $1', [userId]);
-    
-    // Create audit log entry
-    await db.query(
-      'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES ($1, $2, $3, $4, $5, $6)',
-      [
-        req.user.id, 
-        'delete', 
-        'user', 
-        userId, 
-        JSON.stringify({ username: user.username }), 
-        req.ip
-      ]
-    );
-    
-    res.json({ message: 'User deleted successfully' });
-    
-  } catch (err) {
-    console.error(`Error deleting user ${req.params.id}:`, err);
-    res.status(500).json({ error: 'Server error' });
+// Change password (user can change their own password)
+router.post('/change-password', (req, res) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
+  
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Current password and new password required' });
   }
-});
-
-/**
- * @route   PUT /api/users/:id/reset-password
- * @desc    Reset a user's password (admin function)
- * @access  Private/Admin
- */
-router.put('/:id/reset-password', validateToken, isAdmin, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const userId = req.params.id;
-    const { password } = req.body;
-    
-    if (!password || password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  
+  // Get user's current password hash
+  db.get('SELECT password_hash FROM users WHERE id = ?', [userId], async (err, user) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
     
-    // Check if user exists
-    const userCheck = await db.query(
-      'SELECT id, username FROM users WHERE id = $1',
-      [userId]
-    );
-    
-    if (userCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Hash new password
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-    
-    // Update password
-    await db.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [passwordHash, userId]
-    );
-    
-    // Create audit log entry
-    await db.query(
-      'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address) VALUES ($1, $2, $3, $4, $5)',
-      [req.user.id, 'reset_password', 'user', userId, req.ip]
-    );
-    
-    res.json({ message: 'Password reset successfully' });
-    
-  } catch (err) {
-    console.error(`Error resetting password for user ${req.params.id}:`, err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-/**
- * @route   PUT /api/users/:id/change-password
- * @desc    Change own password (user function)
- * @access  Private
- */
-router.put('/change-password', validateToken, async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const userId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
-    
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters' });
-    }
-    
-    // Get current user with password hash
-    const userResult = await db.query(
-      'SELECT password_hash FROM users WHERE id = $1',
-      [userId]
-    );
-    
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
     
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword, 
-      userResult.rows[0].password_hash
-    );
-    
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     }
     
     // Hash new password
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
+    const saltRounds = 10;
     const passwordHash = await bcrypt.hash(newPassword, saltRounds);
     
     // Update password
-    await db.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [passwordHash, userId]
-    );
-    
-    // Create audit log entry
-    await db.query(
-      'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'change_password', 'user', userId, req.ip]
-    );
-    
-    res.json({ message: 'Password changed successfully' });
-    
-  } catch (err) {
-    console.error(`Error changing password:`, err);
-    res.status(500).json({ error: 'Server error' });
-  }
+    db.run('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, userId], (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Error updating password' });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Password updated successfully'
+      });
+    });
+  });
 });
 
 module.exports = router;

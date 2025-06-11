@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="../../css/styles.css" />
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="stylesheet" href="../../css/autocomplete.css" />
-    <link rel="stylesheet" href="../../css/user-auth.css" />
     <link rel="icon" type="image/x-icon" href="../../favicon_io/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="../../favicon_io/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="../../favicon_io/favicon-16x16.png" />
@@ -24,13 +23,10 @@
       <ul>
         <a href="../ward/index.html" class="nav-link">Ward Orders</a>
         <a href="index.html" class="nav-link active">Pharmacy Supply</a>
-        <a href="../../index.html" class="nav-link">Label Generator</a>
-        <a href="../../admin/index.html" class="nav-link" id="admin-link" style="display: none;">Admin</a>
+        <a href="../../admin/index.html" class="nav-link" id="admin-nav-link">Admin</a>
+        <a href="../../profile.html" class="nav-link">My Profile</a>
+        <a href="#" class="nav-link logout-link" id="logout-link">Logout</a>
       </ul>
-      <div class="user-info">
-        <span id="current-user">Not logged in</span>
-        <button id="logout-btn" class="logout-button">Logout</button>
-      </div>
     </nav>
     <header>
       <div class="nhs-header">
@@ -224,43 +220,10 @@
     </footer>
 
     <!-- Load shared dependencies first -->
-    <script src="../../js/user-manager.js" defer></script>
     <script src="../../js/data-manager.js" defer></script>
     <script src="../../js/medication-manager.js" defer></script>
     <!-- Load module-specific scripts -->
     <script src="../js/order-manager.js" defer></script>
     <script src="../js/pharmacy-supply.js" defer></script>
-    
-    <script>
-      // Check if user is logged in and has pharmacy access
-      document.addEventListener('DOMContentLoaded', () => {
-        const currentUser = UserManager.getCurrentUser();
-        if (!currentUser) {
-          // Redirect to login page if not logged in
-          window.location.href = '../../login.html';
-          return;
-        }
-        
-        // Check if user has pharmacy access
-        if (!UserManager.hasAccess(UserManager.ACCESS_LEVELS.PHARMACY)) {
-          alert('You do not have access to the pharmacy supply system');
-          window.location.href = '../../index.html';
-          return;
-        }
-        
-        // Display current user
-        document.getElementById('current-user').textContent = `Logged in as: ${currentUser.username}`;
-        
-        // Show admin link if user has admin access
-        if (UserManager.hasAccess(UserManager.ACCESS_LEVELS.ADMIN)) {
-          document.getElementById('admin-link').style.display = 'inline-block';
-        }
-        
-        // Handle logout
-        document.getElementById('logout-btn').addEventListener('click', () => {
-          UserManager.logout();
-        });
-      });
-    </script>
   </body>
 </html>

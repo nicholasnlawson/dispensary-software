@@ -1,69 +1,77 @@
-/**
- * Admin page styles
- */
+/* Admin Panel Styles */
 
-/* Admin layout */
-.admin-container {
+/* Header */
+.admin-header {
+  background-color: #2c3e50;
+  color: #fff;
+  padding: 15px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.admin-nav ul {
   display: flex;
-  min-height: calc(100vh - 150px);
-}
-
-.admin-sidebar {
-  width: 250px;
-  background-color: #f8f8f8;
-  border-right: 1px solid #ddd;
-  padding: 20px 0;
-}
-
-.admin-content {
-  flex: 1;
-  padding: 20px;
-}
-
-/* Admin menu */
-.admin-menu {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 15px 0 0;
 }
 
-.admin-menu li {
-  padding: 12px 20px;
-  cursor: pointer;
-  border-left: 4px solid transparent;
-  transition: background-color 0.2s;
+.admin-nav li {
+  margin-right: 20px;
 }
 
-.admin-menu li:hover {
-  background-color: #eee;
-}
-
-.admin-menu li.active {
-  background-color: #e6f0fa;
-  border-left-color: #005eb8;
+.admin-nav a {
+  color: #ecf0f1;
+  text-decoration: none;
+  padding: 5px 0;
   font-weight: 500;
+  position: relative;
 }
 
-/* Admin sections */
+.admin-nav li.active a,
+.admin-nav a:hover {
+  color: #3498db;
+}
+
+.admin-nav li.active a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #3498db;
+}
+
+/* Admin Content */
+.admin-content {
+  padding: 30px 0;
+}
+
 .admin-section {
-  display: none;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.admin-section.active {
-  display: block;
-}
-
-.admin-section h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.admin-actions {
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
-/* User table */
+.section-header h2 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+/* User Table */
 .users-table-container {
   overflow-x: auto;
 }
@@ -71,6 +79,7 @@
 .users-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
 }
 
 .users-table th,
@@ -81,280 +90,236 @@
 }
 
 .users-table th {
-  background-color: #f2f2f2;
-  font-weight: 500;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
-.users-table tr:hover {
-  background-color: #f9f9f9;
+.users-table tbody tr:hover {
+  background-color: #f8f9fa;
 }
 
-/* Badges */
-.default-badge {
-  background-color: #6c757d;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 12px;
-  margin-left: 5px;
-}
-
-.access-badge {
+.users-table .user-role {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 3px;
-  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
   margin-right: 5px;
-  color: white;
-}
-
-.access-badge.ordering {
-  background-color: #28a745;
-}
-
-.access-badge.pharmacy {
-  background-color: #007bff;
-}
-
-.access-badge.admin {
-  background-color: #dc3545;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 3px;
-  font-size: 12px;
-}
-
-.status-badge.active {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-badge.inactive {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* Action buttons */
-.actions-cell {
-  white-space: nowrap;
-}
-
-.action-btn {
-  padding: 4px 8px;
-  margin-right: 5px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-  color: white;
-}
-
-.action-btn.edit-btn {
-  background-color: #007bff;
-}
-
-.action-btn.reset-btn {
-  background-color: #6c757d;
-}
-
-.action-btn.delete-btn {
-  background-color: #dc3545;
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Forms */
-.settings-form {
-  max-width: 600px;
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Checkbox and radio button groups */
-.checkbox-group,
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 5px;
-}
-
-.checkbox-group label,
-.radio-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.checkbox-group input[type="checkbox"],
-.radio-group input[type="radio"] {
-  margin: 0;
-  width: 16px;
-  height: 16px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
   margin-bottom: 5px;
-  font-weight: 500;
 }
 
-.form-group input[type="text"],
-.form-group input[type="email"],
-.form-group input[type="password"],
-.form-group input[type="number"] {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
+.users-table .role-admin {
+  background-color: #e74c3c;
+  color: #fff;
 }
 
-.checkbox-group,
-.radio-group {
-  margin-top: 5px;
+.users-table .role-pharmacy {
+  background-color: #2ecc71;
+  color: #fff;
 }
 
-.checkbox-group label,
-.radio-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: normal;
+.users-table .role-ordering {
+  background-color: #3498db;
+  color: #fff;
 }
 
-.form-actions {
-  margin-top: 30px;
+.users-table .user-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
 }
 
-.primary-button {
-  background-color: #005eb8;
-  color: white;
+.users-table .status-active {
+  background-color: #2ecc71;
+  color: #fff;
+}
+
+.users-table .status-inactive {
+  background-color: #7f8c8d;
+  color: #fff;
+}
+
+/* User Actions */
+.action-btn {
+  background: none;
   border: none;
-  border-radius: 4px;
-  padding: 10px 16px;
-  font-size: 16px;
   cursor: pointer;
+  margin-right: 10px;
+  padding: 5px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
 }
 
-.secondary-button {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-left: 10px;
+.action-btn:hover {
+  background-color: #f1f1f1;
+}
+
+.edit-btn {
+  color: #3498db;
+}
+
+.delete-btn {
+  color: #e74c3c;
 }
 
 /* Modal */
 .modal {
   display: none;
   position: fixed;
-  z-index: 1000;
-  left: 0;
   top: 0;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.active {
+  display: flex;
 }
 
 .modal-content {
   background-color: #fff;
-  margin: 10% auto;
-  padding: 0;
+  border-radius: 8px;
   width: 90%;
   max-width: 500px;
-  border-radius: 5px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.3s;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {
   padding: 15px 20px;
-  background-color: #f8f8f8;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.modal-header h2 {
+.modal-header h3 {
   margin: 0;
-  font-size: 20px;
-}
-
-.close-modal {
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
+  color: #2c3e50;
 }
 
 .modal-body {
   padding: 20px;
 }
 
-/* User info in nav */
-.user-info {
-  margin-left: auto;
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #7f8c8d;
+}
+
+.close-btn:hover {
+  color: #2c3e50;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+small {
+  display: block;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  margin-top: 5px;
+}
+
+#password-help {
+  display: block;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  margin-top: 5px;
+}
+
+.checkbox-group,
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 5px;
+}
+
+.checkbox-label,
+.radio-label {
   display: flex;
   align-items: center;
-  color: white;
-  padding: 0 20px;
-}
-
-#current-user {
-  margin-right: 15px;
-}
-
-.logout-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 5px 10px;
   cursor: pointer;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .admin-container {
-    flex-direction: column;
-  }
-  
-  .admin-sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
-    padding: 10px 0;
-  }
-  
-  .admin-menu {
-    display: flex;
-    overflow-x: auto;
-  }
-  
-  .admin-menu li {
-    padding: 10px 15px;
-    border-left: none;
-    border-bottom: 3px solid transparent;
-  }
-  
-  .admin-menu li.active {
-    border-left-color: transparent;
-    border-bottom-color: #005eb8;
-  }
+.checkbox-label input,
+.radio-label input {
+  margin-right: 5px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Alert */
+.alert {
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: none;
+}
+
+.alert.show {
+  display: block;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }

@@ -1,80 +1,216 @@
-/**
- * Database initialization script for NHS Pharmacy System
- * Creates tables and default admin user if they don't exist
- */
-
-require('dotenv').config();
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
 
-// Create database connection
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
-
-async function initializeDatabase() {
-  console.log('Starting database initialization...');
-  
-  try {
-    // Read schema file
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    
-    // Execute schema
-    console.log('Creating database schema...');
-    await pool.query(schema);
-    
-    // Check if admin user exists
-    const adminCheck = await pool.query(
-      "SELECT id FROM users WHERE username = 'admin'"
-    );
-    
-    // Create default admin user if none exists
-    if (adminCheck.rows.length === 0) {
-      console.log('Creating default admin user...');
-      
-      // Hash default password
-      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
-      const passwordHash = await bcrypt.hash('admin', saltRounds);
-      
-      // Insert admin user
-      await pool.query(
-        `INSERT INTO users 
-         (username, email, password_hash, access_levels, is_active, is_default) 
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          'admin',
-          'admin@hospital.nhs.uk',
-          passwordHash,
-          JSON.stringify(['ordering', 'pharmacy', 'admin']),
-          true,
-          true
-        ]
-      );
-      
-      console.log('Default admin user created successfully');
-      console.log('Username: admin');
-      console.log('Password: admin');
-      console.log('IMPORTANT: Change this password immediately after first login!');
-    } else {
-      console.log('Admin user already exists, skipping creation');
-    }
-    
-    console.log('Database initialization completed successfully');
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    process.exit(1);
-  } finally {
-    // Close pool
-    await pool.end();
-  }
+// Ensure SQLite directory exists
+const dbDir = path.join(__dirname, 'sqlite');
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
 }
 
-// Run initialization
-initializeDatabase();
+// Database path
+const dbPath = path.join(dbDir, 'pharmacy_system.db');
+
+// Create or open the database
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error opening database:', err.message);
+    } else {
+        console.log('Connected to SQLite database');
+        // Only initialize automatically if not in explicit initialization mode
+        if (!process.env.EXPLICIT_DB_INIT) {
+            initializeDatabase();
+        }
+    }
+});
+
+// Initialize the database with schema and default data
+function initializeDatabase() {
+    const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+    
+    // Run schema in a transaction
+    db.serialize(() => {
+        db.run('PRAGMA foreign_keys = ON');
+        
+        // Execute schema statements
+        db.exec(schema, async (err) => {
+            if (err) {
+                console.error('Error creating schema:', err.message);
+            } else {
+                console.log('Database schema created successfully');
+                
+                // Create default admin user if not exists
+                const saltRounds = 10;
+                const defaultPassword = 'change_me_immediately';
+                
+                try {
+                    const passwordHash = await bcrypt.hash(defaultPassword, saltRounds);
+                    
+                    // Check if admin user already exists
+                    db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {
+                        if (err) {
+                            console.error('Error checking for admin user:', err.message);
+                        } else if (!row) {
+                            // Insert admin user if doesn't exist
+                            db.run(
+                                'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                                ['admin', 'admin@localhost', passwordHash],
+                                function(err) {
+                                    if (err) {
+                                        console.error('Error creating admin user:', err.message);
+                                    } else {
+                                        const adminId = this.lastID;
+                                        
+                                        // Get admin role ID
+                                        db.get('SELECT id FROM roles WHERE name = ?', ['admin'], (err, row) => {
+                                            if (err || !row) {
+                                                console.error('Error getting admin role:', err?.message);
+                                            } else {
+                                                // Assign admin role to user
+                                                db.run(
+                                                    'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+                                                    [adminId, row.id],
+                                                    (err) => {
+                                                        if (err) {
+                                                            console.error('Error assigning admin role:', err.message);
+                                                        } else {
+                                                            console.log('Default admin user created with all privileges');
+                                                        }
+                                                    }
+                                                );
+                                            }
+                                        });
+                                    }
+                                }
+                            );
+                        } else {
+                            console.log('Admin user already exists');
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error hashing password:', error.message);
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Explicitly initialize the database
+ * @returns {Promise} Resolves when initialization is complete
+ */
+function initialize() {
+    return new Promise((resolve, reject) => {
+        // Set flag to prevent automatic initialization
+        process.env.EXPLICIT_DB_INIT = 'true';
+        
+        console.log('Starting explicit database initialization...');
+        
+        // Run initialization
+        db.serialize(() => {
+            db.run('PRAGMA foreign_keys = ON');
+            
+            const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+            
+            // Execute schema
+            db.exec(schema, async (err) => {
+                if (err) {
+                    console.error('Error creating schema:', err.message);
+                    reject(err);
+                    return;
+                }
+                
+                console.log('Database schema created successfully');
+                
+                try {
+                    // Create default roles and admin user
+                    await createDefaultAdmin();
+                    console.log('Database initialization completed successfully');
+                    resolve();
+                } catch (error) {
+                    console.error('Error during initialization:', error);
+                    reject(error);
+                }
+            });
+        });
+    });
+}
+
+/**
+ * Create default admin user with roles
+ * @returns {Promise} Resolves when admin creation is complete
+ */
+function createDefaultAdmin() {
+    return new Promise(async (resolve, reject) => {
+        const saltRounds = 10;
+        const defaultPassword = 'change_me_immediately';
+        
+        try {
+            const passwordHash = await bcrypt.hash(defaultPassword, saltRounds);
+            
+            // Check if admin user already exists
+            db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {
+                if (err) {
+                    console.error('Error checking for admin user:', err.message);
+                    reject(err);
+                    return;
+                }
+                
+                if (!row) {
+                    // Insert admin user if doesn't exist
+                    db.run(
+                        'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                        ['admin', 'admin@localhost', passwordHash],
+                        function(err) {
+                            if (err) {
+                                console.error('Error creating admin user:', err.message);
+                                reject(err);
+                                return;
+                            }
+                            
+                            const adminId = this.lastID;
+                            
+                            // Get admin role ID
+                            db.get('SELECT id FROM roles WHERE name = ?', ['admin'], (err, row) => {
+                                if (err || !row) {
+                                    console.error('Error getting admin role:', err?.message);
+                                    reject(err || new Error('Admin role not found'));
+                                    return;
+                                }
+                                
+                                // Assign admin role to user
+                                db.run(
+                                    'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+                                    [adminId, row.id],
+                                    (err) => {
+                                        if (err) {
+                                            console.error('Error assigning admin role:', err.message);
+                                            reject(err);
+                                            return;
+                                        }
+                                        
+                                        console.log('Default admin user created with all privileges');
+                                        resolve();
+                                    }
+                                );
+                            });
+                        }
+                    );
+                } else {
+                    console.log('Admin user already exists');
+                    resolve();
+                }
+            });
+        } catch (error) {
+            console.error('Error hashing password:', error.message);
+            reject(error);
+        }
+    });
+}
+
+module.exports = {
+    db,
+    initialize,
+    initializeDatabase
+};

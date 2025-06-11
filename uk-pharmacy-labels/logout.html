@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logout - Pharmacy System</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+    .logout-container {
+      text-align: center;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="logout-container">
+    <h1>Pharmacy System</h1>
+    <p>You are currently logged in. Click the button below to log out.</p>
+    <button id="logout-btn" class="btn">Log Out</button>
+    <script>
+      document.getElementById('logout-btn').addEventListener('click', function() {
+        // Clear authentication data
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
+        
+        // Redirect to login page
+        window.location.href = '/login.html';
+      });
+    </script>
+  </div>
+</body>
+</html>

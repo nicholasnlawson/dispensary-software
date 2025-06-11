@@ -1,303 +1,259 @@
 /**
- * UK Pharmacy Back-Up Label Generator
- * API Client Module
- * Handles communication with the secure local database server
+ * API Client for the Pharmacy System
+ * Handles all API requests and authentication
  */
 
-const ApiClient = {
-    _getRootRelativePath(fileName) {
-        if (window.location.pathname.includes('/admin/')) {
-            return `../${fileName}`;
-        }
-        return fileName;
-    },
-    // API base URL - update this for your intranet deployment
-    BASE_URL: 'http://localhost:3000/api',
-    
-    /**
-     * Get authentication token from session storage
-     * @returns {string|null} JWT token or null if not authenticated
-     */
-    getToken() {
-        return sessionStorage.getItem('auth_token');
-    },
-    
-    /**
-     * Set authentication token in session storage
-     * @param {string} token - JWT token
-     */
-    setToken(token) {
-        sessionStorage.setItem('auth_token', token);
-    },
-    
-    /**
-     * Clear authentication token from session storage
-     */
-    clearToken() {
-        sessionStorage.removeItem('auth_token');
-    },
-    
-    /**
-     * Make API request
-     * @param {string} endpoint - API endpoint
-     * @param {object} options - Fetch options
-     * @returns {Promise<any>} - Response data
-     */
-    async request(endpoint, options = {}) {
-        console.log('[API] Making request to:', this.BASE_URL + endpoint);
-        console.log('[API] Request options:', JSON.stringify(options));
-        
-        const token = this.getToken();
-        
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
-        
-        if (token) {
-            headers['x-auth-token'] = token;
-        }
-        
-        try {
-            console.log('[API] Sending fetch request...');
-            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
-                ...options,
-                headers
-            });
-            console.log('[API] Response status:', response.status);
-            
-            // Handle 401 Unauthorized - token expired or invalid
-            if (response.status === 401) {
-                this.clearToken();
-                // Redirect to login page if not already there
-                if (!window.location.pathname.includes('login.html')) {
-                    window.location.href = ApiClient._getRootRelativePath('login.html') + '?expired=true';
-                }
-                throw new Error('Authentication expired. Please log in again.');
-            }
-            
-            // Parse JSON response
-            const data = await response.json();
-            
-            // Handle error responses
-            if (!response.ok) {
-                throw new Error(data.error || `API error: ${response.status}`);
-            }
-            
-            return data;
-        } catch (error) {
-            console.error('API request error:', error);
-            throw error;
-        }
-    },
-    
-    /**
-     * Authentication API endpoints
-     */
-    auth: {
-        /**
-         * Login user
-         * @param {string} username - Username
-         * @param {string} password - Password
-         * @returns {Promise} User data and token
-         */
-        async login(username, password) {
-            const data = await ApiClient.request('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ username, password })
-            });
-            
-            // Store token
-            ApiClient.setToken(data.token);
-            
-            // Store user in session storage
-            sessionStorage.setItem('current_user', JSON.stringify(data.user));
-            
-            return data.user;
-        },
-        
-        /**
-         * Verify current token and get user data
-         * @returns {Promise} User data
-         */
-        async verify() {
-            if (!ApiClient.getToken()) {
-                return null;
-            }
-            
-            try {
-                const data = await ApiClient.request('/auth/verify');
-                
-                // Update user in session storage
-                sessionStorage.setItem('current_user', JSON.stringify(data.user));
-                
-                return data.user;
-            } catch (error) {
-                return null;
-            }
-        },
-        
-        /**
-         * Logout user
-         */
-        async logout() {
-            try {
-                if (ApiClient.getToken()) {
-                    await ApiClient.request('/auth/logout', {
-                        method: 'POST'
-                    });
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-            } finally {
-                // Clear token and user data
-                ApiClient.clearToken();
-                sessionStorage.removeItem('current_user');
-                
-                // Redirect to login page
-                window.location.href = ApiClient._getRootRelativePath('login.html');
-            }
-        }
-    },
-    
-    /**
-     * User management API endpoints
-     */
-    users: {
-        /**
-         * Get all users
-         * @returns {Promise} List of users
-         */
-        async getAll() {
-            return ApiClient.request('/users');
-        },
-        
-        /**
-         * Get user by ID
-         * @param {string} id - User ID
-         * @returns {Promise} User data
-         */
-        async getById(id) {
-            return ApiClient.request(`/users/${id}`);
-        },
-        
-        /**
-         * Create a new user
-         * @param {Object} userData - User data
-         * @returns {Promise} Created user
-         */
-        async create(userData) {
-            return ApiClient.request('/users', {
-                method: 'POST',
-                body: JSON.stringify(userData)
-            });
-        },
-        
-        /**
-         * Update a user
-         * @param {string} id - User ID
-         * @param {Object} userData - User data
-         * @returns {Promise} Updated user
-         */
-        async update(id, userData) {
-            return ApiClient.request(`/users/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(userData)
-            });
-        },
-        
-        /**
-         * Delete a user
-         * @param {string} id - User ID
-         * @returns {Promise} Success message
-         */
-        async delete(id) {
-            return ApiClient.request(`/users/${id}`, {
-                method: 'DELETE'
-            });
-        },
-        
-        /**
-         * Reset a user's password (admin function)
-         * @param {string} id - User ID
-         * @param {string} newPassword - New password
-         * @returns {Promise} Success message
-         */
-        async resetPassword(id, newPassword) {
-            return ApiClient.request(`/users/${id}/reset-password`, {
-                method: 'PUT',
-                body: JSON.stringify({ password: newPassword })
-            });
-        },
-        
-        /**
-         * Change current user's password
-         * @param {string} currentPassword - Current password
-         * @param {string} newPassword - New password
-         * @returns {Promise} Success message
-         */
-        async changePassword(currentPassword, newPassword) {
-            return ApiClient.request('/users/change-password', {
-                method: 'PUT',
-                body: JSON.stringify({ currentPassword, newPassword })
-            });
-        }
-    },
-    
-    /**
-     * System settings API endpoints
-     */
-    system: {
-        /**
-         * Get all system settings
-         * @returns {Promise} System settings
-         */
-        async getSettings() {
-            return ApiClient.request('/system/settings');
-        },
-        
-        /**
-         * Update a system setting
-         * @param {string} key - Setting key
-         * @param {string} value - Setting value
-         * @returns {Promise} Updated setting
-         */
-        async updateSetting(key, value) {
-            return ApiClient.request(`/system/settings/${key}`, {
-                method: 'PUT',
-                body: JSON.stringify({ value })
-            });
-        },
-        
-        /**
-         * Get audit logs
-         * @param {number} page - Page number
-         * @param {number} limit - Items per page
-         * @returns {Promise} Audit logs with pagination
-         */
-        async getAuditLogs(page = 1, limit = 50) {
-            return ApiClient.request(`/system/audit-logs?page=${page}&limit=${limit}`);
-        },
-        
-        /**
-         * Get database information
-         * @returns {Promise} Database info
-         */
-        async getDatabaseInfo() {
-            return ApiClient.request('/system/database-info');
-        },
-        
-        /**
-         * Get login statistics
-         * @returns {Promise} Login stats
-         */
-        async getLoginStats() {
-            return ApiClient.request('/system/login-stats');
-        }
-    }
-};
+class ApiClient {
+  constructor() {
+    // API base URL - change this to match your server configuration
+    this.baseUrl = 'http://localhost:3000/api';
+    this.token = localStorage.getItem('token');
+  }
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ApiClient;
+  /**
+   * Get authentication headers
+   * @returns {Object} Headers for authenticated requests
+   */
+  getHeaders() {
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (this.token) {
+      headers['Authorization'] = this.token;
+    }
+
+    return headers;
+  }
+
+  /**
+   * Make a request to the API
+   * @param {string} endpoint - API endpoint
+   * @param {string} method - HTTP method
+   * @param {Object} body - Request body
+   * @returns {Promise} - Promise resolving to response data
+   */
+  async request(endpoint, method = 'GET', body = null) {
+    const url = `${this.baseUrl}${endpoint}`;
+    const options = {
+      method,
+      headers: this.getHeaders()
+    };
+
+    if (body && (method === 'POST' || method === 'PUT')) {
+      options.body = JSON.stringify(body);
+    }
+
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+
+      // Handle 401 Unauthorized errors
+      if (response.status === 401) {
+        // Clear token and redirect to login
+        this.logout();
+        window.location.href = '/login.html';
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || 'API request failed');
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`API Error (${endpoint}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Log in a user
+   * @param {string} username - Username or email
+   * @param {string} password - Password
+   * @returns {Promise} - Promise resolving to user data
+   */
+  async login(username, password) {
+    const data = await this.request('/auth/login', 'POST', { username, password });
+    
+    if (data.token) {
+      this.token = data.token;
+      localStorage.setItem('token', data.token);
+      
+      // Store encrypted user data
+      const encryptedUserData = this.encryptData(JSON.stringify({
+        id: data.user.id,
+        username: data.user.username,
+        roles: data.user.roles
+      }));
+      
+      localStorage.setItem('userData', encryptedUserData);
+    }
+    
+    return data;
+  }
+
+  /**
+   * Log out the current user
+   */
+  logout() {
+    this.token = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('userData');
+    
+    // Redirect to login page
+    window.location.href = '/login.html';
+  }
+
+  /**
+   * Get user profile
+   * @returns {Promise} - Promise resolving to user profile data
+   */
+  async getProfile() {
+    return await this.request('/auth/profile');
+  }
+
+  /**
+   * Get all users (admin only)
+   * @returns {Promise} - Promise resolving to users list
+   */
+  async getUsers() {
+    return await this.request('/users');
+  }
+
+  /**
+   * Get user by ID (admin only)
+   * @param {number} id - User ID
+   * @returns {Promise} - Promise resolving to user data
+   */
+  async getUser(id) {
+    return await this.request(`/users/${id}`);
+  }
+
+  /**
+   * Create a new user (admin only)
+   * @param {Object} userData - User data
+   * @returns {Promise} - Promise resolving to created user
+   */
+  async createUser(userData) {
+    return await this.request('/auth/register', 'POST', userData);
+  }
+
+  /**
+   * Update user (admin only)
+   * @param {number} id - User ID
+   * @param {Object} userData - User data to update
+   * @returns {Promise} - Promise resolving to updated user
+   */
+  async updateUser(id, userData) {
+    return await this.request(`/users/${id}`, 'PUT', userData);
+  }
+
+  /**
+   * Delete user (admin only)
+   * @param {number} id - User ID
+   * @returns {Promise} - Promise resolving to success message
+   */
+  async deleteUser(id) {
+    return await this.request(`/users/${id}`, 'DELETE');
+  }
+
+  /**
+   * Change password for user
+   * @param {Object} passwordData - Password change data
+   * @returns {Promise} - Promise resolving to success message
+   */
+  async changePassword(passwordData) {
+    return await this.request(`/users/${passwordData.userId}/password`, 'PUT', {
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    });
+  }
+
+  /**
+   * Update user profile
+   * @param {Object} profileData - Profile data to update
+   * @returns {Promise} - Promise resolving to updated profile
+   */
+  async updateUserProfile(profileData) {
+    return await this.request(`/users/${profileData.userId}/profile`, 'PUT', {
+      email: profileData.email
+    });
+  }
+
+  /**
+   * Check if user is authenticated
+   * @returns {boolean} - True if user is authenticated
+   */
+  isAuthenticated() {
+    return !!this.token;
+  }
+
+  /**
+   * Get current user data
+   * @returns {Object|null} - User data or null if not authenticated
+   */
+  getCurrentUser() {
+    try {
+      const encryptedData = localStorage.getItem('userData');
+      if (!encryptedData) return null;
+      
+      const decryptedData = this.decryptData(encryptedData);
+      return JSON.parse(decryptedData);
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if current user has specific role
+   * @param {string} role - Role to check
+   * @returns {boolean} - True if user has role
+   */
+  hasRole(role) {
+    const user = this.getCurrentUser();
+    return user && user.roles && user.roles.includes(role);
+  }
+
+  /**
+   * Encrypts data using AES encryption
+   * @param {string} data - Data to encrypt
+   * @returns {string} - Encrypted data
+   */
+  encryptData(data) {
+    try {
+      // Use a secure key management approach in production
+      const encryptionKey = 'pharmacy-secure-key-change-in-production';
+      
+      // Use CryptoJS for encryption
+      const encrypted = CryptoJS.AES.encrypt(data, encryptionKey).toString();
+      return encrypted;
+    } catch (error) {
+      console.error('Encryption failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Decrypts data using AES encryption
+   * @param {string} encryptedData - Data to decrypt
+   * @returns {string} - Decrypted data
+   */
+  decryptData(encryptedData) {
+    try {
+      // Use the same key as encryption
+      const encryptionKey = 'pharmacy-secure-key-change-in-production';
+      
+      // Use CryptoJS for decryption
+      const decrypted = CryptoJS.AES.decrypt(encryptedData, encryptionKey).toString(CryptoJS.enc.Utf8);
+      return decrypted;
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      return null;
+    }
+  }
 }
+
+// Export as global
+window.apiClient = new ApiClient();
