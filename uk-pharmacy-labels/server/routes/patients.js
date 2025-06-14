@@ -6,14 +6,17 @@
 const express = require('express');
 const router = express.Router();
 const patientModel = require('../models/patient');
-const { authenticateToken, requireRole } = require('../middleware/auth');
+const { verifyToken, hasRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
+
+// Apply authentication middleware to all routes
+router.use(verifyToken);
 
 /**
  * Get all patients (limited, for authorized users only)
  * Restricted to pharmacy and admin roles
  */
-router.get('/', authenticateToken, requireRole(['pharmacy', 'admin']), async (req, res) => {
+router.get('/', hasRole(['pharmacy', 'admin']), async (req, res) => {
     try {
         const userId = req.user.id;
         const userIp = req.ip;
@@ -46,7 +49,7 @@ router.get('/', authenticateToken, requireRole(['pharmacy', 'admin']), async (re
  * Get patient by ID
  * Restricted to pharmacy and admin roles
  */
-router.get('/:id', authenticateToken, requireRole(['pharmacy', 'admin']), async (req, res) => {
+router.get('/:id', hasRole(['pharmacy', 'admin']), async (req, res) => {
     try {
         const patient = await patientModel.getPatientById(req.params.id, req.user.id, req.ip);
         
@@ -67,7 +70,7 @@ router.get('/:id', authenticateToken, requireRole(['pharmacy', 'admin']), async 
  * Create new patient
  * Restricted to pharmacy and admin roles
  */
-router.post('/', authenticateToken, requireRole(['pharmacy', 'admin']), async (req, res) => {
+router.post('/', hasRole(['pharmacy', 'admin']), async (req, res) => {
     try {
         // Validate required fields
         const { patientName, nhsNumber } = req.body;
@@ -93,7 +96,7 @@ router.post('/', authenticateToken, requireRole(['pharmacy', 'admin']), async (r
  * Update patient by ID
  * Restricted to pharmacy and admin roles
  */
-router.put('/:id', authenticateToken, requireRole(['pharmacy', 'admin']), async (req, res) => {
+router.put('/:id', hasRole(['pharmacy', 'admin']), async (req, res) => {
     try {
         // Verify patient exists
         const existingPatient = await patientModel.getPatientById(req.params.id, req.user.id, req.ip);
@@ -123,7 +126,7 @@ router.put('/:id', authenticateToken, requireRole(['pharmacy', 'admin']), async 
  * Delete patient by ID
  * Restricted to admin role only (data deletion is sensitive)
  */
-router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+router.delete('/:id', hasRole('admin'), async (req, res) => {
     try {
         // Verify patient exists
         const existingPatient = await patientModel.getPatientById(req.params.id, req.user.id, req.ip);

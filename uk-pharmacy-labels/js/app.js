@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize the medication manager
     await MedicationManager.init();
     
+    // Load hospitals from the admin section
+    await loadHospitals();
+    
     // Set current date as default for dispensed date
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('dispensed-date').value = today;
@@ -45,14 +48,62 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Initialize the application
  */
 function initApp() {
-    // Set default dispensary location if the element exists
-    const dispensaryLocation = document.getElementById('dispensary-location');
-    if (dispensaryLocation) {
-        dispensaryLocation.value = 'south-tyneside';
-    }
-    
     // Check authentication and manage admin link visibility
     manageAuthUI();
+}
+
+/**
+ * Load hospitals from the admin section and populate the dropdown
+ */
+async function loadHospitals() {
+    try {
+        console.log('Starting loadHospitals function');
+        
+        // Fetch hospitals from API and cache them
+        const hospitals = await DataManager.fetchAndCacheHospitals();
+        console.log('Fetched hospitals:', hospitals);
+        
+        // Get the dropdown element
+        const dispensaryLocation = document.getElementById('dispensary-location');
+        console.log('Dispensary location element:', dispensaryLocation);
+        if (!dispensaryLocation) return;
+        
+        // Clear existing options
+        dispensaryLocation.innerHTML = '';
+        
+        if (hospitals && hospitals.length > 0) {
+            console.log('Using hospitals from database, count:', hospitals.length);
+            // Add hospitals from the admin section
+            hospitals.forEach(hospital => {
+                console.log('Adding hospital to dropdown:', hospital);
+                const option = document.createElement('option');
+                option.value = hospital.id.toString();
+                option.textContent = hospital.name;
+                dispensaryLocation.appendChild(option);
+            });
+        } else {
+            console.log('No hospitals found, using fallback options');
+            // Fallback to hardcoded options if no hospitals found
+            const defaultOptions = [
+                { value: 'south-tyneside', text: 'South Tyneside District Hospital' },
+                { value: 'sunderland-royal', text: 'Sunderland Royal Hospital' },
+                { value: 'sunderland-eye', text: 'Sunderland Eye Infirmary' }
+            ];
+            
+            defaultOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.text;
+                dispensaryLocation.appendChild(optionElement);
+            });
+            
+            // Set default value
+            dispensaryLocation.value = 'south-tyneside';
+        }
+        console.log('Final dropdown options:', dispensaryLocation.innerHTML);
+    } catch (error) {
+        console.error('Error loading hospitals:', error);
+    }
 }
 
 /**

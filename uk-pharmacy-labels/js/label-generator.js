@@ -245,16 +245,6 @@ const LabelGenerator = {
     /**
      * Generate split labels for long content
      * @param {Object} data - Form data
-     * @param {Object} splitInfo - Information about how to split the content
-     * @returns {Array} - Array of HTML content for the labels
-     */
-    generateSplitLabels(data, splitInfo) {
-        const labels = [];
-        const dispensary = DataManager.getDispensaryInfo(data.dispensaryLocation);
-        const date = data.dateOfDispensing ? new Date(data.dateOfDispensing).toLocaleDateString('en-GB') : '';
-        
-        // Format medication name, strength and formulation
-        const medicationStrength = data.medicationStrength ? `${data.medicationStrength} ` : '';
         const medicationFull = `${data.medicationName || ''} ${medicationStrength}${data.medicationFormulation || ''}`;
         
         // Get warning text from additional information field (already includes standard warning if enabled)
@@ -633,7 +623,7 @@ const LabelGenerator = {
      * @returns {string} - HTML content for the bag label
      */
     generateBagLabel(data) {
-        // Get dispensary information
+        // Get dispensary information from the admin-managed hospital list
         const dispensary = DataManager.getDispensaryInfo(data.dispensaryLocation);
         
         // Format date of birth
@@ -660,18 +650,19 @@ const LabelGenerator = {
                 <div class="bag-label-dispensary">
                     <div class="bag-label-date">Date: ${dispensedDate}</div>
                     <div class="bag-label-pharmacy">${dispensary.name}</div>
+                    <div class="bag-label-pharmacy-details">${dispensary.address}${dispensary.postcode ? `, ${dispensary.postcode}` : ''}, Tel: ${dispensary.phone || 'N/A'}</div>
                 </div>
             </div>
         `;
     },
-
+    
     /**
      * Generate a single label based on the form data
      * @param {Object} data - Form data
      * @returns {string} - HTML content for the label
      */
     generateSingleLabel(data) {
-        // Get dispensary information
+        // Get dispensary information from the admin-managed hospital list
         const dispensary = DataManager.getDispensaryInfo(data.dispensaryLocation);
         
         // Format date
@@ -729,7 +720,7 @@ const LabelGenerator = {
                 
                 <!-- Bottom Row: Pharmacy Details -->
                 <div class="pharmacy-details">
-                    ${dispensary.name}, ${dispensary.address}, Tel: ${dispensary.phone}
+                    ${dispensary.name}, ${dispensary.address}${dispensary.postcode ? `, ${dispensary.postcode}` : ''}, Tel: ${dispensary.phone || 'N/A'}
                 </div>
             </div>
         </div>

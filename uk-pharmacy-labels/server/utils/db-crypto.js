@@ -39,10 +39,27 @@ const IV_LENGTH = 16;
  * @returns {string} - Encrypted value as hex string with IV
  */
 function encrypt(text) {
-  if (!text) return null;
+  if (text === null || text === undefined) return null;
+  
+  // Keep track of the original type
+  const isJsonString = typeof text === 'string' && 
+    (text.startsWith('{') || text.startsWith('['));
   
   // Convert objects to strings
-  const textToEncrypt = typeof text === 'object' ? JSON.stringify(text) : String(text);
+  let textToEncrypt;
+  if (typeof text === 'object') {
+    textToEncrypt = JSON.stringify(text);
+  } else if (isJsonString) {
+    // If it's already a JSON string, ensure consistent formatting
+    try {
+      textToEncrypt = JSON.stringify(JSON.parse(text));
+    } catch (e) {
+      // If it fails to parse as JSON, treat as regular string
+      textToEncrypt = String(text);
+    }
+  } else {
+    textToEncrypt = String(text);
+  }
   
   // Generate a random initialization vector
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -50,7 +67,7 @@ function encrypt(text) {
   // Create cipher using AES-256-CBC
   const cipher = crypto.createCipheriv(
     'aes-256-cbc', 
-    Buffer.from(ENCRYPTION_KEY), 
+    ENCRYPTION_KEY, 
     iv
   );
   
@@ -58,28 +75,44 @@ function encrypt(text) {
   let encrypted = cipher.update(textToEncrypt, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   
-  // Return IV and encrypted data as a single string
-  return iv.toString('hex') + ':' + encrypted;
+  // Store type information: 0 = string, 1 = JSON string, 2 = object
+  const typeFlag = isJsonString ? '1:' : (typeof text === 'object' ? '2:' : '0:');
+  
+  // Return Type flag, IV, and encrypted data as a single string
+  return typeFlag + iv.toString('hex') + ':' + encrypted;
 }
 
 /**
  * Decrypt an encrypted string value
  * @param {string} encryptedText - The encrypted value with IV
- * @returns {string|object} - Decrypted value, parsed as object if possible
+ * @returns {string|object} - Decrypted value, parsed as object if appropriate
  */
 function decrypt(encryptedText) {
   if (!encryptedText) return null;
   
   try {
-    // Split the IV and encrypted data
-    const textParts = encryptedText.split(':');
-    const iv = Buffer.from(textParts.shift(), 'hex');
-    const encryptedData = textParts.join(':');
+    // Split by type flag, IV, and encrypted data
+    const parts = encryptedText.split(':');
+    
+    // Get type flag (default to 0 for backward compatibility)
+    const typeFlag = parts.length > 2 ? parseInt(parts[0], 10) : 0;
+    
+    // Extract IV and encrypted data based on format
+    let iv, encryptedData;
+    if (parts.length > 2 && (typeFlag === 0 || typeFlag === 1 || typeFlag === 2)) {
+      // New format with type flag
+      iv = Buffer.from(parts[1], 'hex');
+      encryptedData = parts.slice(2).join(':');
+    } else {
+      // Old format without type flag
+      iv = Buffer.from(parts[0], 'hex');
+      encryptedData = parts.slice(1).join(':');
+    }
     
     // Create decipher
     const decipher = crypto.createDecipheriv(
       'aes-256-cbc', 
-      Buffer.from(ENCRYPTION_KEY), 
+      ENCRYPTION_KEY, 
       iv
     );
     
@@ -87,13 +120,22 @@ function decrypt(encryptedText) {
     let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     
-    // Try to parse as JSON if it looks like an object
-    try {
-      if (decrypted.startsWith('{') || decrypted.startsWith('[')) {
+    // Handle based on the stored type
+    if (typeFlag === 1 || typeFlag === 2) {
+      // It was a JSON string or object, try to parse it
+      try {
         return JSON.parse(decrypted);
+      } catch (e) {
+        console.warn('Failed to parse JSON from decrypted data', e);
+        return decrypted;
       }
-    } catch (e) {
-      // If parsing fails, return as string
+    } else if (decrypted.startsWith('{') || decrypted.startsWith('[')) {
+      // For backward compatibility, try JSON parsing
+      try {
+        return JSON.parse(decrypted);
+      } catch (e) {
+        // If parsing fails, return as string
+      }
     }
     
     return decrypted;

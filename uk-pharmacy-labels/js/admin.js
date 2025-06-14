@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get form values
     const userData = {
       username: document.getElementById('username').value,
+      first_name: document.getElementById('first_name').value,
+      surname: document.getElementById('surname').value,
       email: document.getElementById('email').value,
       password: document.getElementById('password').value,
       roles: Array.from(document.querySelectorAll('input[name="roles"]:checked'))
@@ -159,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         row.innerHTML = `
           <td>${user.username}</td>
+          <td>${user.first_name || ''} ${user.surname || ''}</td>
           <td>${user.email}</td>
           <td>${rolesBadges}</td>
           <td>${lastLogin}</td>
@@ -221,6 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set form values
         document.getElementById('user-id').value = user.id;
         document.getElementById('username').value = user.username;
+        document.getElementById('first_name').value = user.first_name || '';
+        document.getElementById('surname').value = user.surname || '';
         document.getElementById('email').value = user.email;
         
         // Uncheck all role checkboxes first

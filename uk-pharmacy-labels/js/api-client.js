@@ -6,7 +6,7 @@
 class ApiClient {
   constructor() {
     // API base URL - change this to match your server configuration
-    this.baseUrl = 'http://localhost:3000/api';
+    this.baseUrl = 'http://localhost:3001/api';
     this.token = localStorage.getItem('token');
   }
 
@@ -252,6 +252,96 @@ class ApiClient {
       console.error('Decryption failed:', error);
       return null;
     }
+  }
+
+  /**
+   * Get all hospitals
+   * @returns {Promise} - Promise resolving to hospitals list
+   */
+  async getAllHospitals() {
+    return await this.request('/hospitals');
+  }
+
+  /**
+   * Get hospital by ID
+   * @param {number} id - Hospital ID
+   * @returns {Promise} - Promise resolving to hospital data
+   */
+  async getHospitalById(id) {
+    return await this.request(`/hospitals/${id}`);
+  }
+
+  /**
+   * Create a new hospital
+   * @param {Object} hospitalData - Hospital data
+   * @returns {Promise} - Promise resolving to created hospital
+   */
+  async createHospital(hospitalData) {
+    return await this.request('/hospitals', 'POST', hospitalData);
+  }
+
+  /**
+   * Update hospital
+   * @param {number} id - Hospital ID
+   * @param {Object} hospitalData - Hospital data to update
+   * @returns {Promise} - Promise resolving to updated hospital
+   */
+  async updateHospital(id, hospitalData) {
+    return await this.request(`/hospitals/${id}`, 'PUT', hospitalData);
+  }
+
+  /**
+   * Delete hospital
+   * @param {number} id - Hospital ID
+   * @returns {Promise} - Promise resolving to success message
+   */
+  async deleteHospital(id) {
+    return await this.request(`/hospitals/${id}`, 'DELETE');
+  }
+
+  /**
+   * Get all wards
+   * @returns {Promise} - Promise resolving to wards list
+   */
+  async getAllWards() {
+    return await this.request('/wards');
+  }
+
+  /**
+   * Get ward by ID
+   * @param {number} id - Ward ID
+   * @returns {Promise} - Promise resolving to ward data
+   */
+  async getWardById(id) {
+    return await this.request(`/wards/${id}`);
+  }
+
+  /**
+   * Create a new ward
+   * @param {Object} wardData - Ward data
+   * @returns {Promise} - Promise resolving to created ward
+   */
+  async createWard(wardData) {
+    return await this.request('/wards', 'POST', wardData);
+  }
+
+  /**
+   * Update ward
+   * @param {number} id - Ward ID
+   * @param {Object} wardData - Ward data to update
+   * @returns {Promise} - Promise resolving to updated ward
+   */
+  async updateWard(id, wardData) {
+    return await this.request(`/wards/${id}`, 'PUT', wardData);
+  }
+
+  /**
+   * Delete ward
+   * @param {number} id - Ward ID
+   * @returns {Promise} - Promise resolving to success message
+   */
+  async deleteWard(id) {
+    return await this.request(`/wards/${id}`, 'DELETE');
   }
 }
 

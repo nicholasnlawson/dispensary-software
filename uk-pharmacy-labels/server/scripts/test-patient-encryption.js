@@ -114,7 +114,37 @@ const runTest = async () => {
     
     sensitiveFields.forEach(field => {
       if (originalData[field] && decryptedData[field]) {
-        const matches = originalData[field] === decryptedData[field];
+        let matches = false;
+        
+        // Special handling for medicationDetails (JSON comparison)
+        if (field === 'medicationDetails') {
+          try {
+            // Parse both values to compare as objects
+            const originalJson = typeof originalData[field] === 'string' 
+              ? JSON.parse(originalData[field]) 
+              : originalData[field];
+              
+            const decryptedJson = typeof decryptedData[field] === 'string' 
+              ? JSON.parse(decryptedData[field]) 
+              : decryptedData[field];
+              
+            // Compare stringified sorted JSON to ensure consistent comparison
+            const sortedOriginal = JSON.stringify(originalJson, Object.keys(originalJson).sort());
+            const sortedDecrypted = JSON.stringify(decryptedJson, Object.keys(decryptedJson).sort());
+            
+            matches = sortedOriginal === sortedDecrypted;
+            console.log(`   Debug - medicationDetails comparison:`);
+            console.log(`   Original: ${typeof originalData[field]} / ${originalData[field].substring(0, 30)}...`);
+            console.log(`   Decrypted: ${typeof decryptedData[field]} / ${JSON.stringify(decryptedData[field]).substring(0, 30)}...`);
+          } catch (e) {
+            console.error(`   Error comparing JSON for ${field}:`, e.message);
+            matches = false;
+          }
+        } else {
+          // Standard string comparison for other fields
+          matches = originalData[field] === decryptedData[field];
+        }
+        
         comparisonResults[field] = matches ? '✓ Match' : '✗ MISMATCH!';
         if (!matches) allFieldsMatch = false;
       } else {

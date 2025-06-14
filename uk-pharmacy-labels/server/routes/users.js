@@ -10,7 +10,7 @@ router.use(verifyToken);
 // Get all users (admin only)
 router.get('/', hasRole('admin'), (req, res) => {
   db.all(
-    `SELECT u.id, u.username, u.email, u.created_at, u.last_login, u.is_active
+    `SELECT u.id, u.username, u.email, u.first_name, u.surname, u.created_at, u.last_login, u.is_active
      FROM users u
      ORDER BY u.username`,
     [],
@@ -61,7 +61,7 @@ router.get('/:id', hasRole('admin'), (req, res) => {
   const userId = req.params.id;
   
   db.get(
-    `SELECT u.id, u.username, u.email, u.created_at, u.last_login, u.is_active
+    `SELECT u.id, u.username, u.email, u.first_name, u.surname, u.created_at, u.last_login, u.is_active
      FROM users u
      WHERE u.id = ?`,
     [userId],
@@ -104,7 +104,7 @@ router.get('/:id', hasRole('admin'), (req, res) => {
 // Update user (admin only)
 router.put('/:id', hasRole('admin'), async (req, res) => {
   const userId = req.params.id;
-  const { username, email, password, roles, is_active } = req.body;
+  const { username, email, password, roles, is_active, first_name, surname } = req.body;
   
   // Check if user exists
   db.get('SELECT id FROM users WHERE id = ?', [userId], async (err, user) => {
@@ -132,6 +132,18 @@ router.put('/:id', hasRole('admin'), async (req, res) => {
       if (email) {
         updateFields.push('email = ?');
         updateParams.push(email);
+      }
+      
+      // Add first_name if provided
+      if (first_name !== undefined) {
+        updateFields.push('first_name = ?');
+        updateParams.push(first_name);
+      }
+      
+      // Add surname if provided
+      if (surname !== undefined) {
+        updateFields.push('surname = ?');
+        updateParams.push(surname);
       }
       
       if (password) {

@@ -29,6 +29,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
 function initializeDatabase() {
     const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     
+    // Load migration SQL files
+    const migrationFiles = [
+        'migrations/add-name-fields.sql',
+        'migrations/add-wards-table.sql',
+        'migrations/patients-table.sql',
+        'migrations/add-hospital-fields.sql',
+        'migrations/rename-telephone-column.sql'
+    ];
+    
+    const migrations = migrationFiles.map(file => {
+        try {
+            return fs.readFileSync(path.join(__dirname, file), 'utf8');
+        } catch (error) {
+            console.warn(`Migration file ${file} not found or could not be read:`, error.message);
+            return '';
+        }
+    }).filter(content => content.trim() !== '');
+    
     // Run schema in a transaction
     db.serialize(() => {
         db.run('PRAGMA foreign_keys = ON');
@@ -39,6 +57,26 @@ function initializeDatabase() {
                 console.error('Error creating schema:', err.message);
             } else {
                 console.log('Database schema created successfully');
+                
+                // Execute migrations
+                for (const migration of migrations) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            db.exec(migration, (err) => {
+                                if (err) {
+                                    console.error('Error applying migration:', err.message);
+                                    reject(err);
+                                } else {
+                                    console.log('Migration applied successfully');
+                                    resolve();
+                                }
+                            });
+                        });
+                    } catch (error) {
+                        console.error('Migration failed:', error);
+                        // Continue with other migrations even if one fails
+                    }
+                }
                 
                 // Create default admin user if not exists
                 const saltRounds = 10;
@@ -126,6 +164,12 @@ function initialize() {
                 try {
                     // Create default roles and admin user
                     await createDefaultAdmin();
+                    
+                    // Migrate hardcoded hospitals
+                    console.log('Migrating hardcoded hospitals to database...');
+                    const { migrateHospitals } = require('../utils/migrate-hardcoded-hospitals');
+                    await migrateHospitals(db);
+                    
                     console.log('Database initialization completed successfully');
                     resolve();
                 } catch (error) {

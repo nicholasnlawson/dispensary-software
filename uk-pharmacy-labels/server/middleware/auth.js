@@ -38,14 +38,20 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Middleware to check if user has specific role
-const hasRole = (role) => {
+// Middleware to check if user has specific role(s)
+const hasRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'User not authenticated' });
     }
     
-    if (!req.user.roles.includes(role)) {
+    // Handle both single role string and array of roles
+    const requiredRoles = Array.isArray(roles) ? roles : [roles];
+    
+    // Check if user has at least one of the required roles
+    const hasRequiredRole = requiredRoles.some(role => req.user.roles.includes(role));
+    
+    if (!hasRequiredRole) {
       return res.status(403).json({ success: false, message: 'Access denied: insufficient permissions' });
     }
     
@@ -53,4 +59,4 @@ const hasRole = (role) => {
   };
 };
 
-module.exports = { verifyToken, hasRole };
+module.exports = { verifyToken, hasRole, requireRole: hasRole };

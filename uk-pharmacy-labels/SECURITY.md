@@ -4,22 +4,101 @@ This document outlines the security and GDPR compliance features implemented in 
 
 ## Phase 1 Security Enhancements (Implemented)
 
-### 1. Comprehensive Audit Logging
+### 1. Database Encryption
+- Field-level encryption for all sensitive patient data (NHS Number, Name, DOB, Address, etc.)
+- AES-256-CBC encryption with unique IV per field
+- Secure key derivation and management
+- Transparent encryption/decryption via database adapter
+- Encryption verified via automated test suite
+
+### 2. Comprehensive Audit Logging
 - All user actions, data access, and system events are logged using winston
 - Logs include user ID, IP address, action type, timestamp, and affected resources
-- Separate log files for general auditing and error tracking
-- Log rotation implemented to manage file sizes
+- GDPR-compliant logging with sensitive data redaction ([REDACTED] markers)
+- Separate log files for general auditing and security events
+- Log rotation implemented to manage file sizes and retention periods
+- Track data access, modification, deletion to support GDPR compliance
 
-### 2. Security Headers and Content Security Policy
+### 3. Authentication and Authorization
+- Role-based access control (Admin, Pharmacy, Ordering roles)
+- Secure password storage using bcrypt with appropriate cost factor
+- JWT-based authentication with appropriate expiry
+- Session management with secure token storage
+- Access controls enforced on both client and server
+
+### 4. Security Headers and Content Security Policy
 - Helmet.js implements security headers to prevent common web vulnerabilities
 - Content Security Policy configured to restrict resource loading
 - HTTP Strict Transport Security (HSTS) enabled
 - XSS Protection and other security headers configured
+- Clickjacking protection via X-Frame-Options
 
-### 3. Rate Limiting and DoS Protection
+### 5. Rate Limiting and DoS Protection
 - API rate limiting prevents abuse and brute force attacks
-- Stricter limits on authentication endpoints
-- Configurable time windows and request limits
+- Express rate limit middleware with IP-based tracking
+- Graduated response to potential attacks
+
+### 6. Input Validation and Sanitization
+- Server-side validation of all user inputs
+- Data sanitization to prevent injection attacks
+- Parameterized queries for database operations
+
+## Phase 2 Security Enhancements (Planned)
+
+### 1. Enhanced TLS Implementation
+- Force HTTPS throughout the application
+- TLS 1.3 with strong cipher suite configuration
+- Automatic certificate renewal
+- HTTP-to-HTTPS redirection
+
+### 2. Two-Factor Authentication (2FA)
+- Optional 2FA for admin and pharmacy staff
+- Time-based one-time password (TOTP) implementation
+- Recovery codes for emergency access
+
+### 3. Advanced Encryption Features
+- Database-level encryption at rest
+- End-to-end encryption for specific data flows
+- Key rotation and management procedures
+
+### 4. API Security Enhancements
+- API keys for external system integration
+- OAuth 2.0 implementation for partner access
+- Improved request validation and throttling
+
+### 5. Automated Security Testing
+- Integration with security scanning tools
+- Regular vulnerability assessment
+- Dependency checking for security issues
+
+## GDPR Compliance Guidelines
+
+### Data Minimization
+- Only collect patient data necessary for pharmacy operations
+- Define and enforce retention periods for different data types
+- Implement automated data purging after retention period expiry
+
+### Data Subject Rights
+- Procedure for handling Subject Access Requests (SAR)
+- Data export functionality in portable formats
+- Right to erasure ('right to be forgotten') implementation
+- Data correction mechanisms
+
+### Breach Management
+- Automated breach detection capabilities
+- Notification procedures for data protection authorities
+- Documentation and timeline tracking for incidents
+- Contact templates for affected data subjects
+
+### Data Protection Impact Assessment
+- Regular DPIAs for system changes
+- Documentation templates and procedures
+- Risk assessment framework
+
+### NHS Data Security and Protection Toolkit Compliance
+- Regular toolkit submissions
+- Evidence collection and documentation
+- Staff training on data security protocols
 
 ### 4. Database Security
 - Field-level encryption for sensitive patient data

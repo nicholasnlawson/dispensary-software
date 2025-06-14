@@ -37,11 +37,17 @@
     </header>
 
     <main class="container">
-      <div class="tabs">
-        <button id="patient-tab" class="tab-btn active">Patient Medication</button>
-        <button id="ward-stock-tab" class="tab-btn">Ward Stock</button>
+      <!-- Order Type Selector Buttons - Positioned at the top -->
+      <div class="order-type-selector-container">
+        <div class="order-type-selector">
+          <button id="patient-tab" class="order-type-btn active">Patient Medication</button>
+          <button id="ward-stock-tab" class="order-type-btn">Ward Stock</button>
+        </div>
       </div>
-
+      
+      <!-- Order Forms Container -->
+      <div class="forms-container">
+        <!-- Patient Order Form -->
         <div id="patient-order-form" class="order-form active">
           <h2>Patient Medication Order</h2>
           <form id="patient-med-form">
@@ -49,24 +55,10 @@
               <h3>Ward Details</h3>
               <div class="form-row">
                 <div class="form-column">
-                  <label for="ward-name">Ward Name/Number:</label>
+                  <label for="ward-name">Ward:</label>
                   <select id="ward-name" required>
                     <option value="">Select Ward</option>
-                    <option value="ward-1">Ward 1</option>
-                    <option value="ward-2">Ward 2</option>
-                    <option value="ward-3">Ward 3</option>
-                    <option value="ward-4">Ward 4</option>
-                    <option value="ward-5">Ward 5</option>
-                    <option value="ward-6">Ward 6</option>
-                    <option value="ward-7">Ward 7</option>
-                  </select>
-                </div>
-                <div class="form-column">
-                  <label for="order-urgency">Urgency:</label>
-                  <select id="order-urgency" required>
-                    <option value="routine">Routine</option>
-                    <option value="urgent">Urgent</option>
-                    <option value="emergency">Emergency</option>
+                    <!-- Wards will be populated from database -->
                   </select>
                 </div>
               </div>
@@ -81,7 +73,7 @@
                 </div>
                 <div class="form-column">
                   <label for="patient-dob">Date of Birth:</label>
-                  <input type="date" id="patient-dob" required />
+                  <input type="date" id="patient-dob" placeholder="Optional" />
                 </div>
               </div>
 
@@ -92,19 +84,12 @@
                     type="text"
                     id="patient-nhs"
                     pattern="[0-9]{10}"
-                    placeholder="10 digits"
+                    placeholder="10 digits (optional)"
                   />
                 </div>
                 <div class="form-column">
                   <label for="hospital-id">Hospital ID:</label>
-                  <input type="text" id="hospital-id" placeholder="Hospital ID" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-column full-width">
-                  <label for="patient-location">Bed/Bay:</label>
-                  <input type="text" id="patient-location" placeholder="e.g., Bay 2, Bed 4" />
+                  <input type="text" id="hospital-id" placeholder="Hospital ID" required />
                 </div>
               </div>
             </div>
@@ -149,19 +134,10 @@
             <div class="form-group">
               <h3>Order Details</h3>
               <div class="form-row">
-                <div class="form-column">
-                  <label for="requester-name">Requested By:</label>
-                  <input type="text" id="requester-name" required placeholder="Your Name" />
-                </div>
-                <div class="form-column">
-                  <label for="requester-role">Role:</label>
-                  <select id="requester-role" required>
-                    <option value="">Select Role</option>
-                    <option value="doctor">Doctor</option>
-                    <option value="nurse">Nurse</option>
-                    <option value="pharmacist">Pharmacist</option>
-                    <option value="pharmacy-tech">Pharmacy Technician</option>
-                  </select>
+                <div class="form-column full-width">
+                  <p class="info-message">Order will be submitted on behalf of the logged-in user.</p>
+                  <input type="hidden" id="requester-name" />
+                  <input type="hidden" id="requester-role" />
                 </div>
               </div>
 
@@ -188,24 +164,10 @@
               <h3>Ward Details</h3>
               <div class="form-row">
                 <div class="form-column">
-                  <label for="ws-ward-name">Ward Name/Number:</label>
+                  <label for="ws-ward-name">Ward:</label>
                   <select id="ws-ward-name" required>
                     <option value="">Select Ward</option>
-                    <option value="ward-1">Ward 1</option>
-                    <option value="ward-2">Ward 2</option>
-                    <option value="ward-3">Ward 3</option>
-                    <option value="ward-4">Ward 4</option>
-                    <option value="ward-5">Ward 5</option>
-                    <option value="ward-6">Ward 6</option>
-                    <option value="ward-7">Ward 7</option>
-                  </select>
-                </div>
-                <div class="form-column">
-                  <label for="ws-order-urgency">Urgency:</label>
-                  <select id="ws-order-urgency" required>
-                    <option value="routine">Routine</option>
-                    <option value="urgent">Urgent</option>
-                    <option value="emergency">Emergency</option>
+                    <!-- Wards will be populated from database -->
                   </select>
                 </div>
               </div>
@@ -244,19 +206,10 @@
             <div class="form-group">
               <h3>Order Details</h3>
               <div class="form-row">
-                <div class="form-column">
-                  <label for="ws-requester-name">Requested By:</label>
-                  <input type="text" id="ws-requester-name" required placeholder="Your Name" />
-                </div>
-                <div class="form-column">
-                  <label for="ws-requester-role">Role:</label>
-                  <select id="ws-requester-role" required>
-                    <option value="">Select Role</option>
-                    <option value="doctor">Doctor</option>
-                    <option value="nurse">Nurse</option>
-                    <option value="pharmacist">Pharmacist</option>
-                    <option value="pharmacy-tech">Pharmacy Technician</option>
-                  </select>
+                <div class="form-column full-width">
+                  <p class="info-message">Order will be submitted on behalf of the logged-in user.</p>
+                  <input type="hidden" id="ws-requester-name" />
+                  <input type="hidden" id="ws-requester-role" />
                 </div>
               </div>
 
@@ -276,12 +229,110 @@
           </form>
         </div>
 
-        <div class="recent-orders">
-          <h2>Recent Orders</h2>
-          <div id="recent-orders-list">
-            <p class="empty-state">No recent orders to display</p>
-            <!-- Orders will be populated here -->
+        
+        <!-- Ward Stock Order Form -->
+        <div id="ward-stock-form" class="order-form">
+          <h2>Ward Stock Order</h2>
+        <form id="ward-stock-med-form">
+          <div class="form-group">
+            <h3>Ward Details</h3>
+            <div class="form-row">
+              <div class="form-column">
+                <label for="ws-ward-name">Ward Name/Number:</label>
+                <select id="ws-ward-name" required>
+                  <option value="">Select Ward</option>
+                  <option value="ward-1">Ward 1</option>
+                  <option value="ward-2">Ward 2</option>
+                  <option value="ward-3">Ward 3</option>
+                  <option value="ward-4">Ward 4</option>
+                  <option value="ward-5">Ward 5</option>
+                  <option value="ward-6">Ward 6</option>
+                  <option value="ward-7">Ward 7</option>
+                </select>
+              </div>
+              <div class="form-column">
+                <label for="ws-order-urgency">Urgency:</label>
+                <select id="ws-order-urgency" required>
+                  <option value="routine">Routine</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="emergency">Emergency</option>
+                </select>
+              </div>
+            </div>
           </div>
+
+          <div class="form-group">
+            <h3>Stock Medications</h3>
+            <div id="ws-medications-container">
+              <div class="medication-item">
+                <div class="form-row">
+                  <div class="form-column">
+                    <label for="ws-med-name-1">Medicine Name:</label>
+                    <input type="text" id="ws-med-name-1" class="med-name" required />
+                  </div>
+                  <div class="form-column">
+                    <label for="ws-med-form-1">Form:</label>
+                    <input type="text" id="ws-med-form-1" class="med-form" placeholder="e.g., tablets, capsules" />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-column">
+                    <label for="ws-med-strength-1">Strength:</label>
+                    <input type="text" id="ws-med-strength-1" class="med-strength" placeholder="e.g., 500mg" />
+                  </div>
+                  <div class="form-column">
+                    <label for="ws-med-quantity-1">Quantity:</label>
+                    <input type="text" id="ws-med-quantity-1" class="med-quantity" placeholder="e.g., 28" required />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button type="button" id="ws-add-medication-btn" class="secondary-btn">+ Add Another Medication</button>
+          </div>
+
+          <div class="form-group">
+            <h3>Order Details</h3>
+            <div class="form-row">
+              <div class="form-column">
+                <label for="ws-requester-name">Requested By:</label>
+                <input type="text" id="ws-requester-name" required placeholder="Your Name" />
+              </div>
+              <div class="form-column">
+                <label for="ws-requester-role">Role:</label>
+                <select id="ws-requester-role" required>
+                  <option value="">Select Role</option>
+                  <option value="doctor">Doctor</option>
+                  <option value="nurse">Nurse</option>
+                  <option value="pharmacist">Pharmacist</option>
+                  <option value="pharmacy-tech">Pharmacy Technician</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-column full-width">
+                <label for="ws-order-notes">Order Notes:</label>
+                <textarea id="ws-order-notes" rows="2" placeholder="Any additional notes for pharmacy"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" id="ws-submit-order-btn">Submit Order</button>
+            <button type="button" id="ws-save-draft-btn">Save as Draft</button>
+            <button type="reset" id="ws-clear-form-btn">Clear Form</button>
+          </div>
+        </form>
+        </div>
+      </div>
+      
+      <!-- Recent Orders Section (Always Visible) -->
+      <div class="recent-orders">
+        <h2>Recent Orders</h2>
+        <div id="recent-orders-list">
+          <p class="empty-state">No recent orders to display</p>
+          <!-- Orders will be populated here -->
         </div>
       </div>
     </main>

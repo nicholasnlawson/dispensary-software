@@ -27,7 +27,7 @@ app.use(helmet.contentSecurityPolicy({
     scriptSrc: ["'self'", "'unsafe-inline'"], // Required for some functionality
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", 'data:'],
-    connectSrc: ["'self'"],
+    connectSrc: ["'self'", 'localhost:3001', 'http://localhost:3001'],
     fontSrc: ["'self'"],
     objectSrc: ["'none'"],
     mediaSrc: ["'self'"],
@@ -60,6 +60,15 @@ const authLimiter = rateLimit({
   standardHeaders: true,
 });
 
+// General rate limiter for other API endpoints
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // increased limit from 50 to 500 requests per windowMs
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Serve static files from the root directory
 app.use(express.static(path.join(__dirname, '..')));
 
@@ -67,6 +76,9 @@ app.use(express.static(path.join(__dirname, '..')));
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/users', generalLimiter, require('./routes/users'));
 app.use('/api/patients', generalLimiter, require('./routes/patients'));
+app.use('/api/wards', generalLimiter, require('./routes/wards'));
+app.use('/api/hospitals', generalLimiter, require('./routes/hospitals'));
+app.use('/api/test-hospitals', generalLimiter, require('./routes/test-hospitals'));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '..', 'public')));

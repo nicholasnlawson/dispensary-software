@@ -7,7 +7,7 @@ require('dotenv').config();
 
 // Register a new user (admin only operation)
 router.post('/register', async (req, res) => {
-  const { username, email, password, roles } = req.body;
+  const { username, email, password, roles, first_name, surname } = req.body;
   
   // Validate input
   if (!username || !email || !password || !roles || !Array.isArray(roles) || roles.length === 0) {
@@ -30,8 +30,8 @@ router.post('/register', async (req, res) => {
       const passwordHash = await bcrypt.hash(password, saltRounds);
       
       // Insert new user
-      db.run('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', 
-        [username, email, passwordHash], 
+      db.run('INSERT INTO users (username, email, first_name, surname, password_hash) VALUES (?, ?, ?, ?, ?)', 
+        [username, email, first_name || null, surname || null, passwordHash], 
         function(err) {
           if (err) {
             return res.status(500).json({ success: false, message: 'Error creating user' });
@@ -103,7 +103,7 @@ router.post('/login', (req, res) => {
   
   // Find user by username or email
   db.get(
-    `SELECT u.id, u.username, u.email, u.password_hash
+    `SELECT u.id, u.username, u.email, u.first_name, u.surname, u.password_hash
      FROM users u
      WHERE u.username = ? OR u.email = ?`,
     [username, username],
@@ -164,6 +164,8 @@ router.post('/login', (req, res) => {
                   id: user.id,
                   username: user.username,
                   email: user.email,
+                  first_name: user.first_name,
+                  surname: user.surname,
                   roles: userRoles
                 }
               });

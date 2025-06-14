@@ -60,6 +60,32 @@ const OrderManager = {
     createOrder(orderData) {
         const orderId = `ORD${String(this.nextOrderId).padStart(6, '0')}`;
         
+        // Set default urgency to 'routine' if not provided
+        if (!orderData.urgency) {
+            orderData.urgency = 'routine';
+        }
+        
+        // Validate required fields
+        if (orderData.type === 'patient') {
+            // Patient order validation
+            if (!orderData.patient || !orderData.patient.name) {
+                throw new Error('Patient name is required');
+            }
+            if (!orderData.patient.hospitalId) {
+                throw new Error('Hospital ID is required');
+            }
+        }
+        
+        // Always validate ward
+        if (!orderData.ward) {
+            throw new Error('Ward selection is required');
+        }
+        
+        // Always validate medications
+        if (!orderData.medications || !orderData.medications.length) {
+            throw new Error('At least one medication is required');
+        }
+        
         const order = {
             id: orderId,
             timestamp: new Date().toISOString(),

@@ -71,28 +71,57 @@
   color: #2c3e50;
 }
 
-/* User Table */
-.users-table-container {
+/* Tables - Users and Wards */
+.users-table-container,
+.wards-table-container {
   overflow-x: auto;
+  margin-bottom: 20px;
 }
 
-.users-table {
+.users-table,
+.wards-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .users-table th,
-.users-table td {
+.users-table td,
+.wards-table th,
+.wards-table td {
   padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #dee2e6;
+  border-right: 1px solid #dee2e6;
 }
 
-.users-table th {
-  background-color: #f8f9fa;
+.users-table th:last-child,
+.users-table td:last-child,
+.wards-table th:last-child,
+.wards-table td:last-child {
+  border-right: none;
+}
+
+.users-table th,
+.wards-table th {
+  background-color: #f1f5f9;
   font-weight: 600;
   color: #2c3e50;
+  border-bottom: 2px solid #0063C9;
+}
+
+.users-table tr:nth-child(even),
+.wards-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.users-table tr:last-child td,
+.wards-table tr:last-child td {
+  border-bottom: none;
 }
 
 .users-table tbody tr:hover {

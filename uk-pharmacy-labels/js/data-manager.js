@@ -10,7 +10,8 @@ const DataManager = {
         HOSPITAL_INFO: 'uk_pharmacy_hospital_info',
         PHARMACISTS: 'uk_pharmacy_pharmacists',
         PRESCRIPTION_HISTORY: 'uk_pharmacy_prescription_history',
-        DISPENSARY_LOCATIONS: 'uk_pharmacy_dispensary_locations'
+        DISPENSARY_LOCATIONS: 'uk_pharmacy_dispensary_locations',
+        CACHED_HOSPITALS: 'uk_pharmacy_cached_hospitals'
     },
     
     /**
@@ -36,28 +37,64 @@ const DataManager = {
      * @returns {Object} Dispensary information
      */
     getDispensaryInfo(locationId) {
-        const locations = {
+        // First check if we have hospitals from the admin section
+        const cachedHospitals = this.getCachedHospitals();
+        
+        if (cachedHospitals && cachedHospitals.length > 0) {
+            // Try to find the hospital by ID
+            const hospital = cachedHospitals.find(h => h.id.toString() === locationId.toString());
+            if (hospital) {
+                return {
+                    name: hospital.name,
+                    address: hospital.address,
+                    postcode: hospital.postcode || 'Not specified',
+                    phone: hospital.phone || 'Not specified'
+                };
+            }
+        }
+        
+        // Fallback to hardcoded values if hospital not found
+        const fallbackLocations = {
             'south-tyneside': {
                 name: 'South Tyneside District Hospital',
                 address: 'Harton Lane, South Shields',
                 postcode: 'NE34 0PL',
-                phone: '0191 4041058'
-            },
-            'sunderland-royal': {
-                name: 'Sunderland Royal Hospital',
-                address: 'Kayll Road, Sunderland',
-                postcode: 'SR4 7TP',
-                phone: '0191 5656256'
-            },
-            'sunderland-eye': {
-                name: 'Sunderland Eye Infirmary',
-                address: 'Queen Alexandra Road, Sunderland',
-                postcode: 'SR2 9HP',
-                phone: '0191 5656256'
+                phone: '0191 4041000'
             }
         };
         
-        return locations[locationId] || locations['south-tyneside'];
+        return fallbackLocations['south-tyneside'];
+    },
+    
+    /**
+     * Fetch hospitals from the API and cache them locally
+     * @returns {Promise<Array>} Promise resolving to array of hospitals
+     */
+    async fetchAndCacheHospitals() {
+        try {
+            const response = await window.apiClient.getAllHospitals();
+            
+            if (response.success && Array.isArray(response.hospitals)) {
+                // Cache the hospitals locally
+                localStorage.setItem(this.KEYS.CACHED_HOSPITALS, JSON.stringify(response.hospitals));
+                return response.hospitals;
+            } else {
+                console.error('Error fetching hospitals:', response.message || 'Unknown error');
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching hospitals:', error);
+            return [];
+        }
+    },
+    
+    /**
+     * Get cached hospitals from local storage
+     * @returns {Array} Array of hospital objects
+     */
+    getCachedHospitals() {
+        const data = localStorage.getItem(this.KEYS.CACHED_HOSPITALS);
+        return data ? JSON.parse(data) : [];
     },
     
     /**

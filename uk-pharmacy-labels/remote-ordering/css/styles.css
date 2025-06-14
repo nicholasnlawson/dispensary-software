@@ -41,8 +41,8 @@ main {
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 4px;
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
@@ -57,31 +57,44 @@ main {
 }
 
 
-/* Tabs */
-.tabs {
+/* Order Type Selector */
+.order-type-selector-container {
+  width: 100%;
   display: flex;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid var(--gray-light);
+  justify-content: center;
+  margin-bottom: 1.5rem;
 }
 
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+.order-type-selector {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 650px;
+}
+
+.order-type-btn {
+  background-color: var(--gray-light);
+  border: 2px solid var(--primary-color);
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: bold;
   cursor: pointer;
   transition: var(--transition);
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
+  border-radius: var(--border-radius);
+  flex: 1;
+  max-width: 300px;
+  text-align: center;
 }
 
-.tab-btn:hover {
-  background-color: var(--gray-light);
+.order-type-btn:hover {
+  background-color: var(--secondary-color);
+  color: white;
 }
 
-.tab-btn.active {
-  border-bottom-color: var(--primary-color);
-  color: var(--primary-color);
+.order-type-btn.active {
+  background-color: var(--primary-color);
+  color: white;
   font-weight: bold;
 }
 
@@ -92,10 +105,27 @@ main {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   display: none;
+  margin-bottom: 2rem;
 }
 
 .order-form.active {
   display: block;
+}
+
+.forms-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Recent Orders - Updated for new layout */
+.recent-orders {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-top: 1rem;
+  width: 100%;
 }
 
 .form-group {

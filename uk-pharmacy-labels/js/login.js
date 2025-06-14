@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorMessage = document.getElementById('error-message');
 
   // API base URL - change this to match your server configuration
-  const API_BASE_URL = 'http://localhost:3000/api';
+  const API_BASE_URL = 'http://localhost:3001/api';
 
   // Toggle password visibility
   togglePasswordButton.addEventListener('click', () => {
