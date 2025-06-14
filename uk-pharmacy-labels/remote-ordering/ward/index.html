@@ -69,11 +69,11 @@
               <div class="form-row">
                 <div class="form-column">
                   <label for="patient-name">Full Name:</label>
-                  <input type="text" id="patient-name" required />
+                  <input type="text" id="patient-name" autocomplete="off" required />
                 </div>
                 <div class="form-column">
                   <label for="patient-dob">Date of Birth:</label>
-                  <input type="date" id="patient-dob" placeholder="Optional" />
+                  <input type="date" id="patient-dob" autocomplete="off" placeholder="Optional" />
                 </div>
               </div>
 
@@ -83,13 +83,14 @@
                   <input
                     type="text"
                     id="patient-nhs"
+                    autocomplete="off"
                     pattern="[0-9]{10}"
                     placeholder="10 digits (optional)"
                   />
                 </div>
                 <div class="form-column">
                   <label for="hospital-id">Hospital ID:</label>
-                  <input type="text" id="hospital-id" placeholder="Hospital ID" required />
+                  <input type="text" id="hospital-id" autocomplete="off" placeholder="Hospital ID" required />
                 </div>
               </div>
             </div>
@@ -121,7 +122,11 @@
                   </div>
 
                   <div class="form-row">
-                    <div class="form-column full-width">
+                    <div class="form-column">
+                      <label for="med-dose-1">Dose:</label>
+                      <input type="text" id="med-dose-1" class="med-dose" placeholder="e.g., 1-2 tablets daily" autocomplete="off" />
+                    </div>
+                    <div class="form-column">
                       <label for="med-notes-1">Special Instructions:</label>
                       <textarea id="med-notes-1" class="med-notes" rows="2" placeholder="Any special instructions or notes"></textarea>
                     </div>
@@ -196,6 +201,13 @@
                     <div class="form-column">
                       <label for="ws-med-quantity-1">Quantity:</label>
                       <input type="text" id="ws-med-quantity-1" class="med-quantity" placeholder="e.g., 28" required />
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-column">
+                      <label for="ws-med-dose-1">Dose:</label>
+                      <input type="text" id="ws-med-dose-1" class="med-dose" placeholder="e.g., 1-2 tablets daily" autocomplete="off" />
                     </div>
                   </div>
                 </div>
@@ -342,6 +354,7 @@
     </footer>
 
     <!-- Load shared dependencies first -->
+    <script src="../../js/api-client.js"></script>
     <script src="../../js/data-manager.js" defer></script>
     <script src="../../js/medication-manager.js" defer></script>
     <!-- Load module-specific scripts -->

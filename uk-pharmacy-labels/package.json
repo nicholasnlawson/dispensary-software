@@ -2,7 +2,8 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "crypto-js": "^4.2.0",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "node-fetch": "^2.7.0"

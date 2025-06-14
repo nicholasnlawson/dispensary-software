@@ -1,0 +1,92 @@
+{
+  "brandExceptions": [
+    {
+      "category": "Allergy and immunology",
+      "drugs": [
+        "Adrenaline auto-injector"
+      ],
+      "reason": "Ensure patients receive an auto-injector device they have been trained to use"
+    },
+    {
+      "category": "Anaesthesia and pain",
+      "drugs": [
+        "Buprenorphine transdermal patch",
+        "Fentanyl transdermal patch",
+        "Morphine MR",
+        "Oxycodone MR",
+        "Tramadol MR"
+      ],
+      "reason": "Different formulations with different release profiles"
+    },
+    {
+      "category": "Cardiovascular",
+      "drugs": [
+        "Metolazone",
+        "Diltiazem MR",
+        "Nifedipine MR",
+        "Enoxaparin"
+      ],
+      "reason": "Different bioavailability or clinical effects between formulations"
+    },
+    {
+      "category": "Endocrinology",
+      "drugs": [
+        "Insulin"
+      ],
+      "reason": "NICE guidance recommends insulins are prescribed by brand name"
+    },
+    {
+      "category": "Gastrointestinal",
+      "drugs": [
+        "Mesalazine"
+      ],
+      "reason": "Delivery characteristics may vary between preparations"
+    },
+    {
+      "category": "Mental health",
+      "drugs": [
+        "Lithium",
+        "Methylphenidate MR"
+      ],
+      "reason": "Narrow therapeutic index or different release profiles"
+    },
+    {
+      "category": "Neurology",
+      "drugs": [
+        "Carbamazepine",
+        "Phenobarbital",
+        "Phenytoin",
+        "Primidone",
+        "Clobazam",
+        "Clonazepam",
+        "Eslicarbazepine",
+        "Lamotrigine",
+        "Oxcarbazepine",
+        "Perampanel",
+        "Rufinamide",
+        "Topiramate",
+        "Valproate",
+        "Zonisamide"
+      ],
+      "reason": "Antiseizure medications requiring consistent supply"
+    },
+    {
+      "category": "Organ transplantation",
+      "drugs": [
+        "Ciclosporin",
+        "Tacrolimus"
+      ],
+      "reason": "Switching between formulations may lead to clinically important changes"
+    },
+    {
+      "category": "Respiratory",
+      "drugs": [
+        "Beclometasone inhaler",
+        "Budesonide inhaler",
+        "Fluticasone inhaler",
+        "Tiotropium"
+      ],
+      "reason": "Generic prescribing of inhalers should be avoided"
+    }
+  ]
+}

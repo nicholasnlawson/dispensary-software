@@ -6,7 +6,7 @@
 class ApiClient {
   constructor() {
     // API base URL - change this to match your server configuration
-    this.baseUrl = 'http://localhost:3001/api';
+    this.baseUrl = 'http://localhost:3000/api';
     this.token = localStorage.getItem('token');
   }
 
@@ -342,6 +342,134 @@ class ApiClient {
    */
   async deleteWard(id) {
     return await this.request(`/wards/${id}`, 'DELETE');
+  }
+
+  /**
+   * Get all orders with optional filtering
+   * @param {Object} filters - Optional filters (status, type, wardId)
+   * @returns {Promise} - Promise resolving to orders list
+   */
+  async getOrders(filters = {}) {
+    let queryParams = '';
+    
+    if (Object.keys(filters).length > 0) {
+      queryParams = '?' + Object.entries(filters)
+        .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+        .join('&');
+    }
+    
+    return await this.request(`/orders${queryParams}`);
+  }
+
+  /**
+   * Get order by ID
+   * @param {string} id - Order ID
+   * @returns {Promise} - Promise resolving to order data
+   */
+  async getOrderById(id) {
+    return await this.request(`/orders/${id}`);
+  }
+
+  /**
+   * Create a new order
+   * @param {Object} orderData - Order data
+   * @returns {Promise} - Promise resolving to created order
+   */
+  async createOrder(orderData) {
+    return await this.request('/orders', 'POST', orderData);
+  }
+
+  /**
+   * Update order status
+   * @param {string} id - Order ID
+   * @param {Object} updateData - Order data to update (status, processedBy, checkedBy, etc.)
+   * @returns {Promise} - Promise resolving to updated order
+   */
+  async updateOrder(id, updateData) {
+    return await this.request(`/orders/${id}`, 'PUT', updateData);
+  }
+
+  /**
+   * Delete order (admin only)
+   * @param {string} id - Order ID
+   * @returns {Promise} - Promise resolving to success message
+   */
+  async deleteOrder(id) {
+    return await this.request(`/orders/${id}`, 'DELETE');
+  }
+  
+  /**
+   * Cancel an order with reason
+   * @param {string} id - Order ID
+   * @param {string} reason - Cancellation reason
+   * @param {string} cancelledBy - User ID who cancelled the order
+   * @returns {Promise} - Promise resolving to updated order with cancelled status
+   */
+  async cancelOrder(id, reason, cancelledBy) {
+    return await this.request(`/orders/${id}/cancel`, 'PUT', { 
+      reason, 
+      cancelledBy,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  /**
+   * Update order medications (add, remove, or modify)
+   * @param {string} id - Order ID
+   * @param {Array} medications - Updated medications array
+   * @param {string} modifiedBy - User ID who modified the order
+   * @param {string} reason - Reason for modification
+   * @returns {Promise} - Promise resolving to updated order
+   */
+  async updateOrderMedications(id, medications, modifiedBy, reason) {
+    return await this.request(`/orders/${id}/medications`, 'PUT', {
+      medications,
+      modifiedBy,
+      reason,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  /**
+   * Add medication to an existing order
+   * @param {string} orderId - Order ID
+   * @param {Object} medicationData - Medication data to add
+   * @param {string} modifiedBy - User ID who added the medication
+   * @param {string} reason - Reason for adding medication
+   * @returns {Promise} - Promise resolving to updated order
+   */
+  async addOrderMedication(orderId, medicationData, modifiedBy, reason) {
+    return await this.request(`/orders/${orderId}/medications`, 'POST', {
+      medication: medicationData,
+      modifiedBy,
+      reason,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  /**
+   * Remove medication from an existing order
+   * @param {string} orderId - Order ID
+   * @param {string} medicationId - Medication ID to remove
+   * @param {string} modifiedBy - User ID who removed the medication
+   * @param {string} reason - Reason for removing medication
+   * @returns {Promise} - Promise resolving to updated order
+   */
+  async removeOrderMedication(orderId, medicationId, modifiedBy, reason) {
+    return await this.request(`/orders/${orderId}/medications/${medicationId}`, 'DELETE', {
+      modifiedBy,
+      reason,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  /**
+   * Get order history/audit trail
+   * @param {string} orderId - Order ID
+   * @returns {Promise} - Promise resolving to order history entries
+   */
+  async getOrderHistory(orderId) {
+    return await this.request(`/orders/${orderId}/history`);
   }
 }
 

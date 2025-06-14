@@ -79,6 +79,7 @@ app.use('/api/patients', generalLimiter, require('./routes/patients'));
 app.use('/api/wards', generalLimiter, require('./routes/wards'));
 app.use('/api/hospitals', generalLimiter, require('./routes/hospitals'));
 app.use('/api/test-hospitals', generalLimiter, require('./routes/test-hospitals'));
+app.use('/api/orders', generalLimiter, require('./routes/orders'));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '..', 'public')));

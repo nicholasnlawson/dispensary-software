@@ -35,7 +35,8 @@ function initializeDatabase() {
         'migrations/add-wards-table.sql',
         'migrations/patients-table.sql',
         'migrations/add-hospital-fields.sql',
-        'migrations/rename-telephone-column.sql'
+        'migrations/rename-telephone-column.sql',
+        'migrations/add-orders-table.sql'
     ];
     
     const migrations = migrationFiles.map(file => {

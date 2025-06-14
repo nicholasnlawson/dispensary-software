@@ -4,7 +4,469 @@
  * Handles the ward ordering interface functionality
  */
 
+// Store ward data for mapping IDs to names
+window.wardsCache = {};
+
+/**
+ * Create the order detail modal container
+ */
+function createOrderDetailModal() {
+    // Check if container already exists
+    if (document.getElementById('order-detail-modal')) {
+        return;
+    }
+    
+    // Create modal container
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'order-detail-modal';
+    modalContainer.className = 'hidden';
+    
+    // Create modal content
+    modalContainer.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Order Details</h3>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modal-order-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+                <button type="button" class="btn btn-edit" id="edit-order-btn">Edit Order</button>
+                <button type="button" class="btn btn-save hidden" id="save-order-btn">Save Changes</button>
+                <button type="button" class="btn btn-cancel" id="cancel-order-btn">Cancel Order</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalContainer);
+    
+    // Add close functionality
+    document.querySelector('.modal-close').addEventListener('click', closeOrderDetailModal);
+    document.querySelector('.modal-close-btn').addEventListener('click', closeOrderDetailModal);
+    
+    // Close when clicking outside modal content
+    modalContainer.addEventListener('click', (event) => {
+        if (event.target === modalContainer) {
+            closeOrderDetailModal();
+        }
+    });
+}
+
+/**
+ * Close the order detail modal
+ */
+function closeOrderDetailModal() {
+    const modal = document.getElementById('order-detail-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Global variable to store the current order being viewed/edited
+ */
+let currentOrder = null;
+let isOrderInEditMode = false;
+
+/**
+ * Show order details in modal
+ * @param {Object} order - Order object
+ */
+function showOrderDetails(order) {
+    if (!order) return;
+    
+    // Save the order for reference in edit/save functions
+    currentOrder = JSON.parse(JSON.stringify(order)); // Deep clone to avoid modifying the original
+    isOrderInEditMode = false;
+    
+    const modal = document.getElementById('order-detail-modal');
+    const contentContainer = document.getElementById('modal-order-content');
+    
+    if (!modal || !contentContainer) return;
+    
+    // Render the order in view mode
+    renderOrderDetails(false);
+    
+    // Show modal
+    modal.style.display = 'block';
+    
+    // Setup button handlers
+    setupModalButtons();
+}
+
+/**
+ * Setup the modal buttons based on order status and current mode
+ */
+function setupModalButtons() {
+    // Cancel order button
+    const cancelButton = document.getElementById('cancel-order-btn');
+    if (cancelButton) {
+        if (currentOrder.status === 'pending') {
+            cancelButton.classList.remove('hidden');
+            cancelButton.onclick = () => cancelOrder(currentOrder.id);
+        } else {
+            cancelButton.classList.add('hidden');
+        }
+    }
+    
+    // Edit order button
+    const editButton = document.getElementById('edit-order-btn');
+    if (editButton) {
+        if (currentOrder.status === 'pending') {
+            editButton.classList.remove('hidden');
+            editButton.onclick = () => toggleOrderEditMode(true);
+        } else {
+            editButton.classList.add('hidden');
+        }
+    }
+    
+    // Save changes button
+    const saveButton = document.getElementById('save-order-btn');
+    if (saveButton) {
+        saveButton.classList.add('hidden');
+        saveButton.onclick = saveOrderChanges;
+    }
+}
+
+/**
+ * Toggle between view and edit modes for an order
+ * @param {boolean} editMode - Whether to switch to edit mode
+ */
+function toggleOrderEditMode(editMode) {
+    isOrderInEditMode = editMode;
+    
+    // Toggle button visibility
+    const editButton = document.getElementById('edit-order-btn');
+    const saveButton = document.getElementById('save-order-btn');
+    
+    if (editButton) editButton.classList.toggle('hidden', editMode);
+    if (saveButton) saveButton.classList.toggle('hidden', !editMode);
+    
+    // Re-render the order in the appropriate mode
+    renderOrderDetails(editMode);
+}
+
+/**
+ * Render the order details in either view or edit mode
+ * @param {boolean} editMode - Whether to render in edit mode
+ */
+function renderOrderDetails(editMode) {
+    const contentContainer = document.getElementById('modal-order-content');
+    if (!contentContainer || !currentOrder) return;
+    
+    // Format timestamp
+    const orderDate = new Date(currentOrder.timestamp);
+    const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
+    
+    // Build order details HTML
+    let detailsHTML = `
+        <div class="modal-section">
+            <h4 class="modal-section-title">Order Information</h4>
+            <table class="order-metadata-table">
+                <tr>
+                    <th>Order ID</th>
+                    <td>${currentOrder.id}</td>
+                </tr>
+                <tr>
+                    <th>Date & Time</th>
+                    <td>${formattedDate}</td>
+                </tr>
+                <tr>
+                    <th>Order Type</th>
+                    <td>${currentOrder.type === 'patient' ? 'Patient Medication' : 'Ward Stock'}</td>
+                </tr>
+                <tr>
+                    <th>Ward</th>
+                    <td>${getWardName(currentOrder.ward)}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td><span class="order-status status-${currentOrder.status}">${currentOrder.status.toUpperCase()}</span></td>
+                </tr>
+                <tr>
+                    <th>Requester</th>
+                    <td>${currentOrder.requester ? currentOrder.requester.name : 'Unknown'} (${currentOrder.requester ? currentOrder.requester.role : 'Unknown'})</td>
+                </tr>
+            </table>
+        </div>
+    `;
+    
+    // Add patient details if patient order
+    if (currentOrder.type === 'patient' && currentOrder.patient) {
+        detailsHTML += `
+            <div class="modal-section">
+                <h4 class="modal-section-title">Patient Information</h4>
+                <table class="order-metadata-table">
+                    <tr>
+                        <th>Name</th>
+                        <td>${currentOrder.patient.name || 'Not provided'}</td>
+                    </tr>
+                    <tr>
+                        <th>Hospital ID</th>
+                        <td>${currentOrder.patient.hospitalId || 'Not provided'}</td>
+                    </tr>
+                    ${currentOrder.patient.nhs ? `<tr><th>NHS Number</th><td>${currentOrder.patient.nhs}</td></tr>` : ''}
+                    ${currentOrder.patient.dob ? `<tr><th>Date of Birth</th><td>${currentOrder.patient.dob}</td></tr>` : ''}
+                </table>
+            </div>
+        `;
+    }
+    
+    // Add medications list
+    detailsHTML += `
+        <div class="modal-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 class="modal-section-title" style="margin: 0;">Medications</h4>
+                ${editMode ? `<button type="button" class="btn btn-sm" id="add-medication-btn" onclick="addNewMedication()">Add Medication</button>` : ''}
+            </div>
+            <table class="order-metadata-table" id="medications-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Details</th>
+                        ${editMode ? '<th class="medication-actions">Actions</th>' : ''}
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    if (editMode) {
+        // Edit mode: Show editable fields for each medication
+        currentOrder.medications.forEach((med, index) => {
+            detailsHTML += `
+                <tr class="medication-row" data-index="${index}">
+                    <td>
+                        <input type="text" class="medication-name" value="${med.name || ''}" placeholder="Medication name">
+                    </td>
+                    <td>
+                        <div class="medication-form-row">
+                            <input type="text" class="medication-strength" value="${med.strength || ''}" placeholder="Strength">
+                            <input type="text" class="medication-form" value="${med.form || ''}" placeholder="Form">
+                            <input type="number" class="medication-quantity medication-small-input" value="${med.quantity || ''}" placeholder="Qty">
+                        </div>
+                        <div class="medication-form-row">
+                            <input type="text" class="medication-dose" value="${med.dose || ''}" placeholder="Dose instructions">
+                        </div>
+                        <div class="medication-form-row">
+                            <input type="text" class="medication-notes" value="${med.notes || ''}" placeholder="Notes (optional)">
+                        </div>
+                    </td>
+                    <td class="medication-actions">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeMedication(${index})">Remove</button>
+                    </td>
+                </tr>
+            `;
+        });
+    } else {
+        // View mode: Show medication details
+        currentOrder.medications.forEach(med => {
+            const medDetails = [];
+            if (med.strength) medDetails.push(med.strength);
+            if (med.form) medDetails.push(med.form);
+            if (med.quantity) medDetails.push(`Quantity: ${med.quantity}`);
+            if (med.dose) medDetails.push(`Dose: ${med.dose}`);
+            if (med.notes) medDetails.push(`Notes: ${med.notes}`);
+            
+            detailsHTML += `
+                <tr>
+                    <td>${med.name || 'Unknown'}</td>
+                    <td>${medDetails.join(', ') || 'No details'}</td>
+                </tr>
+            `;
+        });
+    }
+    
+    detailsHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Update content 
+    contentContainer.innerHTML = detailsHTML;
+}
+
+/**
+ * Add a new blank medication to the current order
+ */
+function addNewMedication() {
+    if (!currentOrder || !currentOrder.medications) return;
+    
+    // Add a new empty medication
+    currentOrder.medications.push({
+        name: '',
+        strength: '',
+        form: '',
+        quantity: '',
+        dose: '',
+        notes: ''
+    });
+    
+    // Re-render in edit mode
+    renderOrderDetails(true);
+    
+    // Focus the new medication's name field
+    setTimeout(() => {
+        const medicationRows = document.querySelectorAll('.medication-row');
+        if (medicationRows.length > 0) {
+            const lastRow = medicationRows[medicationRows.length - 1];
+            const nameInput = lastRow.querySelector('.medication-name');
+            if (nameInput) nameInput.focus();
+        }
+    }, 0);
+}
+
+/**
+ * Remove a medication from the current order
+ * @param {number} index - Index of the medication to remove
+ */
+function removeMedication(index) {
+    if (!currentOrder || !currentOrder.medications || index < 0 || index >= currentOrder.medications.length) return;
+    
+    // Remove the medication
+    currentOrder.medications.splice(index, 1);
+    
+    // Re-render in edit mode
+    renderOrderDetails(true);
+}
+
+/**
+ * Save changes made to the order
+ */
+async function saveOrderChanges() {
+    if (!currentOrder) return;
+    
+    try {
+        // Gather medication data from the form
+        if (isOrderInEditMode) {
+            // Parse all medication fields from form inputs
+            const medicationRows = document.querySelectorAll('.medication-row');
+            const medications = [];
+            
+            medicationRows.forEach(row => {
+                const nameInput = row.querySelector('.medication-name');
+                const strengthInput = row.querySelector('.medication-strength');
+                const formInput = row.querySelector('.medication-form');
+                const quantityInput = row.querySelector('.medication-quantity');
+                const doseInput = row.querySelector('.medication-dose');
+                const notesInput = row.querySelector('.medication-notes');
+                
+                // Only add medications with at least a name
+                if (nameInput && nameInput.value.trim()) {
+                    medications.push({
+                        name: nameInput.value.trim(),
+                        strength: strengthInput ? strengthInput.value.trim() : '',
+                        form: formInput ? formInput.value.trim() : '',
+                        quantity: quantityInput ? quantityInput.value.trim() : '',
+                        dose: doseInput ? doseInput.value.trim() : '',
+                        notes: notesInput ? notesInput.value.trim() : ''
+                    });
+                }
+            });
+            
+            // Update the current order
+            currentOrder.medications = medications;
+        }
+        
+        // Check if there are any medications
+        if (!currentOrder.medications.length) {
+            showToastNotification('Order must have at least one medication', 'error');
+            return;
+        }
+        
+        // If we have an API client with updateOrder method
+        if (window.apiClient && typeof window.apiClient.updateOrder === 'function') {
+            showToastNotification('Saving changes...', 'info');
+            
+            // Call API to update order
+            const response = await window.apiClient.updateOrder(currentOrder.id, currentOrder);
+            
+            if (response && response.success) {
+                showToastNotification('Order updated successfully', 'success');
+                
+                // Update local order cache if using OrderManager
+                if (OrderManager) {
+                    OrderManager.updateOrder(currentOrder);
+                }
+                
+                // Switch back to view mode and refresh orders list
+                toggleOrderEditMode(false);
+                loadRecentOrders();
+            } else {
+                showToastNotification(`Error updating order: ${response.message || 'Unknown error'}`, 'error');
+            }
+        } 
+        // If we only have local OrderManager
+        else if (OrderManager) {
+            OrderManager.updateOrder(currentOrder);
+            showToastNotification('Order updated successfully', 'success');
+            toggleOrderEditMode(false);
+            loadRecentOrders();
+        } else {
+            showToastNotification('Order update not supported', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating order:', error);
+        showToastNotification(`Error: ${error.message || 'Unknown error'}`, 'error');
+    }
+}
+
+/**
+ * Cancel an order
+ * @param {string} orderId - Order ID to cancel
+ */
+async function cancelOrder(orderId) {
+    try {
+        if (!orderId) return;
+        
+        if (window.confirm('Are you sure you want to cancel this order?')) {
+            // If we have an API client with cancelOrder method
+            if (window.apiClient && typeof window.apiClient.cancelOrder === 'function') {
+                showToastNotification('Cancelling order...', 'info');
+                
+                // Call API to cancel order
+                const response = await window.apiClient.cancelOrder(orderId);
+                
+                if (response && response.success) {
+                    showToastNotification('Order cancelled successfully', 'success');
+                    
+                    // Update local order status if using OrderManager
+                    if (OrderManager) {
+                        OrderManager.updateOrderStatus(orderId, 'cancelled');
+                    }
+                    
+                    // Close modal and refresh orders list
+                    closeOrderDetailModal();
+                    loadRecentOrders();
+                } else {
+                    showToastNotification(`Error cancelling order: ${response.message || 'Unknown error'}`, 'error');
+                }
+            } 
+            // If we only have local OrderManager
+            else if (OrderManager) {
+                OrderManager.updateOrderStatus(orderId, 'cancelled');
+                showToastNotification('Order cancelled successfully', 'success');
+                closeOrderDetailModal();
+                loadRecentOrders();
+            } else {
+                showToastNotification('Order cancellation not supported', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error cancelling order:', error);
+        showToastNotification(`Error: ${error.message || 'Unknown error'}`, 'error');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    // Create toast container for notifications
+    createToastContainer();
+    
+    // Create order details modal
+    createOrderDetailModal();
+    
     // Load user information
     await loadCurrentUser();
     
@@ -30,35 +492,178 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
+ * Create toast container for notifications
+ */
+function createToastContainer() {
+    // Check if container already exists
+    if (document.getElementById('toast-container')) {
+        return;
+    }
+    
+    // Create toast container
+    const toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    document.body.appendChild(toastContainer);
+    
+    // Add basic styles if not already in stylesheet
+    if (!document.getElementById('toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-styles';
+        style.textContent = `
+            #toast-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            }
+            .toast {
+                min-width: 250px;
+                margin-bottom: 10px;
+                padding: 12px 20px;
+                border-radius: 4px;
+                color: white;
+                box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+                transition: all 0.3s ease;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .toast.success {
+                background-color: #4caf50;
+            }
+            .toast.info {
+                background-color: #2196F3;
+            }
+            .toast.warning {
+                background-color: #ff9800;
+            }
+            .toast.error {
+                background-color: #f44336;
+            }
+            .toast-close {
+                cursor: pointer;
+                margin-left: 10px;
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+/**
+ * Show a toast notification
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type (success, info, warning, error)
+ */
+function showToastNotification(message, type = 'info') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        createToastContainer();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div>${message}</div>
+        <span class="toast-close">&times;</span>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Add click event to close button
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+        toast.remove();
+    });
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+/**
  * Load and set current user information
  */
 async function loadCurrentUser() {
     try {
-        // Get the current user from the authentication system
-        const response = await fetch('/api/auth/current-user');
-        const userData = await response.json();
+        // Check if API client is available
+        if (!window.apiClient) {
+            console.error('API client not available for user authentication');
+            // Set default values to prevent form submission errors
+            setRequesterFields('Unknown User', 'ordering');
+            return;
+        }
         
-        if (userData && userData.success) {
-            // Store user info in window object for easy access
-            window.currentUser = userData.user;
+        try {
+            // Get the current user using the API client (which handles auth tokens)
+            const userData = await window.apiClient.getCurrentUser();
             
-            // Set hidden requester fields
-            document.getElementById('requester-name').value = userData.user.name || '';
-            document.getElementById('requester-role').value = userData.user.role || '';
-            document.getElementById('ws-requester-name').value = userData.user.name || '';
-            document.getElementById('ws-requester-role').value = userData.user.role || '';
-            
-            // Display user info in header if applicable
-            const userInfoElement = document.getElementById('user-info');
-            if (userInfoElement) {
-                userInfoElement.textContent = `Logged in as: ${userData.user.name} (${userData.user.role})`;
+            if (userData && userData.success && userData.user) {
+                // Store user info in window object for easy access
+                window.currentUser = userData.user;
+                
+                // Get name and role from user data
+                const name = userData.user.first_name && userData.user.surname 
+                    ? `${userData.user.first_name} ${userData.user.surname}` 
+                    : userData.user.username;
+                const role = userData.user.roles && userData.user.roles.length > 0 
+                    ? userData.user.roles[0] 
+                    : 'ordering';
+                
+                // Set requester fields
+                setRequesterFields(name, role);
+                
+                // Display user info in header if applicable
+                const userInfoElement = document.getElementById('user-info');
+                if (userInfoElement) {
+                    userInfoElement.textContent = `Logged in as: ${name} (${role})`;
+                }
+            } else {
+                console.error('Failed to load user data or missing user info');
+                setRequesterFields('Unknown User', 'ordering'); // Set defaults
             }
-        } else {
-            console.error('Failed to load user data');
+        } catch (apiError) {
+            console.error('API error loading user data:', apiError);
+            
+            // Try to get user data from localStorage as fallback
+            const storedUserData = localStorage.getItem('userData');
+            if (storedUserData) {
+                try {
+                    const userData = JSON.parse(storedUserData);
+                    setRequesterFields(userData.username || 'Unknown User', userData.roles?.[0] || 'ordering');
+                } catch (parseError) {
+                    console.error('Error parsing stored user data:', parseError);
+                    setRequesterFields('Unknown User', 'ordering'); // Set defaults
+                }
+            } else {
+                setRequesterFields('Unknown User', 'ordering'); // Set defaults
+            }
         }
     } catch (error) {
-        console.error('Error loading user data:', error);
+        console.error('Unexpected error in loadCurrentUser:', error);
+        setRequesterFields('Unknown User', 'ordering'); // Set defaults
     }
+}
+
+/**
+ * Helper to set requester fields throughout the forms
+ * @param {string} name - Requester name
+ * @param {string} role - Requester role
+ */
+function setRequesterFields(name, role) {
+    // Set hidden requester fields in patient order form
+    const patientRequesterName = document.getElementById('requester-name');
+    const patientRequesterRole = document.getElementById('requester-role');
+    if (patientRequesterName) patientRequesterName.value = name;
+    if (patientRequesterRole) patientRequesterRole.value = role;
+    
+    // Set requester fields in ward stock form
+    const wsRequesterName = document.getElementById('ws-requester-name');
+    const wsRequesterRole = document.getElementById('ws-requester-role');
+    if (wsRequesterName) wsRequesterName.value = name;
+    if (wsRequesterRole) wsRequesterRole.value = role;
 }
 
 /**
@@ -76,6 +681,12 @@ async function populateWardDropdowns() {
         
         if (response && response.success && Array.isArray(response.wards)) {
             const wards = response.wards;
+            
+            // Store ward data in global cache for mapping IDs to names
+            window.wardsCache = {};
+            wards.forEach(ward => {
+                window.wardsCache[ward.id] = ward;
+            });
             
             // Populate patient form ward dropdown
             const patientWardDropdown = document.getElementById('ward-name');
@@ -112,6 +723,23 @@ async function populateWardDropdowns() {
     } catch (error) {
         console.error('Error loading wards:', error);
     }
+}
+
+/**
+ * Get ward name from ID using the cache
+ * @param {string|number} wardId - Ward ID
+ * @returns {string} - Ward name or ID if not found
+ */
+function getWardName(wardId) {
+    if (!wardId) return 'Unknown';
+    
+    // Try to get from cache
+    if (window.wardsCache && window.wardsCache[wardId]) {
+        return window.wardsCache[wardId].name;
+    }
+    
+    // Fallback: return ID
+    return wardId;
 }
 
 /**
@@ -257,19 +885,80 @@ function initMedicationAutocomplete() {
  */
 async function loadMedicationData() {
     try {
-        // Load medications list
-        const medsResponse = await fetch('/data/medications.json');
-        let medicationsData = await medsResponse.json();
+        // Load drug aliases from the comprehensive JSON file
+        const drugAliasesResponse = await fetch('/data/drug_aliases.json');
+        let drugAliasesData = await drugAliasesResponse.json();
         
-        // Load formulations
-        const formsResponse = await fetch('/data/formulations.json');
-        let formulationsData = await formsResponse.json();
+        // Load formulation aliases from the comprehensive JSON file
+        const formulationAliasesResponse = await fetch('/data/formulation_aliases.json');
+        let formulationAliasesData = await formulationAliasesResponse.json();
         
-        console.log(`Loaded ${medicationsData.length} medications and ${Object.keys(formulationsData).length} formulation categories`);
+        // Load brand exceptions list
+        const brandExceptionsResponse = await fetch('/data/brand_exceptions.json');
+        let brandExceptionsData = await brandExceptionsResponse.json();
+        
+        // Create a flat array of all brand exception drugs
+        const brandExceptionsList = [];
+        if (brandExceptionsData && brandExceptionsData.brandExceptions) {
+            brandExceptionsData.brandExceptions.forEach(category => {
+                if (category.drugs && Array.isArray(category.drugs)) {
+                    category.drugs.forEach(drug => {
+                        brandExceptionsList.push(drug.toLowerCase());
+                    });
+                }
+            });
+        }
+        
+        // Process drug aliases into a format suitable for autocomplete
+        const processedMedications = [];
+        
+        // Create alias-to-generic mapping
+        const aliasToGenericMap = {};
+        
+        drugAliasesData.forEach(drug => {
+            // Add the main drug name
+            processedMedications.push(drug.name);
+            
+            // Add all aliases and build the mapping
+            if (drug.aliases && Array.isArray(drug.aliases)) {
+                drug.aliases.forEach(alias => {
+                    if (!processedMedications.includes(alias)) {
+                        processedMedications.push(alias);
+                    }
+                    
+                    // Create mapping from alias to generic name
+                    // Check if this drug should be prescribed by brand
+                    const shouldUseGeneric = !brandExceptionsList.some(exception => {
+                        // Check if the drug name or alias contains any of the brand exceptions
+                        return drug.name.toLowerCase().includes(exception) || 
+                               alias.toLowerCase().includes(exception);
+                    });
+                    
+                    if (shouldUseGeneric) {
+                        aliasToGenericMap[alias.toLowerCase()] = drug.name;
+                    }
+                });
+            }
+        });
+        
+        // Process formulation aliases
+        const processedFormulations = {};
+        if (formulationAliasesData && formulationAliasesData.formulations) {
+            Object.entries(formulationAliasesData.formulations).forEach(([key, aliases]) => {
+                processedFormulations[key] = aliases;
+            });
+        }
+        
+        console.log(`Loaded ${processedMedications.length} medications and ${Object.keys(processedFormulations).length} formulation categories`);
+        console.log(`Created mapping for ${Object.keys(aliasToGenericMap).length} drug aliases to generic names`);
+        console.log(`Loaded ${brandExceptionsList.length} brand exceptions that should not be converted to generic`);
         
         // Setup autocomplete data
-        window.medicationsData = medicationsData;
-        window.formulationsData = formulationsData;
+        window.medicationsData = processedMedications;
+        window.formulationsData = processedFormulations;
+        window.rawDrugAliasesData = drugAliasesData; // Keep the original structured data for reference
+        window.aliasToGenericMap = aliasToGenericMap; // Store the alias-to-generic mapping
+        window.brandExceptionsList = brandExceptionsList; // Store the brand exceptions list
     } catch (error) {
         console.error('Error loading medication data:', error);
         
@@ -285,6 +974,9 @@ async function loadMedicationData() {
             'liquid': ['syrup', 'solution', 'suspension', 'elixir'],
             'injection': ['injection', 'injectable', 'vial', 'ampoule']
         };
+        
+        window.aliasToGenericMap = {};
+        window.brandExceptionsList = [];
     }
 }
 
@@ -293,7 +985,7 @@ async function loadMedicationData() {
  * @param {HTMLInputElement} inputElement - Input element
  */
 function setupMedicationAutocomplete(inputElement) {
-    if (!inputElement || !window.medicationsData.length) return;
+    if (!inputElement || !window.medicationsData || !window.medicationsData.length) return;
     
     // Create a simple autocomplete wrapper around the input
     const wrapper = document.createElement('div');
@@ -301,44 +993,151 @@ function setupMedicationAutocomplete(inputElement) {
     inputElement.parentNode.insertBefore(wrapper, inputElement);
     wrapper.appendChild(inputElement);
     
+    // Add autocomplete="off" to prevent browser autofill
+    inputElement.setAttribute('autocomplete', 'off');
+    
     // Create the autocomplete dropdown
     const dropdownList = document.createElement('ul');
     dropdownList.className = 'autocomplete-list';
     wrapper.appendChild(dropdownList);
     
+    // Create a tooltip element for brand name information
+    const tooltipElement = document.createElement('div');
+    tooltipElement.className = 'medication-tooltip';
+    tooltipElement.style.display = 'none';
+    tooltipElement.style.position = 'absolute';
+    tooltipElement.style.backgroundColor = '#f9f9f9';
+    tooltipElement.style.border = '1px solid #ccc';
+    tooltipElement.style.borderRadius = '4px';
+    tooltipElement.style.padding = '8px';
+    tooltipElement.style.zIndex = '1000';
+    tooltipElement.style.maxWidth = '300px';
+    tooltipElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+    wrapper.appendChild(tooltipElement);
+    
+    // Function to check if a medication should be prescribed by brand name
+    function shouldPrescribeByBrand(medicationName) {
+        if (!window.brandExceptionsList || !medicationName) return false;
+        
+        const medNameLower = medicationName.toLowerCase();
+        return window.brandExceptionsList.some(exception => {
+            return medNameLower.includes(exception);
+        });
+    }
+    
+    // Function to get the generic name for an alias
+    function getGenericName(alias) {
+        if (!window.aliasToGenericMap || !alias) return alias;
+        
+        const aliasLower = alias.toLowerCase();
+        return window.aliasToGenericMap[aliasLower] || alias;
+    }
+    
     // Show options based on input
     inputElement.addEventListener('input', () => {
-        const value = inputElement.value.toLowerCase();
+        const value = inputElement.value.toLowerCase().trim();
         dropdownList.innerHTML = '';
+        tooltipElement.style.display = 'none';
         
         if (value.length < 2) {
             dropdownList.style.display = 'none';
             return;
         }
         
-        // Find matching medications
-        const matches = window.medicationsData.filter(med => {
-            if (typeof med === 'string') {
-                return med.toLowerCase().includes(value);
-            } else if (med.name) {
-                return med.name.toLowerCase().includes(value);
-            }
-            return false;
-        }).slice(0, 10); // Limit to 10 results
+        // Find matching medications from our comprehensive list
+        const matches = window.medicationsData
+            .filter(med => {
+                if (typeof med === 'string') {
+                    return med.toLowerCase().includes(value);
+                }
+                return false;
+            })
+            .sort((a, b) => {
+                // Sort exact matches first, then by string length (shorter first), then alphabetically
+                const aLower = a.toLowerCase();
+                const bLower = b.toLowerCase();
+                
+                // Exact matches first
+                if (aLower === value && bLower !== value) return -1;
+                if (bLower === value && aLower !== value) return 1;
+                
+                // Then matches that start with the search term
+                if (aLower.startsWith(value) && !bLower.startsWith(value)) return -1;
+                if (bLower.startsWith(value) && !aLower.startsWith(value)) return 1;
+                
+                // Then by length (shorter first)
+                if (a.length !== b.length) return a.length - b.length;
+                
+                // Finally alphabetically
+                return a.localeCompare(b);
+            })
+            .slice(0, 15); // Limit to 15 results for better performance
         
         if (matches.length > 0) {
             dropdownList.style.display = 'block';
             matches.forEach(med => {
                 const item = document.createElement('li');
-                item.textContent = typeof med === 'string' ? med : med.name;
+                item.textContent = med;
+                
+                // Add visual indicator if this is a brand name exception
+                if (shouldPrescribeByBrand(med)) {
+                    item.classList.add('brand-name-exception');
+                    item.style.fontWeight = 'bold';
+                    item.style.color = '#0066cc';
+                }
+                
                 item.addEventListener('click', () => {
-                    inputElement.value = item.textContent;
+                    const selectedMed = item.textContent;
+                    
+                    // Check if this medication should be prescribed by brand name
+                    if (shouldPrescribeByBrand(selectedMed)) {
+                        // Use the selected brand name as is
+                        inputElement.value = selectedMed;
+                        
+                        // Show tooltip with brand name information
+                        tooltipElement.textContent = 'This medication should be prescribed by brand name for patient safety.';
+                        tooltipElement.style.display = 'block';
+                        
+                        // Hide tooltip after 5 seconds
+                        setTimeout(() => {
+                            tooltipElement.style.display = 'none';
+                        }, 5000);
+                    } else {
+                        // Convert to generic name if it's an alias
+                        const genericName = getGenericName(selectedMed);
+                        inputElement.value = genericName;
+                        
+                        // If we converted to a generic name, show a tooltip
+                        if (genericName !== selectedMed) {
+                            tooltipElement.textContent = `Converted "${selectedMed}" to generic name "${genericName}"`;
+                            tooltipElement.style.display = 'block';
+                            
+                            // Hide tooltip after 5 seconds
+                            setTimeout(() => {
+                                tooltipElement.style.display = 'none';
+                            }, 5000);
+                        }
+                    }
+                    
                     dropdownList.style.display = 'none';
                     
                     // Trigger change event to update related fields (e.g., formulation)
                     const event = new Event('change');
                     inputElement.dispatchEvent(event);
                 });
+                
+                // Add hover effect for brand name exceptions
+                if (shouldPrescribeByBrand(med)) {
+                    item.addEventListener('mouseenter', () => {
+                        tooltipElement.textContent = 'This medication should be prescribed by brand name for patient safety.';
+                        tooltipElement.style.display = 'block';
+                    });
+                    
+                    item.addEventListener('mouseleave', () => {
+                        tooltipElement.style.display = 'none';
+                    });
+                }
+                
                 dropdownList.appendChild(item);
             });
         } else {
@@ -350,6 +1149,7 @@ function setupMedicationAutocomplete(inputElement) {
     document.addEventListener('click', (event) => {
         if (!wrapper.contains(event.target)) {
             dropdownList.style.display = 'none';
+            tooltipElement.style.display = 'none';
         }
     });
 }
@@ -359,13 +1159,16 @@ function setupMedicationAutocomplete(inputElement) {
  * @param {HTMLInputElement} inputElement - Input element
  */
 function setupFormulationAutocomplete(inputElement) {
-    if (!inputElement || !Object.keys(window.formulationsData).length) return;
+    if (!inputElement || !window.formulationsData) return;
     
     // Create a simple autocomplete wrapper around the input
     const wrapper = document.createElement('div');
     wrapper.className = 'autocomplete-wrapper';
     inputElement.parentNode.insertBefore(wrapper, inputElement);
     wrapper.appendChild(inputElement);
+    
+    // Add autocomplete="off" to prevent browser autofill
+    inputElement.setAttribute('autocomplete', 'off');
     
     // Create the autocomplete dropdown
     const dropdownList = document.createElement('ul');
@@ -374,26 +1177,47 @@ function setupFormulationAutocomplete(inputElement) {
     
     // Show options based on input
     inputElement.addEventListener('input', () => {
-        const value = inputElement.value.toLowerCase();
+        const value = inputElement.value.toLowerCase().trim();
         dropdownList.innerHTML = '';
         
-        if (value.length < 1) {
+        if (value.length < 2) {
             dropdownList.style.display = 'none';
             return;
         }
         
-        // Flatten the formulations data for searching
-        let allFormulations = [];
-        for (const category in window.formulationsData) {
-            if (Array.isArray(window.formulationsData[category])) {
-                allFormulations = [...allFormulations, ...window.formulationsData[category]];
-            }
+        // Collect all formulation terms
+        const allFormulations = [];
+        for (const [category, terms] of Object.entries(window.formulationsData)) {
+            terms.forEach(term => {
+                if (!allFormulations.includes(term)) {
+                    allFormulations.push(term);
+                }
+            });
         }
         
         // Find matching formulations
         const matches = allFormulations
             .filter(form => form.toLowerCase().includes(value))
-            .slice(0, 10); // Limit to 10 results
+            .sort((a, b) => {
+                // Sort exact matches first, then by string length (shorter first), then alphabetically
+                const aLower = a.toLowerCase();
+                const bLower = b.toLowerCase();
+                
+                // Exact matches first
+                if (aLower === value && bLower !== value) return -1;
+                if (bLower === value && aLower !== value) return 1;
+                
+                // Then matches that start with the search term
+                if (aLower.startsWith(value) && !bLower.startsWith(value)) return -1;
+                if (bLower.startsWith(value) && !aLower.startsWith(value)) return 1;
+                
+                // Then by length (shorter first)
+                if (a.length !== b.length) return a.length - b.length;
+                
+                // Finally alphabetically
+                return a.localeCompare(b);
+            })
+            .slice(0, 15); // Limit to 15 results
         
         if (matches.length > 0) {
             dropdownList.style.display = 'block';
@@ -403,6 +1227,10 @@ function setupFormulationAutocomplete(inputElement) {
                 item.addEventListener('click', () => {
                     inputElement.value = item.textContent;
                     dropdownList.style.display = 'none';
+                    
+                    // Trigger change event
+                    const event = new Event('change');
+                    inputElement.dispatchEvent(event);
                 });
                 dropdownList.appendChild(item);
             });
@@ -452,6 +1280,10 @@ function createMedicationItem(index) {
         </div>
 
         <div class="form-row">
+            <div class="form-column">
+                <label for="med-dose-${index}">Dose:</label>
+                <input type="text" id="med-dose-${index}" class="med-dose" placeholder="e.g., 1-2 tablets daily" autocomplete="off" />
+            </div>
             <div class="form-column full-width">
                 <label for="med-notes-${index}">Special Instructions:</label>
                 <textarea id="med-notes-${index}" class="med-notes" rows="2" placeholder="Any special instructions or notes"></textarea>
@@ -498,6 +1330,13 @@ function createWardStockMedicationItem(index) {
                 <input type="text" id="ws-med-quantity-${index}" class="med-quantity" placeholder="e.g., 28" required />
             </div>
         </div>
+
+        <div class="form-row">
+            <div class="form-column">
+                <label for="ws-med-dose-${index}">Dose:</label>
+                <input type="text" id="ws-med-dose-${index}" class="med-dose" placeholder="e.g., 1-2 tablets daily" autocomplete="off" />
+            </div>
+        </div>
     `;
     
     // Add remove button functionality
@@ -506,6 +1345,71 @@ function createWardStockMedicationItem(index) {
     });
     
     return newItem;
+}
+
+/**
+ * Submit patient medication order
+ */
+/**
+ * Collect medication data from patient order form
+ * @returns {Array} - Array of medication objects
+ */
+function collectMedicationsData() {
+    const medicationItems = document.querySelectorAll('#medications-container .medication-item');
+    const medications = [];
+    
+    medicationItems.forEach(item => {
+        const nameInput = item.querySelector('.med-name');
+        const formInput = item.querySelector('.med-form');
+        const strengthInput = item.querySelector('.med-strength');
+        const quantityInput = item.querySelector('.med-quantity');
+        const doseInput = item.querySelector('.med-dose');
+        const notesInput = item.querySelector('.med-notes');
+        
+        // Only add if we have at least a name and quantity
+        if (nameInput && nameInput.value && quantityInput && quantityInput.value) {
+            medications.push({
+                name: nameInput.value,
+                form: formInput ? formInput.value : '',
+                strength: strengthInput ? strengthInput.value : '',
+                quantity: quantityInput.value,
+                dose: doseInput ? doseInput.value : '',
+                notes: notesInput ? notesInput.value : ''
+            });
+        }
+    });
+    
+    return medications;
+}
+
+/**
+ * Collect medication data from ward stock order form
+ * @returns {Array} - Array of medication objects
+ */
+function collectWardStockMedicationsData() {
+    const medicationItems = document.querySelectorAll('#ward-stock-medications-container .medication-item');
+    const medications = [];
+    
+    medicationItems.forEach(item => {
+        const nameInput = item.querySelector('.med-name');
+        const formInput = item.querySelector('.med-form');
+        const strengthInput = item.querySelector('.med-strength');
+        const quantityInput = item.querySelector('.med-quantity');
+        const doseInput = item.querySelector('.med-dose');
+        
+        // Only add if we have at least a name and quantity
+        if (nameInput && nameInput.value && quantityInput && quantityInput.value) {
+            medications.push({
+                name: nameInput.value,
+                form: formInput ? formInput.value : '',
+                strength: strengthInput ? strengthInput.value : '',
+                quantity: quantityInput.value,
+                dose: doseInput ? doseInput.value : ''
+            });
+        }
+    });
+    
+    return medications;
 }
 
 /**
@@ -546,28 +1450,8 @@ function submitPatientOrder() {
         }
         
         // Collect medications
-        const medications = [];
-        const medicationItems = document.querySelectorAll('#medications-container .medication-item');
-        let hasValidMedications = false;
-        
-        medicationItems.forEach((item) => {
-            const nameInput = item.querySelector('.med-name');
-            const formInput = item.querySelector('.med-form');
-            const strengthInput = item.querySelector('.med-strength');
-            const quantityInput = item.querySelector('.med-quantity');
-            const notesInput = item.querySelector('.med-notes');
-            
-            if (nameInput && nameInput.value && quantityInput && quantityInput.value) {
-                hasValidMedications = true;
-                medications.push({
-                    name: nameInput.value,
-                    form: formInput ? formInput.value : '',
-                    strength: strengthInput ? strengthInput.value : '',
-                    quantity: quantityInput.value,
-                    notes: notesInput ? notesInput.value : ''
-                });
-            }
-        });
+        const medications = collectMedicationsData();
+        const hasValidMedications = medications.length > 0;
         
         if (!hasValidMedications) {
             alert('Please add at least one medication with name and quantity.');
@@ -595,8 +1479,8 @@ function submitPatientOrder() {
         if (OrderManager) {
             const order = OrderManager.createOrder(orderData);
             
-            // Display confirmation and reset form
-            alert(`Order ${order.id} submitted successfully!`);
+            // Display toast notification instead of alert
+            showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
             document.getElementById('patient-med-form').reset();
             
             // Reload recent orders
@@ -638,26 +1522,8 @@ function submitWardStockOrder() {
         }
         
         // Collect medications
-        const medications = [];
-        const medicationItems = document.querySelectorAll('#ws-medications-container .medication-item');
-        let hasValidMedications = false;
-        
-        medicationItems.forEach((item) => {
-            const nameInput = item.querySelector('.med-name');
-            const formInput = item.querySelector('.med-form');
-            const strengthInput = item.querySelector('.med-strength');
-            const quantityInput = item.querySelector('.med-quantity');
-            
-            if (nameInput && nameInput.value && quantityInput && quantityInput.value) {
-                hasValidMedications = true;
-                medications.push({
-                    name: nameInput.value,
-                    form: formInput ? formInput.value : '',
-                    strength: strengthInput ? strengthInput.value : '',
-                    quantity: quantityInput.value
-                });
-            }
-        });
+        const medications = collectWardStockMedicationsData();
+        const hasValidMedications = medications.length > 0;
         
         if (!hasValidMedications) {
             alert('Please add at least one medication with name and quantity.');
@@ -680,8 +1546,8 @@ function submitWardStockOrder() {
         if (OrderManager) {
             const order = OrderManager.createOrder(orderData);
             
-            // Display confirmation and reset form
-            alert(`Order ${order.id} submitted successfully!`);
+            // Display toast notification instead of alert
+            showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
             document.getElementById('ward-stock-med-form').reset();
             
             // Reload recent orders
@@ -720,32 +1586,280 @@ function loadRecentOrders() {
         const orders = OrderManager.getOrders().slice(0, 5);
         
         if (orders.length > 0) {
-            recentOrdersList.innerHTML = '';
+            // Add table header
+            recentOrdersList.innerHTML = `
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Patient</th>
+                            <th>Ward</th>
+                            <th>Medication Details</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body"></tbody>
+                </table>
+            `;
+            
+            const tableBody = document.getElementById('orders-table-body');
             
             orders.forEach(order => {
-                const orderEl = document.createElement('div');
-                orderEl.className = 'order-item';
+                const row = document.createElement('tr');
+                row.className = 'order-row';
                 
-                // Format timestamp
+                // Format timestamp and order ID
                 const orderDate = new Date(order.timestamp);
-                const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
+                const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
-                orderEl.innerHTML = `
-                    <div class="order-header">
-                        <span class="order-id">${order.id}</span>
-                        <span class="order-time">${formattedDate}</span>
-                    </div>
-                    <div class="order-details">
-                        <p>${order.type === 'patient' ? 'Patient: ' + order.patient.name : 'Ward Stock'}</p>
-                        <p>Ward: ${order.ward}</p>
-                        <p>Medications: ${order.medications.length}</p>
-                    </div>
-                    <span class="order-status status-${order.urgency}">${order.urgency.toUpperCase()}</span>
-                    <span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>
+                // Format patient info (if patient order)
+                let patientInfo = '';
+                if (order.type === 'patient' && order.patient) {
+                    const patientDetails = [];
+                    if (order.patient.name) patientDetails.push(order.patient.name);
+                    if (order.patient.hospitalId) patientDetails.push(`(${order.patient.hospitalId})`);
+                    patientInfo = patientDetails.join(' ');
+                } else {
+                    patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
+                }
+                
+                // Format medications - concatenate all medications into a single string
+                const medicationsList = order.medications.map(med => {
+                    const details = [];
+                    if (med.name) details.push(med.name);
+                    if (med.strength) details.push(med.strength);
+                    if (med.form) details.push(med.form);
+                    if (med.quantity) details.push(`× ${med.quantity}`);
+                    return details.join(' ');
+                }).join('; ');
+                
+                row.innerHTML = `
+                    <td class="order-id">
+                        <div>${order.id}</div>
+                        <div class="order-time">${formattedDate}</div>
+                    </td>
+                    <td class="patient-info">${patientInfo}</td>
+                    <td class="ward-info">${getWardName(order.ward)}</td>
+                    <td class="medications-info">${medicationsList}</td>
+                    <td class="status-cell">
+                        <span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>
+                    </td>
                 `;
                 
-                recentOrdersList.appendChild(orderEl);
+                // Make row clickable to show details
+                row.style.cursor = 'pointer';
+                row.dataset.orderId = order.id;
+                row.addEventListener('click', () => showOrderDetails(order));
+                
+                tableBody.appendChild(row);
             });
+            
+            // Add table styling if not already in stylesheet
+            if (!document.getElementById('orders-table-styles')) {
+                const style = document.createElement('style');
+                style.id = 'orders-table-styles';
+                style.textContent = `
+                    .orders-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 10px;
+                        font-size: 0.85em;
+                    }
+                    .orders-table thead th {
+                        text-align: left;
+                        padding: 8px;
+                        background-color: #f5f5f5;
+                    }
+                    .orders-table tbody td {
+                        padding: 8px;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .orders-table tbody tr:hover {
+                        background-color: #f5f5f5;
+                    }
+                    .order-id {
+                        font-weight: bold;
+                    }
+                    .order-time {
+                        font-size: 0.85em;
+                        color: #666;
+                    }
+                    .ward-stock-label {
+                        font-style: italic;
+                        color: #555;
+                    }
+                    .status-cell {
+                        text-align: center;
+                    }
+                    .order-status {
+                        padding: 3px 6px;
+                        border-radius: 3px;
+                        font-size: 0.8em;
+                        font-weight: bold;
+                    }
+                    .status-pending {
+                        background-color: #ffc107;
+                        color: #212121;
+                    }
+                    .status-processing {
+                        background-color: #2196F3;
+                        color: white;
+                    }
+                    .status-completed {
+                        background-color: #4CAF50;
+                        color: white;
+                    }
+                    .status-cancelled {
+                        background-color: #f44336;
+                        color: white;
+                    }
+                    
+                    /* Order Detail Modal Styles */
+                    #order-detail-modal {
+                        display: none; 
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0,0,0,0.5);
+                        z-index: 1000;
+                        overflow-y: auto;
+                    }
+                    .modal-content {
+                        background-color: white;
+                        margin: 10% auto;
+                        padding: 20px;
+                        width: 80%;
+                        max-width: 700px;
+                        border-radius: 5px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    }
+                    .modal-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        border-bottom: 1px solid #eee;
+                        padding-bottom: 10px;
+                        margin-bottom: 15px;
+                    }
+                    .modal-title {
+                        font-size: 1.2em;
+                        font-weight: bold;
+                    }
+                    .modal-close {
+                        cursor: pointer;
+                        font-size: 1.5em;
+                        font-weight: bold;
+                    }
+                    .modal-body {
+                        max-height: 60vh;
+                        overflow-y: auto;
+                    }
+                    .modal-section {
+                        margin-bottom: 20px;
+                    }
+                    .modal-section-title {
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    }
+                    .modal-footer {
+                        border-top: 1px solid #eee;
+                        padding-top: 15px;
+                        margin-top: 15px;
+                        text-align: right;
+                    }
+                    .btn {
+                        padding: 8px 12px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        border: none;
+                        font-weight: bold;
+                        margin-left: 5px;
+                    }
+                    .btn-cancel {
+                        background-color: #f44336;
+                        color: white;
+                    }
+                    .btn-cancel:hover {
+                        background-color: #d32f2f;
+                    }
+                    .btn-edit {
+                        background-color: #2196F3;
+                        color: white;
+                    }
+                    .btn-edit:hover {
+                        background-color: #0b7dda;
+                    }
+                    .btn-save {
+                        background-color: #4CAF50;
+                        color: white;
+                    }
+                    .btn-save:hover {
+                        background-color: #3d8b40;
+                    }
+                    .btn-secondary {
+                        background-color: #6c757d;
+                        color: white;
+                    }
+                    .btn-secondary:hover {
+                        background-color: #5a6268;
+                    }
+                    .btn-danger {
+                        background-color: #dc3545;
+                        color: white;
+                    }
+                    .btn-danger:hover {
+                        background-color: #bd2130;
+                    }
+                    .btn-sm {
+                        padding: 4px 8px;
+                        font-size: 0.8em;
+                    }
+                    .order-metadata-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 15px;
+                    }
+                    .order-metadata-table th,
+                    .order-metadata-table td {
+                        text-align: left;
+                        padding: 5px;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .order-metadata-table th {
+                        font-weight: bold;
+                        width: 35%;
+                    }
+                    .hidden {
+                        display: none;
+                    }
+                    .medication-actions {
+                        white-space: nowrap;
+                    }
+                    .medication-row:hover {
+                        background-color: #f8f9fa;
+                    }
+                    .medication-form-row {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        margin-bottom: 10px;
+                        align-items: center;
+                    }
+                    .medication-form-row input, 
+                    .medication-form-row select {
+                        padding: 6px;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                        flex: 1;
+                    }
+                    .medication-form-row .medication-small-input {
+                        max-width: 80px;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         } else {
             recentOrdersList.innerHTML = '<p class="empty-state">No recent orders to display</p>';
         }
