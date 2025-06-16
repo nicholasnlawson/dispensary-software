@@ -181,8 +181,7 @@ function createOrderDetailModal() {
     if (document.getElementById('order-detail-modal')) {
         return;
     }
-    
-    // Create modal container
+        // Create modal container
     const modalContainer = document.createElement('div');
     modalContainer.id = 'order-detail-modal';
     modalContainer.className = 'hidden';
@@ -205,6 +204,121 @@ function createOrderDetailModal() {
             </div>
         </div>
     `;
+    
+    // Add styling for the modal
+    const modalStyle = document.createElement('style');
+    modalStyle.textContent = `
+        #order-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 25px;
+            width: 85%;
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            position: relative;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 0;
+        }
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #999;
+            transition: color 0.2s ease;
+        }
+        .modal-close:hover {
+            color: #f44336;
+        }
+        .modal-body {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        .modal-footer {
+            border-top: 2px solid #f0f0f0;
+            padding-top: 15px;
+            margin-top: 20px;
+            text-align: right;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        .btn-edit {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn-edit:hover {
+            background-color: #0d8aee;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .btn-save {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-save:hover {
+            background-color: #3d8b40;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .btn-cancel {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-cancel:hover {
+            background-color: #d32f2f;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    `;
+    document.head.appendChild(modalStyle);
     
     document.body.appendChild(modalContainer);
     
@@ -754,6 +868,8 @@ function showToastNotification(message, type = 'info') {
  */
 async function loadCurrentUser() {
     try {
+        console.log('Loading current user information...');
+        
         // Check if API client is available
         if (!window.apiClient) {
             console.error('API client not available for user authentication');
@@ -764,8 +880,11 @@ async function loadCurrentUser() {
         
         try {
             // Get the current user using the API client (which handles auth tokens)
+            console.log('Calling apiClient.getCurrentUser()...');
             const userData = await window.apiClient.getCurrentUser();
+            console.log('getCurrentUser result:', userData);
             
+            // First method: Direct API response format
             if (userData && userData.success && userData.user) {
                 // Store user info in window object for easy access
                 window.currentUser = userData.user;
@@ -786,27 +905,91 @@ async function loadCurrentUser() {
                 if (userInfoElement) {
                     userInfoElement.textContent = `Logged in as: ${name} (${role})`;
                 }
-            } else {
+                
+                console.log(`User set to: ${name} (${role})`);
+                return; // Successfully set user
+            } 
+            
+            // Second method: Direct localStorage userData format
+            else if (userData && (userData.first_name || userData.surname || userData.name || userData.username)) {
+                // Use pre-computed name if available
+                let name = userData.name;
+                
+                // Fallback to constructing from first_name/surname
+                if (!name && (userData.first_name || userData.surname)) {
+                    name = `${userData.first_name || ''} ${userData.surname || ''}`.trim();
+                }
+                
+                // Last resort: username
+                if (!name) {
+                    name = userData.username || 'Unknown User';
+                }
+                
+                // Get role
+                const role = userData.roles && userData.roles.length > 0 
+                    ? userData.roles[0] 
+                    : 'ordering';
+                
+                // Store in window object
+                window.currentUser = userData;
+                
+                // Set requester fields
+                setRequesterFields(name, role);
+                
+                // Display user info in header if applicable
+                const userInfoElement = document.getElementById('user-info');
+                if (userInfoElement) {
+                    userInfoElement.textContent = `Logged in as: ${name} (${role})`;
+                }
+                
+                console.log(`User set to: ${name} (${role})`);
+                return; // Successfully set user
+            }
+            
+            else {
                 console.error('Failed to load user data or missing user info');
-                setRequesterFields('Unknown User', 'ordering'); // Set defaults
+                console.log('userData received:', userData);
             }
         } catch (apiError) {
             console.error('API error loading user data:', apiError);
-            
-            // Try to get user data from localStorage as fallback
-            const storedUserData = localStorage.getItem('userData');
-            if (storedUserData) {
-                try {
-                    const userData = JSON.parse(storedUserData);
-                    setRequesterFields(userData.username || 'Unknown User', userData.roles?.[0] || 'ordering');
-                } catch (parseError) {
-                    console.error('Error parsing stored user data:', parseError);
-                    setRequesterFields('Unknown User', 'ordering'); // Set defaults
+        }
+        
+        // Try to get user data directly from localStorage as fallback
+        console.log('Trying localStorage fallback...');
+        const storedUserDataEncrypted = localStorage.getItem('userData');
+        const token = localStorage.getItem('token');
+        console.log('token exists:', !!token);
+        console.log('userData exists:', !!storedUserDataEncrypted);
+        
+        if (storedUserDataEncrypted) {
+            try {
+                // Attempt to decrypt manually
+                if (window.apiClient && typeof window.apiClient.decryptData === 'function') {
+                    console.log('Manually decrypting userData...');
+                    const decrypted = window.apiClient.decryptData(storedUserDataEncrypted);
+                    if (decrypted) {
+                        const userData = JSON.parse(decrypted);
+                        console.log('Manually decrypted userData:', userData);
+                        
+                        // Use name field if available (added in our updated login function)
+                        const name = userData.name || userData.username || 'Unknown User';
+                        const role = userData.roles?.[0] || 'ordering';
+                        
+                        setRequesterFields(name, role);
+                        console.log(`User set to: ${name} (${role})`);
+                        return;
+                    }
                 }
-            } else {
-                setRequesterFields('Unknown User', 'ordering'); // Set defaults
+            } catch (decryptError) {
+                console.error('Error decrypting stored user data:', decryptError);
             }
         }
+        
+        // Last resort - hardcode user info for testing only
+        const testUserName = 'Test User';
+        const testUserRole = 'ordering';
+        console.warn(`Setting default test user: ${testUserName}`);
+        setRequesterFields(testUserName, testUserRole);
     } catch (error) {
         console.error('Unexpected error in loadCurrentUser:', error);
         setRequesterFields('Unknown User', 'ordering'); // Set defaults
@@ -1817,14 +2000,28 @@ function saveOrderAsDraft(type) {
 }
 
 /**
- * Load and display recent orders
+ * Load and display recent orders from database
  */
-function loadRecentOrders() {
+async function loadRecentOrders() {
     const recentOrdersList = document.getElementById('recent-orders-list');
+    if (!recentOrdersList) return;
     
-    if (recentOrdersList && OrderManager) {
-        // Get recent orders (last 5)
-        const orders = OrderManager.getOrders().slice(0, 5);
+    try {
+        // Show loading indicator
+        recentOrdersList.innerHTML = '<div class="loading-orders">Loading recent orders...</div>';
+        
+        // Check if API client is available
+        if (!window.apiClient) {
+            console.error('API client not available for fetching orders');
+            recentOrdersList.innerHTML = '<div class="error-message">Error: Unable to fetch orders. API client not available.</div>';
+            return;
+        }
+        
+        // Fetch recent orders from server (last 10)
+        const response = await window.apiClient.getRecentOrders({ limit: 10 });
+        console.log('Recent orders response:', response);
+        
+        const orders = response.orders || [];
         
         if (orders.length > 0) {
             // Add table header
@@ -1837,6 +2034,7 @@ function loadRecentOrders() {
                             <th>Ward</th>
                             <th>Medication Details</th>
                             <th>Status</th>
+                            <th>Requester</th>
                         </tr>
                     </thead>
                     <tbody id="orders-table-body"></tbody>
@@ -1856,9 +2054,27 @@ function loadRecentOrders() {
                 // Format patient info (if patient order)
                 let patientInfo = '';
                 if (order.type === 'patient' && order.patient) {
+                    // Patient name may be encrypted, use identifiers as default display
                     const patientDetails = [];
-                    if (order.patient.name) patientDetails.push(order.patient.name);
-                    if (order.patient.hospitalId) patientDetails.push(`(${order.patient.hospitalId})`);
+                    if (order.patient.name && order.patient.name !== 'undefined') {
+                        // Try to decrypt if encrypted
+                        let patientName = order.patient.name;
+                        try {
+                            if (window.apiClient && typeof window.apiClient.decryptData === 'function' && 
+                                patientName.startsWith('U2FsdGVk')) {
+                                const decrypted = window.apiClient.decryptData(patientName);
+                                if (decrypted) patientName = decrypted;
+                            }
+                        } catch (e) {
+                            console.warn('Failed to decrypt patient name:', e);
+                        }
+                        patientDetails.push(patientName);
+                    }
+                    
+                    // Add identifiers if available
+                    const identifier = order.patient.hospitalId || order.patient.nhs || '';
+                    if (identifier) patientDetails.push(`(${identifier})`);
+                    
                     patientInfo = patientDetails.join(' ');
                 } else {
                     patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
@@ -1870,9 +2086,13 @@ function loadRecentOrders() {
                     if (med.name) details.push(med.name);
                     if (med.strength) details.push(med.strength);
                     if (med.form) details.push(med.form);
+                    if (med.dose) details.push(med.dose);
                     if (med.quantity) details.push(`× ${med.quantity}`);
                     return details.join(' ');
-                }).join('; ');
+                }).join('<br>');
+                
+                // Format requester info
+                const requesterInfo = order.requesterName || 'Unknown';
                 
                 row.innerHTML = `
                     <td class="order-id">
@@ -1880,11 +2100,12 @@ function loadRecentOrders() {
                         <div class="order-time">${formattedDate}</div>
                     </td>
                     <td class="patient-info">${patientInfo}</td>
-                    <td class="ward-info">${getWardName(order.ward)}</td>
+                    <td class="ward-info">${getWardName(order.wardId)}</td>
                     <td class="medications-info">${medicationsList}</td>
                     <td class="status-cell">
                         <span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>
                     </td>
+                    <td class="requester-info">${requesterInfo}</td>
                 `;
                 
                 // Make row clickable to show details
@@ -1902,207 +2123,153 @@ function loadRecentOrders() {
                 style.textContent = `
                     .orders-table {
                         width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 10px;
-                        font-size: 0.85em;
+                        border-collapse: separate;
+                        border-spacing: 0;
+                        margin-top: 15px;
+                        font-size: 0.9em;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                        border-radius: 8px;
+                        overflow: hidden;
                     }
                     .orders-table thead th {
                         text-align: left;
-                        padding: 8px;
-                        background-color: #f5f5f5;
+                        padding: 12px 15px;
+                        background-color: #2196F3;
+                        color: white;
+                        font-weight: bold;
+                        letter-spacing: 0.5px;
+                        border-bottom: 2px solid #0d8aee;
+                    }
+                    .orders-table tbody tr {
+                        transition: all 0.2s ease;
+                        border-bottom: 1px solid #f0f0f0;
+                    }
+                    .orders-table tbody tr:last-child {
+                        border-bottom: none;
                     }
                     .orders-table tbody td {
-                        padding: 8px;
+                        padding: 12px 15px;
                         border-bottom: 1px solid #eee;
+                        vertical-align: middle;
+                    }
+                    .orders-table tbody tr:nth-child(even) {
+                        background-color: #f9f9f9;
                     }
                     .orders-table tbody tr:hover {
-                        background-color: #f5f5f5;
+                        background-color: #e3f2fd;
+                        cursor: pointer;
+                        transform: translateY(-1px);
+                        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+                    }
+                    .order-row {
+                        position: relative;
+                    }
+                    .order-row::after {
+                        content: "View Details";
+                        position: absolute;
+                        right: 15px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        background-color: #2196F3;
+                        color: white;
+                        border-radius: 4px;
+                        padding: 4px 8px;
+                        font-size: 0.8em;
+                        opacity: 0;
+                        transition: opacity 0.2s ease;
+                    }
+                    .order-row:hover::after {
+                        opacity: 1;
                     }
                     .order-id {
                         font-weight: bold;
+                        color: #2196F3;
                     }
                     .order-time {
                         font-size: 0.85em;
                         color: #666;
+                        margin-top: 4px;
                     }
                     .ward-stock-label {
                         font-style: italic;
-                        color: #555;
+                        background-color: #e8eaf6;
+                        padding: 3px 8px;
+                        border-radius: 4px;
+                        color: #3f51b5;
+                        display: inline-block;
+                    }
+                    .loading-orders, .error-message {
+                        padding: 25px;
+                        text-align: center;
+                        color: #666;
+                        background-color: #f9f9f9;
+                        border-radius: 8px;
+                        margin: 15px 0;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    }
+                    .error-message {
+                        color: #d32f2f;
+                        border-left: 4px solid #f44336;
+                    }
+                    .medications-info {
+                        max-width: 300px;
+                        line-height: 1.5;
                     }
                     .status-cell {
                         text-align: center;
                     }
                     .order-status {
-                        padding: 3px 6px;
-                        border-radius: 3px;
-                        font-size: 0.8em;
+                        display: inline-block;
+                        padding: 5px 8px;
+                        border-radius: 4px;
                         font-weight: bold;
+                        font-size: 0.8em;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
                     }
                     .status-pending {
-                        background-color: #ffc107;
-                        color: #212121;
+                        background-color: #fff9c4;
+                        color: #ff8f00;
                     }
                     .status-processing {
-                        background-color: #2196F3;
-                        color: white;
+                        background-color: #bbdefb;
+                        color: #1565c0;
                     }
                     .status-completed {
-                        background-color: #4CAF50;
-                        color: white;
+                        background-color: #c8e6c9;
+                        color: #2e7d32;
                     }
                     .status-cancelled {
-                        background-color: #f44336;
-                        color: white;
-                    }
-                    
-                    /* Order Detail Modal Styles */
-                    #order-detail-modal {
-                        display: none; 
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background-color: rgba(0,0,0,0.5);
-                        z-index: 1000;
-                        overflow-y: auto;
-                    }
-                    .modal-content {
-                        background-color: white;
-                        margin: 10% auto;
-                        padding: 20px;
-                        width: 80%;
-                        max-width: 700px;
-                        border-radius: 5px;
-                        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                    }
-                    .modal-header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        border-bottom: 1px solid #eee;
-                        padding-bottom: 10px;
-                        margin-bottom: 15px;
-                    }
-                    .modal-title {
-                        font-size: 1.2em;
-                        font-weight: bold;
-                    }
-                    .modal-close {
-                        cursor: pointer;
-                        font-size: 1.5em;
-                        font-weight: bold;
-                    }
-                    .modal-body {
-                        max-height: 60vh;
-                        overflow-y: auto;
-                    }
-                    .modal-section {
-                        margin-bottom: 20px;
-                    }
-                    .modal-section-title {
-                        font-weight: bold;
-                        margin-bottom: 5px;
-                    }
-                    .modal-footer {
-                        border-top: 1px solid #eee;
-                        padding-top: 15px;
-                        margin-top: 15px;
-                        text-align: right;
-                    }
-                    .btn {
-                        padding: 8px 12px;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        border: none;
-                        font-weight: bold;
-                        margin-left: 5px;
-                    }
-                    .btn-cancel {
-                        background-color: #f44336;
-                        color: white;
-                    }
-                    .btn-cancel:hover {
-                        background-color: #d32f2f;
-                    }
-                    .btn-edit {
-                        background-color: #2196F3;
-                        color: white;
-                    }
-                    .btn-edit:hover {
-                        background-color: #0b7dda;
-                    }
-                    .btn-save {
-                        background-color: #4CAF50;
-                        color: white;
-                    }
-                    .btn-save:hover {
-                        background-color: #3d8b40;
-                    }
-                    .btn-secondary {
-                        background-color: #6c757d;
-                        color: white;
-                    }
-                    .btn-secondary:hover {
-                        background-color: #5a6268;
-                    }
-                    .btn-danger {
-                        background-color: #dc3545;
-                        color: white;
-                    }
-                    .btn-danger:hover {
-                        background-color: #bd2130;
-                    }
-                    .btn-sm {
-                        padding: 4px 8px;
-                        font-size: 0.8em;
-                    }
-                    .order-metadata-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 15px;
-                    }
-                    .order-metadata-table th,
-                    .order-metadata-table td {
-                        text-align: left;
-                        padding: 5px;
-                        border-bottom: 1px solid #eee;
-                    }
-                    .order-metadata-table th {
-                        font-weight: bold;
-                        width: 35%;
-                    }
-                    .hidden {
-                        display: none;
-                    }
-                    .medication-actions {
-                        white-space: nowrap;
-                    }
-                    .medication-row:hover {
-                        background-color: #f8f9fa;
-                    }
-                    .medication-form-row {
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 10px;
-                        margin-bottom: 10px;
-                        align-items: center;
-                    }
-                    .medication-form-row input, 
-                    .medication-form-row select {
-                        padding: 6px;
-                        border: 1px solid #ccc;
-                        border-radius: 4px;
-                        flex: 1;
-                    }
-                    .medication-form-row .medication-small-input {
-                        max-width: 80px;
+                        background-color: #ffcdd2;
+                        color: #c62828;
                     }
                 `;
                 document.head.appendChild(style);
             }
         } else {
-            recentOrdersList.innerHTML = '<p class="empty-state">No recent orders to display</p>';
-        }
+            recentOrdersList.innerHTML = '<div class="no-orders">No recent orders found in database. Create a new order to see it here.</div>';
+            
+            // Add some styling
+            if (!document.getElementById('no-orders-styles')) {
+                const style = document.createElement('style');
+                style.id = 'no-orders-styles';
+                style.textContent = `
+                    .no-orders {
+                        padding: 30px;
+                        text-align: center;
+                        color: #666;
+                        background-color: #f5f5f5;
+                        border-radius: 8px;
+                        margin: 20px 0;
+                        font-size: 1.1em;
+                        border: 1px dashed #ddd;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }  
+    } catch (error) {
+        console.error('Error loading recent orders:', error);
+        recentOrdersList.innerHTML = `<div class="error-message">Error loading orders: ${error.message}</div>`;
     }
 }

@@ -1,4 +1,12 @@
 {
+  "name": "pharmacy-labels",
+  "version": "1.0.0",
+  "description": "UK Pharmacy Dispensing and Remote Ordering System",
+  "main": "start-with-db.js",
+  "scripts": {
+    "start": "node start-with-db.js",
+    "test": "mocha server/tests/**/*.test.js"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "crypto-js": "^4.2.0",

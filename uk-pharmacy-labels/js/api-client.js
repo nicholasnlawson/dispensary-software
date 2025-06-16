@@ -118,12 +118,27 @@ class ApiClient {
       this.token = data.token;
       localStorage.setItem('token', data.token);
       
-      // Store encrypted user data
+      // Store encrypted user data with full name information
       const encryptedUserData = this.encryptData(JSON.stringify({
         id: data.user.id,
         username: data.user.username,
+        first_name: data.user.first_name || '',
+        surname: data.user.surname || '',
+        // Store a pre-computed display name for convenience
+        name: data.user.first_name && data.user.surname
+            ? `${data.user.first_name} ${data.user.surname}`
+            : data.user.username,
         roles: data.user.roles
       }));
+      
+      console.log('Storing user data:', {
+        id: data.user.id,
+        username: data.user.username,
+        name: data.user.first_name && data.user.surname
+            ? `${data.user.first_name} ${data.user.surname}`
+            : data.user.username,
+        roles: data.user.roles
+      });
       
       localStorage.setItem('userData', encryptedUserData);
     }
@@ -233,13 +248,42 @@ class ApiClient {
    */
   getCurrentUser() {
     try {
-      const encryptedData = localStorage.getItem('userData');
-      if (!encryptedData) return null;
+      // First check for token - no valid user without token
+      if (!this.token) {
+        console.log('No authentication token found');
+        return null;
+      }
       
-      const decryptedData = this.decryptData(encryptedData);
-      return JSON.parse(decryptedData);
+      const encryptedData = localStorage.getItem('userData');
+      if (!encryptedData) {
+        console.log('No user data found in localStorage');
+        return null;
+      }
+      
+      // Attempt to decrypt the data
+      let decryptedData;
+      try {
+        decryptedData = this.decryptData(encryptedData);
+        if (!decryptedData) {
+          console.error('Decryption returned null value');
+          return null;
+        }
+      } catch (decryptError) {
+        console.error('Failed to decrypt user data:', decryptError);
+        return null;
+      }
+      
+      // Parse the JSON data
+      try {
+        const userData = JSON.parse(decryptedData);
+        console.log('Retrieved user data:', userData);
+        return userData;
+      } catch (parseError) {
+        console.error('Failed to parse user data JSON:', parseError);
+        return null;
+      }
     } catch (error) {
-      console.error('Error getting current user:', error);
+      console.error('Unexpected error in getCurrentUser:', error);
       return null;
     }
   }
@@ -421,18 +465,30 @@ class ApiClient {
     console.log('Sending order to server:', orderData);
     
     try {
-      // Ensure requester information is included
-      if (!orderData.requester) {
+      // Get user data from hidden form fields - these are populated at page load
+      // This is more reliable than localStorage which may have encryption issues
+      const patientRequesterName = document.getElementById('requester-name')?.value;
+      const patientRequesterRole = document.getElementById('requester-role')?.value;
+      const wsRequesterName = document.getElementById('ws-requester-name')?.value;
+      const wsRequesterRole = document.getElementById('ws-requester-role')?.value;
+      
+      // Use values from form if available
+      const formRequesterName = patientRequesterName || wsRequesterName || null;
+      const formRequesterRole = patientRequesterRole || wsRequesterRole || 'ordering';
+      
+      // Ensure requester information is included - prioritize existing data, then form data, then localStorage
+      if (!orderData.requester || !orderData.requester.name || orderData.requester.name === 'Unknown User') {
+        // Try to get user from localStorage as backup
         const currentUser = this.getCurrentUser();
-        if (currentUser) {
-          orderData.requester = {
-            id: currentUser.id,
-            name: currentUser.name || currentUser.username,
-            role: currentUser.roles?.[0] || 'ordering'
-          };
-        } else {
-          console.warn('No user data available for requester');
-        }
+        
+        // Create requester object with best available data
+        orderData.requester = {
+          id: (currentUser?.id || 0),
+          name: formRequesterName || (currentUser?.name || currentUser?.username || 'Unknown User'),
+          role: formRequesterRole || (currentUser?.roles?.[0] || 'ordering')
+        };
+        
+        console.log('Updated requester info:', orderData.requester);
       }
       
       const result = await this.post('/orders', orderData);
@@ -440,6 +496,36 @@ class ApiClient {
       return result;
     } catch (error) {
       console.error('Error creating order:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get recent orders
+   * @param {Object} options - Query options
+   * @param {number} options.limit - Maximum number of orders to return
+   * @param {string} options.status - Filter by order status
+   * @param {string} options.type - Filter by order type ('patient' or 'ward-stock')
+   * @returns {Promise} - Promise resolving to array of orders
+   */
+  async getRecentOrders(options = {}) {
+    try {
+      // Build query string from options
+      const queryParams = [];
+      if (options.limit) queryParams.push(`limit=${options.limit}`);
+      if (options.status) queryParams.push(`status=${options.status}`);
+      if (options.type) queryParams.push(`type=${options.type}`);
+      
+      const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+      const endpoint = `/orders${queryString}`;
+      
+      console.log(`Fetching recent orders from ${endpoint}`);
+      const result = await this.request(endpoint);
+      
+      console.log('Server returned orders:', result);
+      return result;
+    } catch (error) {
+      console.error('Error fetching recent orders:', error);
       throw error;
     }
   }
