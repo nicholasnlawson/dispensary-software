@@ -376,6 +376,95 @@ const MedicationManager = {
     },
     
     /**
+     * Check for recent medication orders for the current patient and medication
+     * @returns {Promise<void>}
+     */
+    async checkRecentMedications() {
+        const medicationName = document.getElementById('med-name').value.trim();
+        if (!medicationName) return;
+        
+        // Get patient details
+        const patientName = document.getElementById('patient-name')?.value.trim();
+        const hospitalNumber = document.getElementById('patient-hospital-id')?.value.trim();
+        const nhsNumber = document.getElementById('patient-nhs')?.value.trim();
+        
+        // Don't check if we don't have patient identifiers
+        if (!patientName && !hospitalNumber && !nhsNumber) {
+            this.clearRecentMedicationWarning();
+            return;
+        }
+        
+        try {
+            // Call the API to check for recent orders
+            const result = await window.apiClient.checkRecentMedications(
+                { name: patientName, hospitalId: hospitalNumber, nhs: nhsNumber },
+                [{ name: medicationName }]
+            );
+            
+            // Display warning if recent orders found
+            if (result && result.recentOrders && result.recentOrders.length > 0) {
+                this.showRecentMedicationWarning(result.recentOrders);
+            } else {
+                this.clearRecentMedicationWarning();
+            }
+        } catch (error) {
+            console.error('Error checking recent medications:', error);
+            this.clearRecentMedicationWarning();
+        }
+    },
+    
+    /**
+     * Show warning for recent medication orders
+     * @param {Array} recentOrders - List of recent orders
+     */
+    showRecentMedicationWarning(recentOrders) {
+        // Check if warning container already exists
+        let warningContainer = document.getElementById('recent-med-warning');
+        
+        // Create warning container if it doesn't exist
+        if (!warningContainer) {
+            warningContainer = document.createElement('div');
+            warningContainer.id = 'recent-med-warning';
+            warningContainer.className = 'warning-container alert alert-warning';
+            
+            // Insert after the medication name input
+            const medicationInput = document.getElementById('med-name');
+            if (medicationInput && medicationInput.parentNode) {
+                medicationInput.parentNode.insertBefore(
+                    warningContainer, 
+                    medicationInput.nextSibling
+                );
+            }
+        }
+        
+        // Format warning message
+        const order = recentOrders[0];
+        const orderDate = new Date(order.timestamp);
+        const formattedDate = orderDate.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+        
+        // Create warning content
+        warningContainer.innerHTML = `
+            <strong>⚠️ WARNING:</strong> This medication was ordered for this patient on 
+            ${formattedDate} (${recentOrders.length > 1 ? recentOrders.length + ' orders' : '1 order'} 
+            in the last 14 days).
+        `;
+    },
+    
+    /**
+     * Clear recent medication warning
+     */
+    clearRecentMedicationWarning() {
+        const warningContainer = document.getElementById('recent-med-warning');
+        if (warningContainer) {
+            warningContainer.remove();
+        }
+    },
+    
+    /**
      * Update warning labels based on selected medication and formulation
      */
     updateWarningLabels() {
@@ -392,6 +481,9 @@ const MedicationManager = {
                 additionalInfoField.value = '';
             }
         }
+        
+        // Check for recent medication orders for this patient/medication
+        this.checkRecentMedications();
         
         // If we don't have both medication and formulation, just clear warnings and return
         if (!medicationName || !formulation) {

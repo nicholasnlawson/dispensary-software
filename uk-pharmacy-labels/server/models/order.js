@@ -39,15 +39,18 @@ const OrderModel = {
   // Create a new order
   createOrder(orderData) {
     const { 
-      id, type, wardId, requester, notes,
+      id: providedId, type, wardId, requester, notes,
       // Also check for flattened requester properties
       requesterName: flatRequesterName,
       requesterRole: flatRequesterRole
     } = orderData;
 
     return new Promise((resolve, reject) => {
-      // Add debugging
-      console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
+      // BUGFIX: Always generate a valid UUID if no ID is provided
+      const id = providedId || `ORD${Date.now().toString().substring(6)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      
+      // Add debugging with the ID we'll actually use
+      console.log(`Creating order with ID: ${id} and data:`, JSON.stringify(orderData, null, 2));
       
       const timestamp = orderData.timestamp || new Date().toISOString();
       const status = orderData.status || 'pending';
@@ -92,16 +95,34 @@ const OrderModel = {
           id, type, wardId, timestamp, status,
           requesterName, requesterRole, encryptedNotes || null
         ],
-        (err) => {
+        function(err) { // IMPORTANT: Use function() instead of arrow to access this.lastID
           if (err) {
             console.error('Error inserting order:', err);
             return reject(err);
           }
           
+          // Log the operation results
+          console.log(`✅ ORDER INSERT SUCCESS - ID: ${id}, LastID: ${this.lastID}, Changes: ${this.changes}`);
+          console.log(`Database reports: ${this.changes} row(s) affected`);
+
+          // Verify the order exists immediately after insert
+          db.get('SELECT id, type FROM orders WHERE id = ?', [id], (verifyErr, row) => {
+            if (verifyErr) {
+              console.error('Error verifying order insertion:', verifyErr);
+            } else if (!row) {
+              console.error('⚠️ CRITICAL: Order not found in database immediately after insert!');
+            } else {
+              console.log(`✅ Verified order exists in DB: ${JSON.stringify(row)}`);
+            }
+          });
+          
           // If patient order, insert patient details
           if (type === 'patient' && orderData.patient) {
             // Encrypt sensitive patient information
             const patientData = { ...orderData.patient };
+            
+            // Log patient data before processing to verify input
+            console.log('Patient data received:', JSON.stringify(patientData, null, 2));
             
             // Encrypt patient name and date of birth if encryption is configured
             if (encryption.isEncryptionConfigured()) {
@@ -110,6 +131,18 @@ const OrderModel = {
                 patientData.dob = encryption.encrypt(patientData.dob);
               }
             }
+            
+            // BUGFIX: Handle various possible field names for hospital ID and NHS number
+            const nhsNumber = patientData.nhs || patientData.nhsNumber || patientData.nhs_number || null;
+            const hospitalId = patientData.hospitalId || patientData.hospitalNumber || patientData.hospital_id || null;
+            
+            // Log the values we're about to store
+            console.log('Storing patient identifiers:', {
+              id,
+              patient_name: patientData.name ? '(encrypted)' : null,
+              patient_nhs: nhsNumber,
+              patient_hospital_id: hospitalId
+            });
             
             db.run(
               `INSERT INTO order_patients (
@@ -120,14 +153,29 @@ const OrderModel = {
                 id,
                 patientData.name,
                 patientData.dob || null,
-                orderData.patient.nhs || null,
-                orderData.patient.hospitalId
+                nhsNumber,
+                hospitalId
               ],
-              (err) => {
+              function(err) {
                 if (err) {
                   console.error('Error inserting patient details:', err);
+                  console.error('Full error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
                   return reject(err);
                 }
+                
+                // Log patient insert success
+                console.log(`✅ PATIENT INSERT SUCCESS - Order ID: ${id}, Changes: ${this.changes}`);
+                
+                // Verify patient was actually added to the database
+                db.get('SELECT order_id, patient_hospital_id FROM order_patients WHERE order_id = ?', [id], (verifyErr, row) => {
+                  if (verifyErr) {
+                    console.error('Error verifying patient insertion:', verifyErr);
+                  } else if (!row) {
+                    console.error(`⚠️ CRITICAL: Patient record not found for order ${id} immediately after insert!`);
+                  } else {
+                    console.log(`✅ Verified patient exists in DB: ${JSON.stringify(row)}`);
+                  }
+                });
                 
                 // Continue with medications after patient details inserted
                 insertMedications();
@@ -142,8 +190,13 @@ const OrderModel = {
           function insertMedications() {
             // If no medications, return success
             if (!orderData.medications || orderData.medications.length === 0) {
+              console.log(`Order ${id} created successfully with no medications`);
               return resolve({ success: true, id });
             }
+            
+            // Log medications we're about to insert
+            console.log(`Inserting ${orderData.medications.length} medications for order ${id}:`, 
+              JSON.stringify(orderData.medications, null, 2));
             
             // Create a counter to track completed medication inserts
             let completed = 0;
@@ -164,15 +217,36 @@ const OrderModel = {
                   med.dose || null,
                   med.notes || null
                 ],
-                (err) => {
-                  if (err && !hasError) {
+                function(err) {
+                  const medName = med.name;
+                  
+                  if (err) {
                     hasError = true;
-                    console.error('Error inserting medication:', err);
+                    console.error(`Error inserting medication "${medName}":`, err);
+                    console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
                     return reject(err);
                   }
                   
+                  // Log success
+                  console.log(`✅ MEDICATION INSERT SUCCESS - Order ID: ${id}, Med: "${medName}", Changes: ${this.changes}`);
+                  
+                  // Verify medication was actually added
+                  db.get('SELECT order_id, name FROM order_medications WHERE order_id = ? AND name = ?', 
+                    [id, med.name], (verifyErr, row) => {
+                    if (verifyErr) {
+                      console.error(`Error verifying medication "${medName}" insertion:`, verifyErr);
+                    } else if (!row) {
+                      console.error(`⚠️ CRITICAL: Medication "${medName}" not found for order ${id} after insert!`);
+                    } else {
+                      console.log(`✅ Verified medication "${medName}" exists in DB: ${JSON.stringify(row)}`);
+                    }
+                  });
+                  
                   completed++;
+                  console.log(`Medication progress: ${completed}/${orderData.medications.length}`);
+                  
                   if (completed === orderData.medications.length && !hasError) {
+                    console.log(`✅ All ${completed} medications inserted successfully. Order ID: ${id}`);
                     resolve({ success: true, id });
                   }
                 }
@@ -1307,7 +1381,308 @@ const OrderModel = {
         reject(error);
       }
     });
-  }
+  },
+  /**
+   * Get the complete history for an order
+   * @param {string} orderId - Order ID
+   * @param {Object} options - Query options
+   * @returns {Promise} - Promise resolving to order history
+   */
+  getOrderHistory(orderId, options = {}) {
+    return new Promise((resolve, reject) => {
+      if (!orderId) {
+        return reject(new Error('Order ID is required'));
+      }
+      
+      const { limit = 100, offset = 0, sortOrder = 'DESC' } = options;
+      const allowedSortOrders = ['ASC', 'DESC'];
+      
+      if (!allowedSortOrders.includes(sortOrder.toUpperCase())) {
+        return reject(new Error('Invalid sort order. Must be ASC or DESC'));
+      }
+      
+      const sql = `
+        SELECT 
+          id, order_id, action, timestamp, user_id, user_name,
+          details, metadata
+        FROM order_history
+        WHERE order_id = ?
+        ORDER BY timestamp ${sortOrder.toUpperCase()}
+        LIMIT ? OFFSET ?
+      `;
+      
+      db.all(sql, [orderId, limit, offset], (err, rows) => {
+        if (err) {
+          console.error(`Error retrieving order history for ${orderId}:`, err);
+          return reject(err);
+        }
+        
+        // Format the history entries
+        const history = rows.map(row => {
+          // Try to parse the details and metadata if they are JSON strings
+          let details = row.details;
+          try {
+            if (typeof details === 'string' && details.trim()) {
+              details = JSON.parse(details);
+            }
+          } catch (e) {
+            // Keep as-is if not valid JSON
+          }
+          
+          let metadata = row.metadata;
+          try {
+            if (typeof metadata === 'string' && metadata.trim()) {
+              metadata = JSON.parse(metadata);
+            }
+          } catch (e) {
+            // Keep as-is if not valid JSON
+          }
+          
+          return {
+            id: row.id,
+            orderId: row.order_id,
+            action: row.action,
+            timestamp: row.timestamp,
+            userId: row.user_id,
+            userName: row.user_name,
+            details,
+            metadata
+          };
+        });
+        
+        resolve(history);
+      });
+    });
+  },
+
+  /**
+   * Check for recent medication orders for a patient within the last 14 days
+   * @param {Object} patientData - Patient identification data
+   * @param {Array} medications - List of medications to check
+   * @returns {Promise} - Promise resolving to array of recent orders
+   */
+  checkRecentMedicationOrders(patientData, medications) {
+    return new Promise((resolve, reject) => {
+      // Validate inputs
+      if (!patientData || !medications || !Array.isArray(medications)) {
+        return resolve([]);
+      }
+
+      // Extract patient identifiers
+      const { patientName, nhsNumber, hospitalNumber } = patientData;
+      
+      // We need at least one identifier to find the patient
+      // For reliable results, prioritize hospital/NHS numbers over names (which may be encrypted)
+      if (!hospitalNumber && !nhsNumber && !patientName) {
+        logger.info('Cannot check recent medications: No patient identifiers provided');
+        return resolve([]);
+      }
+
+      // Calculate date 14 days ago
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      const fourteenDaysAgoStr = fourteenDaysAgo.toISOString();
+
+      // Build medication names list for the query
+      const medicationNames = medications.map(med => med.name?.toLowerCase()).filter(name => name);
+      if (!medicationNames.length) {
+        return resolve([]);
+      }
+
+      // Prepare query parameters
+      const queryParams = [fourteenDaysAgoStr];
+      
+      // Build patient matching condition prioritizing hospital/NHS numbers
+      // NOTE: patient_name will be encrypted if encryption is enabled, so we can't reliably use it
+      // for SQL matching. Instead, rely on hospital_id and nhs number which are not encrypted.
+      const patientConditions = [];
+      
+      // LOGGING: All patient info we have
+      logger.info(`DEBUG - Patient data received: ${JSON.stringify(patientData)}`);
+
+      // Prioritize hospital number (most reliable, unencrypted identifier)
+      if (hospitalNumber) {
+        patientConditions.push('LOWER(p.patient_hospital_id) = LOWER(?)');
+        queryParams.push(hospitalNumber);
+        logger.info(`DEBUG - Using hospital number for matching: LOWER(p.patient_hospital_id) = LOWER('${hospitalNumber}')`);
+      }
+      
+      // Next priority: NHS number (also unencrypted)
+      if (nhsNumber) {
+        patientConditions.push('p.patient_nhs = ?');
+        queryParams.push(nhsNumber);
+        logger.info(`DEBUG - Using NHS number for matching: p.patient_nhs = '${nhsNumber}'`);
+      }
+      
+      // Only use patient name if we have no other identifiers AND encryption isn't configured
+      // This prevents trying to match plaintext against encrypted values
+      if (!hospitalNumber && !nhsNumber && patientName && !encryption.isEncryptionConfigured()) {
+        patientConditions.push('LOWER(p.patient_name) LIKE LOWER(?)');
+        queryParams.push(`%${patientName}%`);
+      }
+      
+      // If no usable patient matching conditions, return empty results
+      if (patientConditions.length === 0) {
+        logger.info('Cannot build patient condition: No usable unencrypted patient identifiers');
+        return resolve([]);
+      }
+      
+      const patientCondition = `AND (${patientConditions.join(' OR ')})`;
+
+      // Transform medication names for more flexible matching
+      const transformedMedNames = medicationNames.map(name => {
+        // Tokenize the medication name to make matching more flexible
+        // Example: "Aspirin 75mg tablets" -> ["aspirin", "75mg", "tablets"]
+        const tokens = name.toLowerCase().split(/\s+/);
+        
+        // Take the first token as the base name and filter out common suffixes
+        let baseName = tokens[0];
+        // Strip any non-alphanumeric characters for more flexible matching
+        baseName = baseName.replace(/[^a-z0-9]/g, '');
+        
+        // Log the transformation for debugging
+        logger.info(`Transformed medication "${name}" to base name "${baseName}"`);
+        
+        return baseName;
+      });
+      
+      // Build medication conditions with very flexible LIKE operators
+      const medConditions = transformedMedNames.map(() => 'LOWER(m.name) LIKE ?');
+      
+      // Use more permissive wildcards for better matching possibilities
+      const medParams = transformedMedNames.map(name => `%${name}%`);
+      
+      // Log all medication patterns we're looking for
+      logger.info(`Looking for medication patterns: ${JSON.stringify(medParams)}`);
+      
+      queryParams.push(...medParams);
+      
+      // Add query to search for exact medication names as entered
+      medicationNames.forEach(fullName => {
+        medConditions.push('LOWER(m.name) LIKE ?');
+        queryParams.push(`%${fullName.toLowerCase()}%`);
+        logger.info(`Also checking for exact match: %${fullName.toLowerCase()}%`);
+      });
+      
+      const medicationCondition = `AND (${medConditions.join(' OR ')})`;
+      
+      // Build the SQL query with proper joins
+      const sql = `
+        SELECT o.id, o.type, o.timestamp, o.status, o.requester_name, o.ward_id,
+               m.name as medication_name, m.dose, m.quantity, m.form as formulation,
+               p.patient_name, p.patient_hospital_id, p.patient_nhs
+        FROM orders o
+        JOIN order_patients p ON o.id = p.order_id
+        JOIN order_medications m ON o.id = m.order_id
+        WHERE o.timestamp >= ?
+          ${patientCondition}
+          ${medicationCondition}
+        ORDER BY o.timestamp DESC
+      `;
+
+      // Log the query for debugging
+      logger.info('Recent medication check SQL:', sql);
+      logger.info('Parameters:', JSON.stringify(queryParams));
+
+      // Debug query check - Run direct query to see what's in the database for this patient
+      logger.info('DEBUGGING - Running direct database query to check what orders exist for this patient');
+      db.all(
+        `SELECT o.id, o.timestamp, p.patient_name, p.patient_hospital_id, p.patient_nhs, m.name as medication_name 
+         FROM orders o 
+         JOIN order_patients p ON o.id = p.order_id 
+         JOIN order_medications m ON o.id = m.order_id 
+         WHERE LOWER(p.patient_hospital_id) LIKE ? 
+         ORDER BY o.timestamp DESC LIMIT 10`,
+        [`%${hospitalNumber}%`],
+        (debugErr, debugRows) => {
+          if (debugErr) {
+            logger.error('Debug query error:', debugErr);
+          } else {
+            logger.info(`DEBUGGING - Found ${debugRows.length} orders for hospital ID like '${hospitalNumber}'`);
+            debugRows.forEach((row, idx) => {
+              let patientNameDisplay = row.patient_name;
+              // Try to decrypt if needed
+              if (encryption.isEncryptionConfigured() && patientNameDisplay) {
+                try {
+                  patientNameDisplay = encryption.decrypt(patientNameDisplay);
+                } catch (e) {
+                  patientNameDisplay = '(encrypted)';
+                }
+              }
+              logger.info(`DEBUGGING - Order ${idx+1}: ID=${row.id}, Date=${row.timestamp}, Patient=${patientNameDisplay} (${row.patient_hospital_id}/${row.patient_nhs}), Med=${row.medication_name}`);
+            });
+          }
+        }
+      );
+
+      // Execute the actual query for recent medications
+      logger.info('Executing final query with all conditions');
+      db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+          console.error('Error checking recent medication orders:', err);
+          return reject(err);
+        }
+
+        logger.info(`DEBUGGING - Query returned ${rows.length} rows`);
+        if (rows.length === 0) {
+          logger.info('DEBUGGING - No matches found with query. Possible issues:');
+          logger.info('DEBUGGING - 1. Patient identifiers do not match exactly what is in database');
+          logger.info('DEBUGGING - 2. Medication name format differs from what is in database');
+          logger.info('DEBUGGING - 3. Orders might be older than 14 days');
+        } else {
+          logger.info('DEBUGGING - Raw matches from database:');
+          rows.forEach((row, idx) => {
+            logger.info(`DEBUGGING - Match ${idx+1}: ID=${row.id}, Date=${row.timestamp}, Medication=${row.medication_name}`);
+          });
+        }
+
+        // Process results, decrypt patient names if available
+        const recentOrders = rows.map(row => {
+          // Get the patient name - it might be encrypted
+          let displayPatientName = "Patient";
+          
+          // Try to decrypt patient name from the row if encryption is enabled
+          if (row.patient_name && encryption.isEncryptionConfigured()) {
+            try {
+              displayPatientName = encryption.decrypt(row.patient_name);
+            } catch (decryptErr) {
+              // If decryption fails, just use identifiers
+              logger.warn(`Could not decrypt patient name for order ${row.id}`, decryptErr);
+              displayPatientName = row.patient_nhs || row.patient_hospital_id || "Patient";
+            }
+          } else if (row.patient_name) {
+            // If encryption is not enabled, use patient name as-is
+            displayPatientName = row.patient_name;
+          }
+
+          return {
+            orderId: row.id,
+            orderType: row.type,
+            timestamp: row.timestamp,
+            daysAgo: Math.floor((new Date() - new Date(row.timestamp)) / (1000 * 60 * 60 * 24)),
+            status: row.status,
+            requesterName: row.requester_name,
+            wardId: row.ward_id,
+            patientName: displayPatientName,
+            patientHospitalId: row.patient_hospital_id,
+            patientNHS: row.patient_nhs,
+            medication: {
+              name: row.medication_name,
+              dose: row.dose,
+              quantity: row.quantity,
+              formulation: row.formulation
+            }
+          };
+        });
+
+        logger.info(`Found ${recentOrders.length} recent medication orders`);
+        if (recentOrders.length > 0) {
+          logger.info('Sample recent order:', JSON.stringify(recentOrders[0]));
+        }
+        resolve(recentOrders);
+      });
+    });
+  },
 };
 
 module.exports = OrderModel;

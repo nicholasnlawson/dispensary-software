@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha tests/**/*.test.js --timeout 5000",
+    "test:recent-orders": "mocha tests/recent-orders.test.js --timeout 5000",
     "init-db": "node db/init-db.js",
     "migrate": "node db/run-migration.js",
     "test-encryption": "node scripts/test-patient-encryption.js",
@@ -27,6 +28,9 @@
     "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "chai": "^5.2.0",
+    "mocha": "^11.6.0",
+    "nodemon": "^3.1.10",
+    "sinon": "^21.0.0"
   }
 }

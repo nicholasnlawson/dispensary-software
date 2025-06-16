@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Duplicate Alert</title>
+</head>
+<body>
+    <h1>Test Duplicate Medication Alert</h1>
+    
+    <div>
+        <h2>Test with existing patient data:</h2>
+        <p>NHS: NHS12345, Hospital: H12345, Medication: Paracetamol</p>
+        <button onclick="testDuplicateAlert()">Test Duplicate Alert</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        async function testDuplicateAlert() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // First login to get token
+                const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'change_me_immediately'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('Login response:', loginData);
+                
+                if (!loginData.token) {
+                    throw new Error('Failed to get authentication token');
+                }
+                
+                // Test recent check with existing patient data
+                const recentCheckResponse = await fetch('http://localhost:3000/api/orders/recent-check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${loginData.token}`
+                    },
+                    body: JSON.stringify({
+                        patientData: {
+                            patientName: "Test Patient",
+                            nhsNumber: "NHS12345",
+                            hospitalNumber: "H12345"
+                        },
+                        medications: [
+                            { name: "Paracetamol", quantity: "28" }
+                        ]
+                    })
+                });
+                
+                const recentCheckData = await recentCheckResponse.json();
+                console.log('Recent check response:', recentCheckData);
+                
+                if (recentCheckData.recentOrders && recentCheckData.recentOrders.length > 0) {
+                    resultDiv.innerHTML = `
+                        <h3>✅ SUCCESS! Found ${recentCheckData.recentOrders.length} recent order(s)</h3>
+                        <p>The duplicate alert should trigger with this data.</p>
+                        <pre>${JSON.stringify(recentCheckData, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3>❌ No recent orders found</h3>
+                        <p>Response: ${JSON.stringify(recentCheckData, null, 2)}</p>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Error occurred</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

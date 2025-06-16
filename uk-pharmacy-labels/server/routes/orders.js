@@ -13,6 +13,54 @@ const logger = require('../utils/logger');
 router.use(verifyToken);
 
 /**
+ * POST /api/orders/recent-check
+ * Check for recent medication orders for a patient in the past 14 days
+ * Returns matching orders to show alerts in the UI
+ * Accessible to ordering role
+ */
+router.post('/recent-check', hasRole(['ordering']), async (req, res) => {
+  try {
+    const { patient, medications } = req.body;
+    
+    if (!patient || !medications || !Array.isArray(medications)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: patient object and medications array'
+      });
+    }
+    
+    // Extract necessary patient identification data
+    const patientData = {
+      patientName: patient.name,
+      nhsNumber: patient.nhsNumber || patient.nhs_number,
+      hospitalNumber: patient.hospitalNumber || patient.hospital_number
+    };
+    
+    // Check for recent medication orders
+    const recentOrders = await OrderModel.checkRecentMedicationOrders(patientData, medications);
+    
+    // Add explicit warning flag based on presence of recent orders
+    const hasRecentOrders = Array.isArray(recentOrders) && recentOrders.length > 0;
+    
+    res.json({
+      success: true,
+      recentOrders,
+      warning: hasRecentOrders,
+      warningMessage: hasRecentOrders ? 
+        `This medication was ordered ${recentOrders.length > 1 ? recentOrders.length + ' times' : 'once'} in the last 14 days` : 
+        null
+    });
+  } catch (error) {
+    console.error('Error checking recent medication orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error checking recent medication orders',
+      error: error.message
+    });
+  }
+});
+
+/**
  * GET /api/orders
  * Get all orders with optional filtering
  * Accessible to admin, pharmacy, and ordering roles
@@ -73,16 +121,21 @@ router.get('/:id', hasRole(['admin', 'pharmacy', 'ordering']), async (req, res) 
  * Accessible to ordering role
  */
 router.post('/', hasRole(['ordering']), async (req, res) => {
+  // Debug log to verify route is called
+  console.log('POST /api/orders called with body:', JSON.stringify(req.body, null, 2));
+  console.log('Request headers:', JSON.stringify(req.headers, null, 2));
   try {
     const { id, type, wardId, patient, medications, requester, notes } = req.body;
     
     // Validate required fields
-    if (!id || !type || !wardId || !medications || !requester) {
+    if (!type || !wardId || !medications || !requester) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields'
+        message: 'Missing required fields: type, wardId, medications, and requester are all required'
       });
     }
+    
+    // id is optional - will be auto-generated if not provided
     
     // Validate order type
     if (type !== 'patient' && type !== 'ward-stock') {

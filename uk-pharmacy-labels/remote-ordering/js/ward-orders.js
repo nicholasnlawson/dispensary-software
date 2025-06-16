@@ -8,6 +8,172 @@
 window.wardsCache = {};
 
 /**
+ * Create the recent medication alert modal container
+ */
+function createRecentMedicationAlertModal() {
+    // Check if container already exists
+    if (document.getElementById('recent-medication-alert-modal')) {
+        return;
+    }
+    
+    // Create modal container
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'recent-medication-alert-modal';
+    modalContainer.className = 'hidden';
+    
+    // Create modal content
+    modalContainer.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Recent Medication Alert</h3>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> The following medications have been recently ordered for this patient within the last 14 days:
+                </div>
+                <div id="recent-medications-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-order-submit-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="proceed-order-submit-btn">Proceed Anyway</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalContainer);
+    
+    // Add close functionality
+    document.querySelector('#recent-medication-alert-modal .modal-close').addEventListener('click', closeRecentMedicationAlertModal);
+    
+    // Close when clicking outside modal content
+    modalContainer.addEventListener('click', (event) => {
+        if (event.target === modalContainer) {
+            closeRecentMedicationAlertModal();
+        }
+    });
+}
+
+/**
+ * Close the recent medication alert modal
+ */
+function closeRecentMedicationAlertModal() {
+    const modal = document.getElementById('recent-medication-alert-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+/**
+ * Show the recent medication alert modal
+ * @param {Array} recentOrders - Recent medication orders
+ * @param {Function} confirmCallback - Function to call if user confirms
+ */
+function showRecentMedicationAlert(recentOrders, confirmCallback) {
+    // Create modal if it doesn't exist
+    createRecentMedicationAlertModal();
+    
+    const modal = document.getElementById('recent-medication-alert-modal');
+    const listContainer = document.getElementById('recent-medications-list');
+    
+    if (!modal || !listContainer) return;
+    
+    // Clear previous content
+    listContainer.innerHTML = '';
+    
+    // Build HTML for recent medications
+    let alertHTML = '<table class="table table-striped">'
+        + '<thead><tr>'
+        + '<th>Medication</th>'
+        + '<th>Dose</th>'
+        + '<th>Order Date</th>'
+        + '<th>Status</th>'
+        + '<th>Requested By</th>'
+        + '</tr></thead><tbody>';
+    
+    recentOrders.forEach(order => {
+        const orderDate = new Date(order.timestamp);
+        const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
+        
+        alertHTML += `
+            <tr>
+                <td>${order.medication.name}</td>
+                <td>${order.medication.dose || '-'}</td>
+                <td>${formattedDate}</td>
+                <td>${order.status.toUpperCase()}</td>
+                <td>${order.requesterName || 'Unknown'}</td>
+            </tr>
+        `;
+    });
+    
+    alertHTML += '</tbody></table>';
+    listContainer.innerHTML = alertHTML;
+    
+    // Setup buttons
+    const cancelButton = document.getElementById('cancel-order-submit-btn');
+    const proceedButton = document.getElementById('proceed-order-submit-btn');
+    
+    if (cancelButton && proceedButton) {
+        cancelButton.onclick = () => {
+            closeRecentMedicationAlertModal();
+        };
+        
+        proceedButton.onclick = () => {
+            closeRecentMedicationAlertModal();
+            if (typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+        };
+    }
+    
+    // Show modal
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Check for recent medication orders for a patient
+ * @param {Object} patientData - Patient data
+ * @param {Array} medications - Medications to check
+ * @returns {Promise} - Promise resolving to array of recent orders
+ */
+async function checkRecentMedicationOrders(patientData, medications) {
+    try {
+        // If no API client, skip check
+        if (!window.apiClient || typeof window.apiClient.post !== 'function') {
+            console.warn('API client not available for recent medication check');
+            return [];
+        }
+        
+        // Call the API endpoint
+        // Using the correct structure expected by the API
+        // Server expects {patient: {...}, medications: [...]}
+        console.log('Checking recent medications with data:', { patientData, medications });
+        
+        // Transform data to match the server's expected format
+        const patient = {
+            name: patientData.patientName,
+            nhsNumber: patientData.nhsNumber,
+            hospitalNumber: patientData.hospitalNumber
+        };
+        
+        const response = await window.apiClient.post('/orders/recent-check', {
+            patient: patient,
+            medications: medications
+        });
+        
+        if (response && response.success) {
+            return response.recentOrders || [];
+        } else {
+            console.error('Error checking recent medications:', response?.message || 'Unknown error');
+            return [];
+        }
+    } catch (error) {
+        console.error('Exception checking recent medications:', error);
+        return [];
+    }
+}
+
+/**
  * Create the order detail modal container
  */
 function createOrderDetailModal() {
@@ -928,14 +1094,23 @@ async function loadMedicationData() {
                     
                     // Create mapping from alias to generic name
                     // Check if this drug should be prescribed by brand
+                    // Check if this is a combination medication (contains '/')
+                    const isCombinationMedication = drug.name.includes('/');
+                    
+                    // Check if this drug should be prescribed by brand
                     const shouldUseGeneric = !brandExceptionsList.some(exception => {
                         // Check if the drug name or alias contains any of the brand exceptions
                         return drug.name.toLowerCase().includes(exception) || 
                                alias.toLowerCase().includes(exception);
                     });
                     
-                    if (shouldUseGeneric) {
+                    // Map the alias to generic name only if:
+                    // 1. It's not a brand exception AND
+                    // 2. It's not a combination medication
+                    if (shouldUseGeneric && !isCombinationMedication) {
                         aliasToGenericMap[alias.toLowerCase()] = drug.name;
+                    } else if (isCombinationMedication) {
+                        console.log(`Skipping alias mapping for combination medication: ${alias} -> ${drug.name}`);
                     }
                 });
             }
@@ -1415,7 +1590,7 @@ function collectWardStockMedicationsData() {
 /**
  * Submit patient medication order
  */
-function submitPatientOrder() {
+async function submitPatientOrder() {
     try {
         // Collect form data
         const wardId = document.getElementById('ward-name').value;
@@ -1461,7 +1636,7 @@ function submitPatientOrder() {
         // Create order object
         const orderData = {
             type: 'patient',
-            ward: wardId,
+            wardId: wardId,
             patient: {
                 name: patientName,
                 dob: patientDOB || '',
@@ -1475,24 +1650,32 @@ function submitPatientOrder() {
             }
         };
         
-        // Submit order using OrderManager
-        if (OrderManager) {
-            const order = OrderManager.createOrder(orderData);
+        // Check for recent medication orders before submission
+        const patientData = {
+            patientName: patientName,
+            nhsNumber: patientNHS,
+            hospitalNumber: patientID
+        };
+        
+        // Attempt to check for recent orders
+        try {
+            const recentOrders = await checkRecentMedicationOrders(patientData, medications);
             
-            // Display toast notification instead of alert
-            showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
-            document.getElementById('patient-med-form').reset();
-            
-            // Reload recent orders
-            loadRecentOrders();
-            
-            // Re-populate autocomplete fields for first medication
-            setupMedicationAutocomplete(document.getElementById('med-name-1'));
-            setupFormulationAutocomplete(document.getElementById('med-form-1'));
-        } else {
-            console.error('OrderManager not found');
-            alert('Error submitting order. Please try again.');
+            // If recent orders found, show alert and wait for user confirmation
+            if (recentOrders && recentOrders.length > 0) {
+                showRecentMedicationAlert(recentOrders, () => {
+                    // User clicked 'Proceed Anyway'
+                    submitPatientOrderFinal(orderData);
+                });
+                return; // Exit here, submitPatientOrderFinal will be called by callback if user confirms
+            }
+        } catch (error) {
+            // Log error but continue with submission
+            console.error('Error checking recent medication orders:', error);
         }
+        
+        // No recent orders found or check failed, proceed with submission
+        submitPatientOrderFinal(orderData);
     } catch (error) {
         console.error('Error submitting patient order:', error);
         alert(`Error: ${error.message || 'Unknown error submitting order'}`);
@@ -1500,9 +1683,34 @@ function submitPatientOrder() {
 }
 
 /**
+ * Final step of patient order submission after recent medication check
+ * @param {Object} orderData - Order data to submit
+ */
+async function submitPatientOrderFinal(orderData) {
+    try {
+        // Submit order using apiClient
+        const order = await apiClient.createOrder(orderData);
+        
+        // Display toast notification instead of alert
+        showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
+        document.getElementById('patient-med-form').reset();
+        
+        // Reload recent orders
+        loadRecentOrders();
+        
+        // Re-populate autocomplete fields for first medication
+        setupMedicationAutocomplete(document.getElementById('med-name-1'));
+        setupFormulationAutocomplete(document.getElementById('med-form-1'));
+    } catch (error) {
+        console.error('Error submitting order:', error);
+        showToastNotification(`Error submitting order: ${error.message}`, 'error');
+    }
+}
+
+/**
  * Submit ward stock order
  */
-function submitWardStockOrder() {
+async function submitWardStockOrder() {
     try {
         // Collect form data
         const wardId = document.getElementById('ws-ward-name').value;
@@ -1533,7 +1741,7 @@ function submitWardStockOrder() {
         // Create order object
         const orderData = {
             type: 'ward-stock',
-            ward: wardId,
+            wardId: wardId,
             medications: medications,
             requester: {
                 name: requesterName,
@@ -1542,27 +1750,60 @@ function submitWardStockOrder() {
             notes: orderNotes || ''
         };
         
-        // Submit order using OrderManager
-        if (OrderManager) {
-            const order = OrderManager.createOrder(orderData);
+        // For ward stock, we still want to check if these medications have been ordered recently
+        // This is a bit different from patient orders as we're checking by ward rather than patient
+        // We use the ward ID as a proxy for "patient" in the recent check API
+        try {
+            const patientData = {
+                // Use ward ID as the hospital number to check for ward-specific recent orders
+                hospitalNumber: wardId
+            };
             
-            // Display toast notification instead of alert
-            showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
-            document.getElementById('ward-stock-med-form').reset();
+            const recentOrders = await checkRecentMedicationOrders(patientData, medications);
             
-            // Reload recent orders
-            loadRecentOrders();
-            
-            // Re-populate autocomplete fields for first medication
-            setupMedicationAutocomplete(document.getElementById('ws-med-name-1'));
-            setupFormulationAutocomplete(document.getElementById('ws-med-form-1'));
-        } else {
-            console.error('OrderManager not found');
-            alert('Error submitting order. Please try again.');
+            // If recent orders found, show alert and wait for user confirmation
+            if (recentOrders && recentOrders.length > 0) {
+                showRecentMedicationAlert(recentOrders, () => {
+                    // User clicked 'Proceed Anyway'
+                    submitWardStockOrderFinal(orderData);
+                });
+                return; // Exit here, submitWardStockOrderFinal will be called by callback if user confirms
+            }
+        } catch (error) {
+            // Log error but continue with submission
+            console.error('Error checking recent ward stock orders:', error);
         }
+        
+        // No recent orders found or check failed, proceed with submission
+        submitWardStockOrderFinal(orderData);
     } catch (error) {
         console.error('Error submitting ward stock order:', error);
         alert(`Error: ${error.message || 'Unknown error submitting order'}`);
+    }
+}
+
+/**
+ * Final step of ward stock order submission after recent medication check
+ * @param {Object} orderData - Order data to submit
+ */
+async function submitWardStockOrderFinal(orderData) {
+    try {
+        // Submit order using apiClient
+        const order = await apiClient.createOrder(orderData);
+        
+        // Display toast notification instead of alert
+        showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
+        document.getElementById('ward-stock-med-form').reset();
+        
+        // Reload recent orders
+        loadRecentOrders();
+        
+        // Re-populate autocomplete fields for first medication
+        setupMedicationAutocomplete(document.getElementById('ws-med-name-1'));
+        setupFormulationAutocomplete(document.getElementById('ws-med-form-1'));
+    } catch (error) {
+        console.error('Error submitting order:', error);
+        showToastNotification(`Error submitting order: ${error.message}`, 'error');
     }
 }
 

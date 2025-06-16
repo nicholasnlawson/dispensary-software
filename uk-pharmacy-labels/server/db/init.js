@@ -9,8 +9,15 @@ if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
 }
 
-// Database path
-const dbPath = path.join(dbDir, 'pharmacy_system.db');
+// Database path - allow override via environment variable
+let dbPath;
+if (process.env.DATABASE_PATH) {
+    dbPath = process.env.DATABASE_PATH;
+    console.log(`Using database from environment variable: ${dbPath}`);
+} else {
+    dbPath = path.join(dbDir, 'pharmacy_system.db');
+    console.log(`Using default database path: ${dbPath}`);
+}
 
 // Create or open the database
 const db = new sqlite3.Database(dbPath, (err) => {

@@ -1,0 +1,38 @@
+/**
+ * Styling for medication warnings
+ */
+
+.warning-container {
+  margin: 10px 0;
+  padding: 12px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alert {
+  position: relative;
+}
+
+.alert-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-left: 4px solid #ffc107;
+}
+
+#recent-med-warning {
+  animation: pulse 2s;
+}
+
+@keyframes pulse {
+  0% {
+    background-color: #fff3cd;
+  }
+  50% {
+    background-color: #fff0b3;
+  }
+  100% {
+    background-color: #fff3cd;
+  }
+}
