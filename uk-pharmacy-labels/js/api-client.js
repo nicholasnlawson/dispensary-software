@@ -502,31 +502,157 @@ class ApiClient {
   
   /**
    * Get recent orders
-   * @param {Object} options - Query options
-   * @param {number} options.limit - Maximum number of orders to return
-   * @param {string} options.status - Filter by order status
-   * @param {string} options.type - Filter by order type ('patient' or 'ward-stock')
-   * @returns {Promise} - Promise resolving to array of orders
+   * @param {Object} options - Query options (limit, offset, etc)
+   * @returns {Promise} - Promise resolving to orders data
    */
   async getRecentOrders(options = {}) {
+    const queryParams = new URLSearchParams();
+    
+    if (options.limit) queryParams.append('limit', options.limit);
+    if (options.offset) queryParams.append('offset', options.offset);
+    if (options.status) queryParams.append('status', options.status);
+    
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/orders${queryString}`);
+  }
+  
+  /**
+   * Update an existing order
+   * @param {string} orderId - ID of the order to update
+   * @param {Object} orderData - Updated order data
+   * @returns {Promise} - Promise resolving to updated order data
+   */
+  async updateOrder(orderId, orderData) {
+    console.log('[API] updateOrder called with:', { orderId, orderData });
+    
+    if (!orderId) {
+      console.error('[API] updateOrder: No order ID provided');
+      return { success: false, message: 'Order ID is required' };
+    }
+    
     try {
-      // Build query string from options
-      const queryParams = [];
-      if (options.limit) queryParams.push(`limit=${options.limit}`);
-      if (options.status) queryParams.push(`status=${options.status}`);
-      if (options.type) queryParams.push(`type=${options.type}`);
+      // Get current user for audit trail
+      const currentUser = this.getCurrentUser();
+      const modifiedBy = currentUser ? (currentUser.name || currentUser.username || 'Unknown User') : 'Unknown User';
       
-      const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-      const endpoint = `/orders${queryString}`;
-      
-      console.log(`Fetching recent orders from ${endpoint}`);
-      const result = await this.request(endpoint);
-      
-      console.log('Server returned orders:', result);
-      return result;
+      // If this update includes medications, use the medications endpoint with audit trail
+      if (orderData.medications && Array.isArray(orderData.medications)) {
+        console.log('[API] Updating order medications with audit trail');
+        
+        const medicationUpdatePayload = {
+          medications: orderData.medications,
+          modifiedBy: modifiedBy,
+          reason: orderData.reason || 'Order updated via UI',
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log('[API] Making PUT request to /orders/' + orderId + '/medications', medicationUpdatePayload);
+        const response = await this.request(`/orders/${orderId}/medications`, 'PUT', medicationUpdatePayload);
+        console.log('[API] updateOrder medications response:', response);
+        return response;
+      } 
+      // Otherwise, update basic order metadata using the standard endpoint
+      else {
+        console.log('[API] Updating order metadata only');
+        const updatePayload = {
+          status: orderData.status || 'pending',
+          processingNotes: orderData.notes || orderData.processingNotes || 'Updated via UI'
+        };
+        
+        console.log('[API] Making PUT request to /orders/' + orderId, updatePayload);
+        const response = await this.request(`/orders/${orderId}`, 'PUT', updatePayload);
+        console.log('[API] updateOrder response:', response);
+        return response;
+      }
     } catch (error) {
-      console.error('Error fetching recent orders:', error);
-      throw error;
+      console.error('[API] Error updating order:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to update order' 
+      };
+    }
+  }
+  
+  /**
+   * Cancel an order
+   * @param {string} orderId - ID of the order to cancel
+   * @param {string} reason - Reason for cancellation
+   * @returns {Promise} - Promise resolving to cancellation result
+   */
+  async cancelOrder(orderId, reason = 'Cancelled by user') {
+    console.log('[API] cancelOrder called with orderId:', orderId, 'reason:', reason);
+    
+    if (!orderId) {
+      console.error('[API] cancelOrder: No order ID provided');
+      return { success: false, message: 'Order ID is required' };
+    }
+    
+    try {
+      // Get current user for cancelledBy field
+      const currentUser = this.getCurrentUser();
+      console.log('[API] Current user for cancellation:', currentUser);
+      
+      // Determine the cancelledBy value based on available user properties
+      let cancelledBy = 'Unknown User';
+      if (currentUser) {
+        if (currentUser.username) {
+          // Use username if available (most likely format: "N Lawson")
+          cancelledBy = currentUser.username;
+        } else if (currentUser.first_name && currentUser.surname) {
+          // Fall back to first_name + surname if available
+          cancelledBy = `${currentUser.first_name} ${currentUser.surname}`;
+        } else if (currentUser.name) {
+          // Fall back to name if available
+          cancelledBy = currentUser.name;
+        }
+      }
+      
+      console.log('[API] Using cancelledBy:', cancelledBy);
+      
+      // Backend PUT /:id/cancel expects reason, cancelledBy, timestamp
+      const cancelPayload = {
+        reason: reason,
+        cancelledBy: cancelledBy,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('[API] Making PUT request to /orders/' + orderId + '/cancel', cancelPayload);
+      const response = await this.request(`/orders/${orderId}/cancel`, 'PUT', cancelPayload);
+      console.log('[API] cancelOrder response:', response);
+      return response;
+    } catch (error) {
+      console.error('[API] Error cancelling order:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to cancel order' 
+      };
+    }
+  }
+  
+  /**
+   * Get order history/audit trail  
+   * @param {string} orderId - ID of the order to get history for
+   * @returns {Promise} - Promise resolving to order history
+   */
+  async getOrderHistory(orderId) {
+    console.log('[API] getOrderHistory called with orderId:', orderId);
+    
+    if (!orderId) {
+      console.error('[API] getOrderHistory: No order ID provided');
+      return { success: false, message: 'Order ID is required' };
+    }
+    
+    try {
+      console.log('[API] Making GET request to /orders/' + orderId + '/history');
+      const response = await this.request(`/orders/${orderId}/history`, 'GET');
+      console.log('[API] getOrderHistory response:', response);
+      return response;
+    } catch (error) {
+      console.error('[API] Error fetching order history:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to fetch order history' 
+      };
     }
   }
 }

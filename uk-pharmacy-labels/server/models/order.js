@@ -498,7 +498,10 @@ const OrderModel = {
   getOrders(filters = {}) {
     return new Promise((resolve, reject) => {
       let query = `
-        SELECT o.*, w.name as ward_name, h.name as hospital_name
+        SELECT o.id, o.type, o.ward_id, o.timestamp, o.status, o.requester_name, o.requester_role, 
+        o.notes, o.processed_by, o.processed_at, o.checked_by, o.processing_notes,
+        o.cancelled_by, o.cancellation_reason, o.cancelled_at,
+        w.name as ward_name, h.name as hospital_name
         FROM orders o
         JOIN wards w ON o.ward_id = w.id
         JOIN hospitals h ON w.hospital_id = h.id
@@ -709,19 +712,25 @@ const OrderModel = {
         db.serialize(() => {
           db.run('BEGIN TRANSACTION');
           
-          // 1. Update order status to cancelled
+          // 1. Update order status to cancelled and set cancellation fields
           db.run(
             `UPDATE orders SET 
               status = ?, 
               processing_notes = CASE 
                 WHEN processing_notes IS NULL THEN ? 
                 ELSE processing_notes || '\n' || ?
-              END
+              END,
+              cancelled_by = ?,
+              cancellation_reason = ?,
+              cancelled_at = ?
             WHERE id = ?`,
             [
               'cancelled', 
               `Cancelled: ${reason}`, 
-              `Cancelled: ${reason}`, 
+              `Cancelled: ${reason}`,
+              cancelledBy,
+              reason,
+              actualTimestamp, 
               orderId
             ],
             function(err) {

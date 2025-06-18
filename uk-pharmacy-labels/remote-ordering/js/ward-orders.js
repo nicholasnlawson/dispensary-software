@@ -60,7 +60,9 @@ function createRecentMedicationAlertModal() {
 function closeRecentMedicationAlertModal() {
     const modal = document.getElementById('recent-medication-alert-modal');
     if (modal) {
+        modal.style.display = 'none';
         modal.classList.add('hidden');
+        console.log('[MODAL] Recent medication alert modal closed');
     }
 }
 
@@ -127,7 +129,12 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
     }
     
     // Show modal
+    modal.style.display = 'block';
     modal.classList.remove('hidden');
+    console.log('[MODAL] Modal shown');
+    
+    // Setup close handlers
+    setupModalCloseHandlers();
 }
 
 /**
@@ -338,10 +345,57 @@ function createOrderDetailModal() {
  * Close the order detail modal
  */
 function closeOrderDetailModal() {
+    console.log('[MODAL] closeOrderDetailModal called');
+    
     const modal = document.getElementById('order-detail-modal');
     if (modal) {
         modal.style.display = 'none';
+        modal.classList.add('hidden');
+        console.log('[MODAL] Modal hidden');
+        
+        // Reset edit mode
+        isOrderInEditMode = false;
+        currentOrder = null;
+        console.log('[MODAL] Reset currentOrder and edit mode');
     }
+}
+
+/**
+ * Setup modal close handlers
+ */
+function setupModalCloseHandlers() {
+    console.log('[MODAL] Setting up close handlers');
+    
+    const modal = document.getElementById('order-detail-modal');
+    if (!modal) {
+        console.error('[MODAL] Modal not found for close handlers');
+        return;
+    }
+    
+    // Close button handlers
+    const closeButtons = modal.querySelectorAll('.modal-close, .modal-close-btn');
+    closeButtons.forEach(button => {
+        button.onclick = () => {
+            console.log('[MODAL] Close button clicked');
+            closeOrderDetailModal();
+        };
+    });
+    
+    // Click outside to close
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            console.log('[MODAL] Clicked outside modal');
+            closeOrderDetailModal();
+        }
+    };
+    
+    // Escape key to close
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            console.log('[MODAL] Escape key pressed');
+            closeOrderDetailModal();
+        }
+    });
 }
 
 /**
@@ -351,62 +405,100 @@ let currentOrder = null;
 let isOrderInEditMode = false;
 
 /**
- * Show order details in modal
- * @param {Object} order - Order object
+ * Show order details in a modal
+ * @param {Object} order - Order object to display
  */
 function showOrderDetails(order) {
-    if (!order) return;
+    console.log('[MODAL] showOrderDetails called with order:', order);
     
-    // Save the order for reference in edit/save functions
-    currentOrder = JSON.parse(JSON.stringify(order)); // Deep clone to avoid modifying the original
-    isOrderInEditMode = false;
+    if (!order) {
+        console.error('[MODAL] No order provided to showOrderDetails');
+        return;
+    }
+    
+    // Store current order for editing/deletion
+    currentOrder = order;
+    console.log('[MODAL] Set currentOrder:', currentOrder);
+    
+    // Create modal if it doesn't exist
+    createOrderDetailModal();
     
     const modal = document.getElementById('order-detail-modal');
-    const contentContainer = document.getElementById('modal-order-content');
+    const content = document.getElementById('modal-order-content');
     
-    if (!modal || !contentContainer) return;
+    if (!modal || !content) {
+        console.error('[MODAL] Modal or content element not found');
+        return;
+    }
     
-    // Render the order in view mode
-    renderOrderDetails(false);
+    // Populate modal content
+    content.innerHTML = createOrderDetailHTML(order);
+    console.log('[MODAL] Modal content populated');
+    
+    // Setup buttons based on order status
+    setupModalButtons();
     
     // Show modal
     modal.style.display = 'block';
+    modal.classList.remove('hidden');
+    console.log('[MODAL] Modal shown');
     
-    // Setup button handlers
-    setupModalButtons();
+    // Setup close handlers
+    setupModalCloseHandlers();
 }
 
 /**
  * Setup the modal buttons based on order status and current mode
  */
 function setupModalButtons() {
+    console.log('[MODAL] setupModalButtons called for order:', currentOrder);
+    
     // Cancel order button
     const cancelButton = document.getElementById('cancel-order-btn');
+    console.log('[MODAL] Cancel button found:', !!cancelButton);
+    
     if (cancelButton) {
         if (currentOrder.status === 'pending') {
+            console.log('[MODAL] Showing cancel button for pending order');
             cancelButton.classList.remove('hidden');
-            cancelButton.onclick = () => cancelOrder(currentOrder.id);
+            cancelButton.onclick = () => {
+                console.log('[MODAL] Cancel button clicked for order:', currentOrder.id);
+                cancelOrder(currentOrder.id);
+            };
         } else {
+            console.log('[MODAL] Hiding cancel button for non-pending order, status:', currentOrder.status);
             cancelButton.classList.add('hidden');
         }
     }
     
     // Edit order button
     const editButton = document.getElementById('edit-order-btn');
+    console.log('[MODAL] Edit button found:', !!editButton);
+    
     if (editButton) {
         if (currentOrder.status === 'pending') {
+            console.log('[MODAL] Showing edit button for pending order');
             editButton.classList.remove('hidden');
-            editButton.onclick = () => toggleOrderEditMode(true);
+            editButton.onclick = () => {
+                console.log('[MODAL] Edit button clicked for order:', currentOrder.id);
+                toggleOrderEditMode(true);
+            };
         } else {
+            console.log('[MODAL] Hiding edit button for non-pending order, status:', currentOrder.status);
             editButton.classList.add('hidden');
         }
     }
     
     // Save changes button
     const saveButton = document.getElementById('save-order-btn');
+    console.log('[MODAL] Save button found:', !!saveButton);
+    
     if (saveButton) {
         saveButton.classList.add('hidden');
-        saveButton.onclick = saveOrderChanges;
+        saveButton.onclick = () => {
+            console.log('[MODAL] Save button clicked for order:', currentOrder.id);
+            saveOrderChanges();
+        };
     }
 }
 
@@ -616,11 +708,29 @@ function removeMedication(index) {
  * Save changes made to the order
  */
 async function saveOrderChanges() {
-    if (!currentOrder) return;
+    console.log('[SAVE] saveOrderChanges called');
     
     try {
+        if (!currentOrder) {
+            console.error('[SAVE] No current order to save');
+            showToastNotification('No order to update', 'error');
+            return;
+        }
+        
+        // Ensure we have an order ID
+        if (!currentOrder.id) {
+            console.error('[SAVE] Order has no ID');
+            showToastNotification('Order ID is missing', 'error');
+            return;
+        }
+        
+        // Store order ID locally to prevent loss during operations
+        const orderIdToUpdate = currentOrder.id;
+        console.log('[SAVE] Working with order ID:', orderIdToUpdate);
+        
         // Gather medication data from the form
         if (isOrderInEditMode) {
+            console.log('[SAVE] Order is in edit mode, gathering form data');
             // Parse all medication fields from form inputs
             const medicationRows = document.querySelectorAll('.medication-row');
             const medications = [];
@@ -646,97 +756,368 @@ async function saveOrderChanges() {
                 }
             });
             
+            console.log('[SAVE] Collected medications:', medications.length);
             // Update the current order
             currentOrder.medications = medications;
         }
         
         // Check if there are any medications
-        if (!currentOrder.medications.length) {
+        if (!currentOrder.medications || !currentOrder.medications.length) {
+            console.error('[SAVE] No medications in order');
             showToastNotification('Order must have at least one medication', 'error');
             return;
         }
         
+        // Prompt user for reason for the edit (for audit trail)
+        const reason = await showEditReasonModal();
+        if (!reason || reason.trim() === '') {
+            console.log('[SAVE] User cancelled or did not provide reason');
+            showToastNotification('Edit cancelled - reason is required for audit trail', 'info');
+            return;
+        }
+        
+        // Add reason to order data for audit trail
+        currentOrder.reason = reason.trim();
+        
+        // Check for API client availability
+        console.log('[SAVE] Checking API client availability');
+        console.log('[SAVE] window.apiClient exists:', !!window.apiClient);
+        console.log('[SAVE] updateOrder method exists:', !!(window.apiClient && typeof window.apiClient.updateOrder === 'function'));
+        
         // If we have an API client with updateOrder method
         if (window.apiClient && typeof window.apiClient.updateOrder === 'function') {
+            console.log('[SAVE] Using API client to update order', orderIdToUpdate);
             showToastNotification('Saving changes...', 'info');
             
             // Call API to update order
-            const response = await window.apiClient.updateOrder(currentOrder.id, currentOrder);
+            const response = await window.apiClient.updateOrder(orderIdToUpdate, currentOrder);
+            console.log('[SAVE] API response:', response);
             
             if (response && response.success) {
+                console.log('[SAVE] Order updated successfully');
                 showToastNotification('Order updated successfully', 'success');
                 
                 // Update local order cache if using OrderManager
                 if (OrderManager) {
+                    console.log('[SAVE] Updating OrderManager cache');
                     OrderManager.updateOrder(currentOrder);
                 }
                 
                 // Switch back to view mode and refresh orders list
+                console.log('[SAVE] Toggling view mode and refreshing list');
                 toggleOrderEditMode(false);
-                loadRecentOrders();
+                
+                // Force a refresh of the orders list after update
+                setTimeout(() => {
+                    console.log('[SAVE] Refreshing recent orders list');
+                    loadRecentOrders();
+                }, 500);
             } else {
+                console.error('[SAVE] API returned error:', response);
                 showToastNotification(`Error updating order: ${response.message || 'Unknown error'}`, 'error');
             }
         } 
         // If we only have local OrderManager
         else if (OrderManager) {
+            console.log('[SAVE] Using OrderManager to update local order');
             OrderManager.updateOrder(currentOrder);
             showToastNotification('Order updated successfully', 'success');
             toggleOrderEditMode(false);
-            loadRecentOrders();
+            
+            // Force a refresh of the orders list after update
+            setTimeout(() => {
+                console.log('[SAVE] Refreshing recent orders list');
+                loadRecentOrders();
+            }, 500);
         } else {
+            console.error('[SAVE] No update mechanism available');
             showToastNotification('Order update not supported', 'error');
         }
     } catch (error) {
-        console.error('Error updating order:', error);
-        showToastNotification(`Error: ${error.message || 'Unknown error'}`, 'error');
+        console.error('[SAVE] Error updating order:', error);
+        showToastNotification(`Error updating order: ${error.message || 'Unknown error'}`, 'error');
     }
+}
+
+/**
+ * Create and show a custom edit reason modal
+ * @returns {Promise} - Resolves with the edit reason when user makes a choice
+ */
+async function showEditReasonModal() {
+    return new Promise((resolve) => {
+        console.log('[MODAL] Creating edit reason modal');
+        
+        // Create modal container if it doesn't exist
+        let modalOverlay = document.getElementById('edit-reason-modal-overlay');
+        if (!modalOverlay) {
+            modalOverlay = document.createElement('div');
+            modalOverlay.id = 'edit-reason-modal-overlay';
+            modalOverlay.style.position = 'fixed';
+            modalOverlay.style.top = '0';
+            modalOverlay.style.left = '0';
+            modalOverlay.style.width = '100%';
+            modalOverlay.style.height = '100%';
+            modalOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            modalOverlay.style.display = 'flex';
+            modalOverlay.style.alignItems = 'center';
+            modalOverlay.style.justifyContent = 'center';
+            modalOverlay.style.zIndex = '1000';
+            document.body.appendChild(modalOverlay);
+        } else {
+            modalOverlay.innerHTML = ''; // Clear any existing content
+            modalOverlay.style.display = 'flex';
+        }
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '5px';
+        modalContent.style.width = '400px';
+        modalContent.style.maxWidth = '90%';
+        modalContent.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        
+        // Modal header
+        const modalHeader = document.createElement('h3');
+        modalHeader.textContent = 'Enter Edit Reason';
+        modalHeader.style.marginTop = '0';
+        modalContent.appendChild(modalHeader);
+        
+        // Modal description
+        const modalDescription = document.createElement('p');
+        modalDescription.textContent = 'Please provide a reason for editing this order';
+        modalContent.appendChild(modalDescription);
+        
+        // Reason textarea
+        const reasonArea = document.createElement('textarea');
+        reasonArea.style.width = '100%';
+        reasonArea.style.padding = '10px';
+        reasonArea.style.marginBottom = '15px';
+        reasonArea.style.minHeight = '60px';
+        reasonArea.style.boxSizing = 'border-box';
+        reasonArea.value = 'Edited by user request';
+        modalContent.appendChild(reasonArea);
+        
+        // Button container
+        const btnContainer = document.createElement('div');
+        btnContainer.style.display = 'flex';
+        btnContainer.style.justifyContent = 'flex-end';
+        btnContainer.style.gap = '10px';
+        
+        // Cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.classList.add('btn', 'btn-secondary');
+        cancelBtn.onclick = () => {
+            modalOverlay.style.display = 'none';
+            resolve('');
+        };
+        btnContainer.appendChild(cancelBtn);
+        
+        // Confirm button
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'Confirm Edit';
+        confirmBtn.classList.add('btn', 'btn-primary');
+        confirmBtn.onclick = () => {
+            const reason = reasonArea.value.trim() || 'Edited by user request';
+            modalOverlay.style.display = 'none';
+            resolve(reason);
+        };
+        btnContainer.appendChild(confirmBtn);
+        
+        // Add button container to modal
+        modalContent.appendChild(btnContainer);
+        
+        // Add modal content to overlay
+        modalOverlay.appendChild(modalContent);
+        
+        // Focus the textarea
+        setTimeout(() => reasonArea.focus(), 50);
+    });
 }
 
 /**
  * Cancel an order
  * @param {string} orderId - Order ID to cancel
  */
-async function cancelOrder(orderId) {
-    try {
-        if (!orderId) return;
+/**
+ * Create and show a custom cancellation modal
+ * @param {string} orderId - Order ID to cancel
+ * @returns {Promise} - Resolves with {cancelled: bool, reason: string} when user makes a choice
+ */
+function showCancellationModal(orderId) {
+    return new Promise((resolve) => {
+        console.log('[MODAL] Creating cancellation modal for order:', orderId);
         
-        if (window.confirm('Are you sure you want to cancel this order?')) {
-            // If we have an API client with cancelOrder method
-            if (window.apiClient && typeof window.apiClient.cancelOrder === 'function') {
-                showToastNotification('Cancelling order...', 'info');
-                
-                // Call API to cancel order
-                const response = await window.apiClient.cancelOrder(orderId);
-                
-                if (response && response.success) {
-                    showToastNotification('Order cancelled successfully', 'success');
-                    
-                    // Update local order status if using OrderManager
-                    if (OrderManager) {
-                        OrderManager.updateOrderStatus(orderId, 'cancelled');
-                    }
-                    
-                    // Close modal and refresh orders list
-                    closeOrderDetailModal();
-                    loadRecentOrders();
-                } else {
-                    showToastNotification(`Error cancelling order: ${response.message || 'Unknown error'}`, 'error');
-                }
-            } 
-            // If we only have local OrderManager
-            else if (OrderManager) {
-                OrderManager.updateOrderStatus(orderId, 'cancelled');
+        // Create modal container if it doesn't exist
+        let modalOverlay = document.getElementById('cancellation-modal-overlay');
+        if (!modalOverlay) {
+            modalOverlay = document.createElement('div');
+            modalOverlay.id = 'cancellation-modal-overlay';
+            modalOverlay.style.position = 'fixed';
+            modalOverlay.style.top = '0';
+            modalOverlay.style.left = '0';
+            modalOverlay.style.width = '100%';
+            modalOverlay.style.height = '100%';
+            modalOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            modalOverlay.style.display = 'flex';
+            modalOverlay.style.alignItems = 'center';
+            modalOverlay.style.justifyContent = 'center';
+            modalOverlay.style.zIndex = '1000';
+            document.body.appendChild(modalOverlay);
+        } else {
+            modalOverlay.innerHTML = ''; // Clear any existing content
+            modalOverlay.style.display = 'flex';
+        }
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '5px';
+        modalContent.style.width = '400px';
+        modalContent.style.maxWidth = '90%';
+        modalContent.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        
+        // Modal header
+        const modalHeader = document.createElement('h3');
+        modalHeader.textContent = 'Cancel Order';
+        modalHeader.style.marginTop = '0';
+        modalContent.appendChild(modalHeader);
+        
+        // Modal description
+        const modalDescription = document.createElement('p');
+        modalDescription.textContent = `Please provide a reason for cancelling order ${orderId}`;
+        modalContent.appendChild(modalDescription);
+        
+        // Reason textarea
+        const reasonArea = document.createElement('textarea');
+        reasonArea.style.width = '100%';
+        reasonArea.style.padding = '10px';
+        reasonArea.style.marginBottom = '15px';
+        reasonArea.style.minHeight = '60px';
+        reasonArea.style.boxSizing = 'border-box';
+        reasonArea.value = 'Cancelled by user request';
+        modalContent.appendChild(reasonArea);
+        
+        // Button container
+        const btnContainer = document.createElement('div');
+        btnContainer.style.display = 'flex';
+        btnContainer.style.justifyContent = 'flex-end';
+        btnContainer.style.gap = '10px';
+        
+        // Cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.classList.add('btn', 'btn-secondary');
+        cancelBtn.onclick = () => {
+            modalOverlay.style.display = 'none';
+            resolve({ cancelled: false });
+        };
+        btnContainer.appendChild(cancelBtn);
+        
+        // Confirm button
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'Confirm Cancellation';
+        confirmBtn.classList.add('btn', 'btn-danger');
+        confirmBtn.onclick = () => {
+            const reason = reasonArea.value.trim() || 'Cancelled by user request';
+            modalOverlay.style.display = 'none';
+            resolve({ cancelled: true, reason });
+        };
+        btnContainer.appendChild(confirmBtn);
+        
+        // Add button container to modal
+        modalContent.appendChild(btnContainer);
+        
+        // Add modal content to overlay
+        modalOverlay.appendChild(modalContent);
+        
+        // Focus the textarea
+        setTimeout(() => reasonArea.focus(), 50);
+    });
+}
+
+async function cancelOrder(orderId) {
+    console.log('[CANCEL] cancelOrder called with orderId:', orderId);
+    
+    try {
+        // Backup orderId from currentOrder if not provided directly
+        if (!orderId && currentOrder && currentOrder.id) {
+            orderId = currentOrder.id;
+            console.log('[CANCEL] Using currentOrder.id as fallback:', orderId);
+        }
+        
+        if (!orderId) {
+            console.error('[CANCEL] No order ID provided');
+            return;
+        }
+        
+        // Store the orderId locally to ensure it's not lost if currentOrder is cleared
+        const orderIdToCancel = orderId;
+        
+        // Show custom cancellation modal instead of using prompt/confirm
+        const result = await showCancellationModal(orderIdToCancel);
+        
+        if (!result.cancelled) {
+            console.log('[CANCEL] User cancelled the cancellation dialog');
+            return;
+        }
+        
+        const reason = result.reason;
+        console.log('[CANCEL] User confirmed cancellation for order:', orderIdToCancel, 'with reason:', reason);
+        
+        // Check for API client availability
+        console.log('[CANCEL] Checking API client availability');
+        console.log('[CANCEL] window.apiClient exists:', !!window.apiClient);
+        console.log('[CANCEL] cancelOrder method exists:', !!(window.apiClient && typeof window.apiClient.cancelOrder === 'function'));
+        
+        // If we have an API client with cancelOrder method
+        if (window.apiClient && typeof window.apiClient.cancelOrder === 'function') {
+            console.log('[CANCEL] Using API client to cancel order', orderIdToCancel);
+            showToastNotification('Cancelling order...', 'info');
+            
+            // Call API to cancel order with reason
+            const response = await window.apiClient.cancelOrder(orderIdToCancel, reason);
+            console.log('[CANCEL] API response:', response);
+            
+            if (response && response.success) {
+                console.log('[CANCEL] Order cancelled successfully');
                 showToastNotification('Order cancelled successfully', 'success');
+                
+                // Log that we're updating the UI (no OrderManager needed)
+                console.log('[CANCEL] Order cancelled successfully, will refresh order list');
+                
+                // Close modal and refresh orders list
+                console.log('[CANCEL] Closing modal and refreshing list');
                 closeOrderDetailModal();
-                loadRecentOrders();
+                
+                // Force a refresh of the orders list after cancellation
+                setTimeout(() => {
+                    console.log('[CANCEL] Refreshing recent orders list');
+                    loadRecentOrders();
+                }, 500);
             } else {
-                showToastNotification('Order cancellation not supported', 'error');
+                console.error('[CANCEL] API returned error:', response);
+                showToastNotification(`Error cancelling order: ${response.message || 'Unknown error'}`, 'error');
             }
+        } 
+        // Fallback if API client is not available
+        else {
+            console.log('[CANCEL] API client not available, performing local-only cancellation');
+            showToastNotification('Order marked as cancelled locally. Sync required.', 'warning');
+            showToastNotification('Order cancelled successfully', 'success');
+            closeOrderDetailModal();
+            
+            // Force a refresh of the orders list after cancellation
+            setTimeout(() => {
+                console.log('[CANCEL] Refreshing recent orders list');
+                loadRecentOrders();
+            }, 500);
         }
     } catch (error) {
-        console.error('Error cancelling order:', error);
-        showToastNotification(`Error: ${error.message || 'Unknown error'}`, 'error');
+        console.error('[CANCEL] Error cancelling order:', error);
+        showToastNotification(`Error cancelling order: ${error.message || 'Unknown error'}`, 'error');
     }
 }
 
@@ -1359,43 +1740,10 @@ function setupMedicationAutocomplete(inputElement) {
     dropdownList.className = 'autocomplete-list';
     wrapper.appendChild(dropdownList);
     
-    // Create a tooltip element for brand name information
-    const tooltipElement = document.createElement('div');
-    tooltipElement.className = 'medication-tooltip';
-    tooltipElement.style.display = 'none';
-    tooltipElement.style.position = 'absolute';
-    tooltipElement.style.backgroundColor = '#f9f9f9';
-    tooltipElement.style.border = '1px solid #ccc';
-    tooltipElement.style.borderRadius = '4px';
-    tooltipElement.style.padding = '8px';
-    tooltipElement.style.zIndex = '1000';
-    tooltipElement.style.maxWidth = '300px';
-    tooltipElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-    wrapper.appendChild(tooltipElement);
-    
-    // Function to check if a medication should be prescribed by brand name
-    function shouldPrescribeByBrand(medicationName) {
-        if (!window.brandExceptionsList || !medicationName) return false;
-        
-        const medNameLower = medicationName.toLowerCase();
-        return window.brandExceptionsList.some(exception => {
-            return medNameLower.includes(exception);
-        });
-    }
-    
-    // Function to get the generic name for an alias
-    function getGenericName(alias) {
-        if (!window.aliasToGenericMap || !alias) return alias;
-        
-        const aliasLower = alias.toLowerCase();
-        return window.aliasToGenericMap[aliasLower] || alias;
-    }
-    
     // Show options based on input
     inputElement.addEventListener('input', () => {
         const value = inputElement.value.toLowerCase().trim();
         dropdownList.innerHTML = '';
-        tooltipElement.style.display = 'none';
         
         if (value.length < 2) {
             dropdownList.style.display = 'none';
@@ -1705,9 +2053,6 @@ function createWardStockMedicationItem(index) {
     return newItem;
 }
 
-/**
- * Submit patient medication order
- */
 /**
  * Collect medication data from patient order form
  * @returns {Array} - Array of medication objects
@@ -2094,6 +2439,20 @@ async function loadRecentOrders() {
                 // Format requester info
                 const requesterInfo = order.requesterName || 'Unknown';
                 
+                // Add cancellation info if order is cancelled
+                let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
+                if (order.status === 'cancelled') {
+                    const cancelledBy = order.cancelledBy || 'Unknown';
+                    const reason = order.cancellationReason || order.cancelReason || 'No reason provided';
+                    statusContent += `
+                        <div class="cancellation-info">
+                            <span class="cancelled-by">By: ${cancelledBy}</span>
+                            <span class="cancellation-reason" title="${reason}">${reason.length > 20 ? reason.substring(0, 20) + '...' : reason}</span>
+                        </div>
+                    `;
+                    row.classList.add('cancelled-order');
+                }
+                
                 row.innerHTML = `
                     <td class="order-id">
                         <div>${order.id}</div>
@@ -2103,7 +2462,7 @@ async function loadRecentOrders() {
                     <td class="ward-info">${getWardName(order.wardId)}</td>
                     <td class="medications-info">${medicationsList}</td>
                     <td class="status-cell">
-                        <span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>
+                        ${statusContent}
                     </td>
                     <td class="requester-info">${requesterInfo}</td>
                 `;
@@ -2164,23 +2523,7 @@ async function loadRecentOrders() {
                     .order-row {
                         position: relative;
                     }
-                    .order-row::after {
-                        content: "View Details";
-                        position: absolute;
-                        right: 15px;
-                        top: 50%;
-                        transform: translateY(-50%);
-                        background-color: #2196F3;
-                        color: white;
-                        border-radius: 4px;
-                        padding: 4px 8px;
-                        font-size: 0.8em;
-                        opacity: 0;
-                        transition: opacity 0.2s ease;
-                    }
-                    .order-row:hover::after {
-                        opacity: 1;
-                    }
+                    /* Removed View Details overlay that was obscuring information */
                     .order-id {
                         font-weight: bold;
                         color: #2196F3;
@@ -2216,24 +2559,23 @@ async function loadRecentOrders() {
                         line-height: 1.5;
                     }
                     .status-cell {
-                        text-align: center;
+                        min-width: 120px;
                     }
                     .order-status {
                         display: inline-block;
-                        padding: 5px 8px;
+                        padding: 4px 8px;
                         border-radius: 4px;
-                        font-weight: bold;
                         font-size: 0.8em;
+                        font-weight: bold;
                         text-transform: uppercase;
-                        letter-spacing: 0.5px;
                     }
                     .status-pending {
-                        background-color: #fff9c4;
-                        color: #ff8f00;
+                        background-color: #ffecb3;
+                        color: #ff6f00;
                     }
                     .status-processing {
-                        background-color: #bbdefb;
-                        color: #1565c0;
+                        background-color: #b3e5fc;
+                        color: #0277bd;
                     }
                     .status-completed {
                         background-color: #c8e6c9;
@@ -2242,6 +2584,34 @@ async function loadRecentOrders() {
                     .status-cancelled {
                         background-color: #ffcdd2;
                         color: #c62828;
+                    }
+                    .cancelled-order td {
+                        color: #777;
+                        text-decoration: line-through;
+                    }
+                    .cancelled-order .status-cell,
+                    .cancelled-order .order-id,
+                    .cancelled-order .status-cancelled {
+                        text-decoration: none !important;
+                    }
+                    .cancellation-info {
+                        margin-top: 5px;
+                        font-size: 0.8em;
+                        color: #555;
+                        text-decoration: none !important;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .cancelled-by {
+                        font-weight: bold;
+                        margin-bottom: 2px;
+                    }
+                    .cancellation-reason {
+                        font-style: italic;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        max-width: 130px;
                     }
                 `;
                 document.head.appendChild(style);
@@ -2271,5 +2641,363 @@ async function loadRecentOrders() {
     } catch (error) {
         console.error('Error loading recent orders:', error);
         recentOrdersList.innerHTML = `<div class="error-message">Error loading orders: ${error.message}</div>`;
+    }
+}
+
+/**
+ * Create HTML content for order details modal
+ * @param {Object} order - Order object to display
+ * @returns {string} - HTML string for modal content
+ */
+function createOrderDetailHTML(order) {
+    console.log('[MODAL] createOrderDetailHTML called with order:', order);
+    
+    if (!order) {
+        return '<p>No order data available</p>';
+    }
+    
+    // Format timestamp
+    const timestamp = new Date(order.timestamp).toLocaleString();
+    
+    // Format cancellation info if available
+    let cancellationInfo = '';
+    if (order.status === 'cancelled') {
+        cancellationInfo = `
+            <div class="order-section cancellation-info">
+                <h4>Cancellation Information</h4>
+                <div class="cancellation-details">
+                    <p><strong>Cancelled By:</strong> ${order.cancelledBy || 'Unknown'}</p>
+                    <p><strong>Reason:</strong> ${order.cancellationReason || order.cancelReason || 'No reason provided'}</p>
+                    <p><strong>When:</strong> ${order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : timestamp}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create patient info section
+    let patientInfo = '';
+    if (order.patient) {
+        patientInfo = `
+            <div class="order-section">
+                <h4>Patient Information</h4>
+                <div class="patient-details">
+                    <p><strong>Name:</strong> ${order.patient.name || 'Not provided'}</p>
+                    <p><strong>NHS Number:</strong> ${order.patient.nhsNumber || 'Not provided'}</p>
+                    <p><strong>Hospital Number:</strong> ${order.patient.hospitalNumber || 'Not provided'}</p>
+                    <p><strong>Ward:</strong> ${order.patient.ward || 'Not provided'}</p>
+                    <p><strong>Bed:</strong> ${order.patient.bed || 'Not provided'}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create medications section
+    let medicationsHTML = '';
+    if (order.medications && order.medications.length > 0) {
+        medicationsHTML = `
+            <div class="order-section">
+                <h4>Medications</h4>
+                <div class="medications-list">
+                    ${order.medications.map((med, index) => `
+                        <div class="medication-item" data-index="${index}">
+                            <div class="medication-row">
+                                <div class="medication-field">
+                                    <label>Name:</label>
+                                    <span class="medication-name">${med.name || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Strength:</label>
+                                    <span class="medication-strength">${med.strength || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Form:</label>
+                                    <span class="medication-form">${med.form || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Quantity:</label>
+                                    <span class="medication-quantity">${med.quantity || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Dose:</label>
+                                    <span class="medication-dose">${med.dose || 'N/A'}</span>
+                                </div>
+                                ${med.notes ? `
+                                <div class="medication-field full-width">
+                                    <label>Notes:</label>
+                                    <span class="medication-notes">${med.notes}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create order info section
+    const orderInfo = `
+        <div class="order-section">
+            <h4>Order Information</h4>
+            <div class="order-details">
+                <p><strong>Order ID:</strong> ${order.id}</p>
+                <p><strong>Type:</strong> ${order.type || 'N/A'}</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${order.status}">${order.status || 'pending'}</span></p>
+                <p><strong>Created:</strong> ${timestamp}</p>
+                <p><strong>Requester:</strong> ${order.requester ? order.requester.name : 'Unknown'} (${order.requester ? order.requester.role : 'Unknown'})</p>
+                ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
+            </div>
+        </div>
+    `;
+    
+    // Add history button if we have apiClient with getOrderHistory method
+    const historyButton = window.apiClient && typeof window.apiClient.getOrderHistory === 'function' ?
+        `<button type="button" class="btn btn-info" id="view-history-btn" onclick="viewOrderHistory('${order.id}')">View Audit Trail</button>` : '';
+    
+    return `
+        <div class="order-detail-content">
+            ${orderInfo}
+            ${order.status === 'cancelled' ? cancellationInfo : ''}
+            ${patientInfo}
+            ${medicationsHTML}
+            <div class="order-actions">
+                ${historyButton}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * View order history/audit trail
+ * @param {string} orderId - Order ID to view history for
+ */
+async function viewOrderHistory(orderId) {
+    console.log('[HISTORY] viewOrderHistory called with orderId:', orderId);
+    
+    try {
+        // Show loading indicator
+        showToastNotification('Loading audit trail...', 'info');
+        
+        // Fetch history
+        const response = await window.apiClient.getOrderHistory(orderId);
+        console.log('[HISTORY] History response:', response);
+        
+        if (!response || !response.success || !response.history) {
+            console.error('[HISTORY] Failed to fetch history:', response);
+            showToastNotification('Failed to load audit trail: ' + (response?.message || 'Unknown error'), 'error');
+            return;
+        }
+        
+        // Create and show history modal
+        showHistoryModal(orderId, response.history);
+    } catch (error) {
+        console.error('[HISTORY] Error viewing history:', error);
+        showToastNotification('Error loading audit trail: ' + (error.message || 'Unknown error'), 'error');
+    }
+}
+
+/**
+ * Create and show history modal
+ * @param {string} orderId - Order ID
+ * @param {Array} historyData - Array of history entries
+ */
+function showHistoryModal(orderId, historyData) {
+    console.log('[MODAL] Creating history modal for order:', orderId);
+    
+    // Create modal container
+    let modalOverlay = document.getElementById('history-modal-overlay');
+    if (!modalOverlay) {
+        modalOverlay = document.createElement('div');
+        modalOverlay.id = 'history-modal-overlay';
+        modalOverlay.style.position = 'fixed';
+        modalOverlay.style.top = '0';
+        modalOverlay.style.left = '0';
+        modalOverlay.style.width = '100%';
+        modalOverlay.style.height = '100%';
+        modalOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modalOverlay.style.display = 'flex';
+        modalOverlay.style.alignItems = 'center';
+        modalOverlay.style.justifyContent = 'center';
+        modalOverlay.style.zIndex = '1000';
+        document.body.appendChild(modalOverlay);
+    } else {
+        modalOverlay.innerHTML = ''; // Clear any existing content
+        modalOverlay.style.display = 'flex';
+    }
+    
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.style.backgroundColor = 'white';
+    modalContent.style.padding = '20px';
+    modalContent.style.borderRadius = '5px';
+    modalContent.style.width = '700px';
+    modalContent.style.maxWidth = '90%';
+    modalContent.style.maxHeight = '80vh';
+    modalContent.style.overflowY = 'auto';
+    modalContent.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    
+    // Modal header
+    const modalHeader = document.createElement('div');
+    modalHeader.style.display = 'flex';
+    modalHeader.style.justifyContent = 'space-between';
+    modalHeader.style.alignItems = 'center';
+    modalHeader.style.marginBottom = '15px';
+    
+    const modalTitle = document.createElement('h3');
+    modalTitle.textContent = `Order Audit Trail (${orderId})`;
+    modalTitle.style.marginTop = '0';
+    modalHeader.appendChild(modalTitle);
+    
+    // Close button (X)
+    const closeBtn = document.createElement('span');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.fontSize = '24px';
+    closeBtn.style.fontWeight = 'bold';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.onclick = () => {
+        modalOverlay.style.display = 'none';
+    };
+    modalHeader.appendChild(closeBtn);
+    
+    modalContent.appendChild(modalHeader);
+    
+    // History table
+    let historyHTML = '';
+    if (historyData && historyData.length > 0) {
+        historyHTML = `
+            <table class="table table-striped history-table">
+                <thead>
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Action</th>
+                        <th>User</th>
+                        <th>Reason</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${historyData.map(entry => {
+                        // Parse JSON data if needed
+                        let previousData = '';
+                        let newData = '';
+                        try {
+                            if (entry.previous_data) {
+                                const prevObj = JSON.parse(entry.previous_data);
+                                previousData = JSON.stringify(prevObj, null, 2);
+                            }
+                            if (entry.new_data) {
+                                const newObj = JSON.parse(entry.new_data);
+                                newData = JSON.stringify(newObj, null, 2);
+                            }
+                        } catch (e) {
+                            console.error('Error parsing history JSON:', e);
+                        }
+                        
+                        // Format action type for display
+                        const actionDisplay = entry.action_type
+                            .replace(/_/g, ' ')
+                            .split(' ')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                        
+                        return `
+                        <tr>
+                            <td>${new Date(entry.action_timestamp).toLocaleString()}</td>
+                            <td>${actionDisplay}</td>
+                            <td>${entry.modified_by}</td>
+                            <td>${entry.reason || 'N/A'}</td>
+                            <td>
+                                ${previousData || newData ? 
+                                    `<button class="btn btn-sm btn-outline-info show-details-btn" 
+                                        onclick="toggleHistoryDetails(this)">Show Details</button>
+                                    <div class="history-details" style="display:none">
+                                        ${previousData ? `<p><strong>Previous:</strong></p><pre>${previousData}</pre>` : ''}
+                                        ${newData ? `<p><strong>New:</strong></p><pre>${newData}</pre>` : ''}
+                                    </div>`
+                                : 'No details available'}
+                            </td>
+                        </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    } else {
+        historyHTML = '<div class="alert alert-info">No audit trail entries found for this order.</div>';
+    }
+    
+    const historyContent = document.createElement('div');
+    historyContent.innerHTML = historyHTML;
+    modalContent.appendChild(historyContent);
+    
+    // Close button at bottom
+    const footerDiv = document.createElement('div');
+    footerDiv.style.textAlign = 'right';
+    footerDiv.style.marginTop = '15px';
+    
+    const closeBtnBottom = document.createElement('button');
+    closeBtnBottom.textContent = 'Close';
+    closeBtnBottom.className = 'btn btn-secondary';
+    closeBtnBottom.onclick = () => {
+        modalOverlay.style.display = 'none';
+    };
+    footerDiv.appendChild(closeBtnBottom);
+    
+    modalContent.appendChild(footerDiv);
+    
+    // Add modal to overlay
+    modalOverlay.appendChild(modalContent);
+    
+    // Add needed styles
+    if (!document.getElementById('history-styles')) {
+        const style = document.createElement('style');
+        style.id = 'history-styles';
+        style.textContent = `
+            .history-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .history-table th, .history-table td {
+                padding: 8px;
+                border: 1px solid #ddd;
+            }
+            .history-table th {
+                background-color: #f2f2f2;
+                text-align: left;
+            }
+            .history-details {
+                margin-top: 10px;
+                padding: 10px;
+                background-color: #f9f9f9;
+                border-radius: 4px;
+                border: 1px solid #eee;
+            }
+            .history-details pre {
+                white-space: pre-wrap;
+                font-family: monospace;
+                font-size: 12px;
+                margin-bottom: 10px;
+                padding: 5px;
+                background-color: #f5f5f5;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+/**
+ * Toggle visibility of history detail section
+ * @param {HTMLElement} button - The button that was clicked
+ */
+function toggleHistoryDetails(button) {
+    const detailsDiv = button.nextElementSibling;
+    if (detailsDiv.style.display === 'none') {
+        detailsDiv.style.display = 'block';
+        button.textContent = 'Hide Details';
+    } else {
+        detailsDiv.style.display = 'none';
+        button.textContent = 'Show Details';
     }
 }

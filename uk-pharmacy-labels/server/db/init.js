@@ -43,7 +43,12 @@ function initializeDatabase() {
         'migrations/patients-table.sql',
         'migrations/add-hospital-fields.sql',
         'migrations/rename-telephone-column.sql',
-        'migrations/add-orders-table.sql'
+        'migrations/add-orders-table.sql',
+        'migrations/add-order-history.sql',
+        'migrations/add-patient-indexes.sql',
+        'migrations/add-dose-to-medications.sql',
+        'migrations/add-dose-to-order-medications.sql',
+        'migrations/add-cancellation-fields.sql'
     ];
     
     const migrations = migrationFiles.map(file => {
@@ -72,8 +77,15 @@ function initializeDatabase() {
                         await new Promise((resolve, reject) => {
                             db.exec(migration, (err) => {
                                 if (err) {
-                                    console.error('Error applying migration:', err.message);
-                                    reject(err);
+                                    // Check for specific errors we can safely ignore
+                                    if (err.message.includes('duplicate column name') || 
+                                        err.message.includes('near "user_version"')) {
+                                        console.log('Ignoring expected migration issue:', err.message);
+                                        resolve(); // Continue despite the error
+                                    } else {
+                                        console.error('Error applying migration:', err.message);
+                                        reject(err);
+                                    }
                                 } else {
                                     console.log('Migration applied successfully');
                                     resolve();

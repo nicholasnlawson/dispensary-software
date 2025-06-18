@@ -12,6 +12,3 @@ CREATE INDEX IF NOT EXISTS idx_orders_timestamp ON orders(timestamp);
 
 -- Add index on order_medications name for faster medication lookups
 CREATE INDEX IF NOT EXISTS idx_medications_name ON order_medications(name);
-
--- Update schema version
-PRAGMA user_version = PRAGMA user_version + 1;

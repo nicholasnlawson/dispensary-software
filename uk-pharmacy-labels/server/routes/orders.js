@@ -206,9 +206,9 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
 /**
  * PUT /api/orders/:id
  * Update an order's status or processing information
- * Accessible to pharmacy role
+ * Accessible to pharmacy and ordering roles
  */
-router.put('/:id', hasRole(['pharmacy']), async (req, res) => {
+router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
   try {
     const orderId = req.params.id;
     const { status, processedBy, checkedBy, processingNotes } = req.body;
