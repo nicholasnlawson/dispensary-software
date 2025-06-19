@@ -535,6 +535,25 @@ class ApiClient {
       const currentUser = this.getCurrentUser();
       const modifiedBy = currentUser ? (currentUser.name || currentUser.username || 'Unknown User') : 'Unknown User';
       
+      // If we have previousOrder data, fetch the current state to compare for audit trail
+      let previousOrderData = null;
+      if (!orderData.previousState) {
+        try {
+          // Fetch the current order to compare changes
+          const currentOrderResponse = await this.request(`/orders/${orderId}`, 'GET');
+          if (currentOrderResponse && currentOrderResponse.success) {
+            previousOrderData = currentOrderResponse.order;
+            console.log('[API] Fetched current order for comparison:', previousOrderData);
+          }
+        } catch (fetchError) {
+          console.warn('[API] Could not fetch current order for comparison:', fetchError);
+          // Continue without previous data if fetch fails
+        }
+      } else {
+        previousOrderData = orderData.previousState;
+        console.log('[API] Using provided previous state for comparison');
+      }
+      
       // If this update includes medications, use the medications endpoint with audit trail
       if (orderData.medications && Array.isArray(orderData.medications)) {
         console.log('[API] Updating order medications with audit trail');
@@ -543,7 +562,8 @@ class ApiClient {
           medications: orderData.medications,
           modifiedBy: modifiedBy,
           reason: orderData.reason || 'Order updated via UI',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          previousState: previousOrderData
         };
         
         console.log('[API] Making PUT request to /orders/' + orderId + '/medications', medicationUpdatePayload);
@@ -556,7 +576,11 @@ class ApiClient {
         console.log('[API] Updating order metadata only');
         const updatePayload = {
           status: orderData.status || 'pending',
-          processingNotes: orderData.notes || orderData.processingNotes || 'Updated via UI'
+          processingNotes: orderData.notes || orderData.processingNotes || 'Updated via UI',
+          modifiedBy: modifiedBy,
+          reason: orderData.reason || 'Order updated via UI',
+          timestamp: new Date().toISOString(),
+          previousState: previousOrderData
         };
         
         console.log('[API] Making PUT request to /orders/' + orderId, updatePayload);
@@ -645,7 +669,22 @@ class ApiClient {
     try {
       console.log('[API] Making GET request to /orders/' + orderId + '/history');
       const response = await this.request(`/orders/${orderId}/history`, 'GET');
-      console.log('[API] getOrderHistory response:', response);
+      console.log('[API] getOrderHistory response structure:', JSON.stringify(response, null, 2));
+      
+      // Log data for debugging
+      if (response.history && Array.isArray(response.history)) {
+        console.log('[API] History entries count:', response.history.length);
+        
+        // Check if we have entries with previousData/newData
+        const entriesWithDiff = response.history.filter(entry => 
+          (entry.previousData || entry.previous_data) && (entry.newData || entry.new_data));
+        console.log('[API] Entries with diff data:', entriesWithDiff.length);
+        
+        if (entriesWithDiff.length > 0) {
+          console.log('[API] Sample entry with diff:', entriesWithDiff[0]);
+        }
+      }
+      
       return response;
     } catch (error) {
       console.error('[API] Error fetching order history:', error);

@@ -483,23 +483,27 @@ router.delete('/:orderId/medications/:medicationId', hasRole(['pharmacy', 'order
 /**
  * GET /api/orders/:id/history
  * Get the history/audit trail for an order
- * Accessible to admin and pharmacy roles
+ * Accessible to admin, pharmacy and ordering roles
  */
-router.get('/:id/history', hasRole(['admin', 'pharmacy']), async (req, res) => {
+router.get('/:id/history', hasRole(['admin', 'pharmacy', 'ordering']), async (req, res) => {
   try {
     const orderId = req.params.id;
-    const history = await OrderModel.getOrderHistory(orderId);
+    console.log(`[DEBUG] Getting history for order: ${orderId}`);
+    const historyResult = await OrderModel.getOrderHistory(orderId);
     
-    if (!history) {
+    if (!historyResult) {
       return res.status(404).json({ 
         success: false, 
         message: 'Order history not found' 
       });
     }
     
-    res.json({ 
-      success: true, 
-      history 
+    // Extract the history array directly instead of nesting it
+    // This avoids the double-nesting issue where frontend receives {success:true, history:{success:true, history:[...]}}  
+    res.json({
+      success: true,
+      history: historyResult.history || [],
+      pagination: historyResult.pagination || null
     });
   } catch (error) {
     console.error('Error fetching order history:', error);

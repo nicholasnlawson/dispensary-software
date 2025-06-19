@@ -188,10 +188,14 @@ function createOrderDetailModal() {
     if (document.getElementById('order-detail-modal')) {
         return;
     }
-        // Create modal container
+        // Create modal container with enhanced cross-browser compatibility
     const modalContainer = document.createElement('div');
     modalContainer.id = 'order-detail-modal';
     modalContainer.className = 'hidden';
+    
+    // Add explicit styling to improve cross-browser compatibility
+    modalContainer.style.position = 'fixed';
+    modalContainer.style.zIndex = '1000';
     
     // Create modal content
     modalContainer.innerHTML = `
@@ -205,6 +209,7 @@ function createOrderDetailModal() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+                <button type="button" class="btn btn-audit" id="view-history-btn">View Audit Trail</button>
                 <button type="button" class="btn btn-edit" id="edit-order-btn">Edit Order</button>
                 <button type="button" class="btn btn-save hidden" id="save-order-btn">Save Changes</button>
                 <button type="button" class="btn btn-cancel" id="cancel-order-btn">Cancel Order</button>
@@ -408,7 +413,7 @@ let isOrderInEditMode = false;
  * Show order details in a modal
  * @param {Object} order - Order object to display
  */
-function showOrderDetails(order) {
+async function showOrderDetails(order) {
     console.log('[MODAL] showOrderDetails called with order:', order);
     
     if (!order) {
@@ -438,6 +443,16 @@ function showOrderDetails(order) {
     // Setup buttons based on order status
     setupModalButtons();
     
+    // Show/hide audit trail button based on access permissions
+    const auditTrailBtn = document.getElementById('view-history-btn');
+    if (auditTrailBtn) {
+        const hasHistoryAccess = window.apiClient && typeof window.apiClient.getOrderHistory === 'function';
+        auditTrailBtn.style.display = hasHistoryAccess ? 'inline-block' : 'none';
+        if (hasHistoryAccess) {
+            auditTrailBtn.setAttribute('data-order-id', order.id);
+        }
+    }
+    
     // Show modal
     modal.style.display = 'block';
     modal.classList.remove('hidden');
@@ -448,26 +463,67 @@ function showOrderDetails(order) {
 }
 
 /**
+ * Enhance modal for cross-browser compatibility
+ * @param {HTMLElement} modal - Modal element to enhance
+ */
+function enhanceModalForCrossBrowser(modal) {
+    if (!modal) return;
+    
+    console.log('[MODAL] Applying cross-browser enhancements');
+    
+    // Apply animations via class
+    modal.classList.add('show-modal');
+    
+    // Ensure consistent modal rendering across browsers
+    modal.style.zIndex = '1000';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    
+    // Ensure buttons have consistent styling
+    const buttons = modal.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        // Ensure cursor is pointer on all browsers
+        button.style.cursor = 'pointer';
+    });
+    
+    // Force browser to recompute styles for better rendering
+    void modal.offsetWidth;
+}
+
+/**
  * Setup the modal buttons based on order status and current mode
  */
 function setupModalButtons() {
-    console.log('[MODAL] setupModalButtons called for order:', currentOrder);
+    console.log('[MODAL] Setting up modal buttons');
+    // Get button elements
+    const editBtn = document.getElementById('edit-order-btn');
+    const saveBtn = document.getElementById('save-order-btn');
+    const cancelBtn = document.getElementById('cancel-order-btn');
+    const closeBtn = document.getElementById('close-detail-btn');
     
-    // Cancel order button
-    const cancelButton = document.getElementById('cancel-order-btn');
-    console.log('[MODAL] Cancel button found:', !!cancelButton);
+    // Set up history button if it exists
+    const historyBtn = document.getElementById('view-history-btn');
+    if (historyBtn) {
+        console.log('[MODAL] Found history button, setting up event listener');
+        historyBtn.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            console.log('[MODAL] View History button clicked for order:', orderId);
+            if (orderId) {
+                viewOrderHistory(orderId);
+            }
+        });
+    }
     
-    if (cancelButton) {
-        if (currentOrder.status === 'pending') {
+    if (cancelBtn) {
+        if (currentOrder && currentOrder.status === 'pending') {
             console.log('[MODAL] Showing cancel button for pending order');
-            cancelButton.classList.remove('hidden');
-            cancelButton.onclick = () => {
+            cancelBtn.classList.remove('hidden');
+            cancelBtn.onclick = () => {
                 console.log('[MODAL] Cancel button clicked for order:', currentOrder.id);
                 cancelOrder(currentOrder.id);
             };
         } else {
-            console.log('[MODAL] Hiding cancel button for non-pending order, status:', currentOrder.status);
-            cancelButton.classList.add('hidden');
+            console.log('[MODAL] Hiding cancel button for non-pending order');
+            cancelBtn.classList.add('hidden');
         }
     }
     
@@ -743,13 +799,22 @@ async function saveOrderChanges() {
                 const doseInput = row.querySelector('.medication-dose');
                 const notesInput = row.querySelector('.medication-notes');
                 
-                // Only add medications with at least a name
-                if (nameInput && nameInput.value.trim()) {
+                // Only add medications with at least a name AND quantity
+                const medName = nameInput && nameInput.value.trim();
+                const medQuantity = quantityInput && quantityInput.value.trim();
+                
+                if (medName) {
+                    // Ensure quantity is always set - default to '1' if empty
+                    const finalQuantity = medQuantity || '1';
+                    
+                    // Log validation info
+                    console.log(`[SAVE] Medication: ${medName}, Quantity: ${finalQuantity}`);
+                    
                     medications.push({
-                        name: nameInput.value.trim(),
+                        name: medName,
                         strength: strengthInput ? strengthInput.value.trim() : '',
                         form: formInput ? formInput.value.trim() : '',
-                        quantity: quantityInput ? quantityInput.value.trim() : '',
+                        quantity: finalQuantity, // Always set quantity
                         dose: doseInput ? doseInput.value.trim() : '',
                         notes: notesInput ? notesInput.value.trim() : ''
                     });
@@ -1594,19 +1659,43 @@ function initializeWardStockForm() {
  * Initialize medication autocomplete
  */
 function initMedicationAutocomplete() {
-    // Load medication data from JSON files
+    console.log('[AUTO] Initializing medication autocomplete');
     loadMedicationData()
         .then(() => {
-            // Set up autocomplete for initial medication fields
-            setupMedicationAutocomplete(document.getElementById('med-name-1'));
-            setupFormulationAutocomplete(document.getElementById('med-form-1'));
+            console.log('[AUTO] Medication data loaded successfully');
+            console.log('[AUTO] medicationsData loaded:', window.medicationsData ? window.medicationsData.length : 'None');
+            console.log('[AUTO] aliasToGenericMap loaded:', window.aliasToGenericMap ? Object.keys(window.aliasToGenericMap).length : 'None');
             
-            // Set up autocomplete for initial ward stock medication fields
-            setupMedicationAutocomplete(document.getElementById('ws-med-name-1'));
-            setupFormulationAutocomplete(document.getElementById('ws-med-form-1'));
+            const medicationNameInputs = document.querySelectorAll('.medication-name');
+            console.log('[AUTO] Found medication name inputs:', medicationNameInputs.length);
+            medicationNameInputs.forEach(input => {
+                setupMedicationAutocomplete(input);
+            });
+            
+            // Setup specific inputs that might not be captured by the class selector
+            const specificInputs = [
+                { id: 'med-name-1', found: false },
+                { id: 'med-form-1', found: false, formulation: true },
+                { id: 'ws-med-name-1', found: false },
+                { id: 'ws-med-form-1', found: false, formulation: true }
+            ];
+            
+            specificInputs.forEach(spec => {
+                const input = document.getElementById(spec.id);
+                spec.found = !!input;
+                if (input) {
+                    if (spec.formulation) {
+                        setupFormulationAutocomplete(input);
+                    } else {
+                        setupMedicationAutocomplete(input);
+                    }
+                }
+            });
+            
+            console.log('[AUTO] Specific inputs status:', specificInputs);
         })
         .catch(error => {
-            console.error('Error loading medication data:', error);
+            console.error('[AUTO] Error loading medication data:', error);
         });
 }
 
@@ -1644,6 +1733,33 @@ async function loadMedicationData() {
         
         // Create alias-to-generic mapping
         const aliasToGenericMap = {};
+        
+        // Add shouldPrescribeByBrand function to check if medication is in the brand exception list
+        window.shouldPrescribeByBrand = function(medicationName) {
+            if (!medicationName || !brandExceptionsList.length) return false;
+            
+            // Normalize the medication name for comparison
+            const normalizedName = medicationName.toLowerCase().trim();
+            
+            // Check if this medication is in our brand exceptions list
+            return brandExceptionsList.some(brand => {
+                return normalizedName === brand || 
+                       normalizedName.includes(brand) || 
+                       brand.includes(normalizedName);
+            });
+        };
+        
+        // Add getGenericName function to map aliases to generic names
+        window.getGenericName = function(medicationName) {
+            if (!medicationName) return medicationName;
+            
+            // Check if this medication has a generic name mapping
+            const normalizedName = medicationName.toLowerCase().trim();
+            const genericName = window.aliasToGenericMap[normalizedName];
+            
+            // Return the generic name if found, otherwise return the original name
+            return genericName || medicationName;
+        };
         
         drugAliasesData.forEach(drug => {
             // Add the main drug name
@@ -1795,6 +1911,23 @@ function setupMedicationAutocomplete(inputElement) {
                 item.addEventListener('click', () => {
                     const selectedMed = item.textContent;
                     
+                    // Create tooltip element if it doesn't exist
+                    let tooltipElement = wrapper.querySelector('.medication-tooltip');
+                    if (!tooltipElement) {
+                        tooltipElement = document.createElement('div');
+                        tooltipElement.className = 'medication-tooltip';
+                        tooltipElement.style.display = 'none';
+                        tooltipElement.style.position = 'absolute';
+                        tooltipElement.style.backgroundColor = '#f9f9f9';
+                        tooltipElement.style.border = '1px solid #ccc';
+                        tooltipElement.style.padding = '8px';
+                        tooltipElement.style.borderRadius = '4px';
+                        tooltipElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                        tooltipElement.style.zIndex = '1000';
+                        tooltipElement.style.maxWidth = '250px';
+                        wrapper.appendChild(tooltipElement);
+                    }
+                    
                     // Check if this medication should be prescribed by brand name
                     if (shouldPrescribeByBrand(selectedMed)) {
                         // Use the selected brand name as is
@@ -1806,7 +1939,7 @@ function setupMedicationAutocomplete(inputElement) {
                         
                         // Hide tooltip after 5 seconds
                         setTimeout(() => {
-                            tooltipElement.style.display = 'none';
+                            if (tooltipElement) tooltipElement.style.display = 'none';
                         }, 5000);
                     } else {
                         // Convert to generic name if it's an alias
@@ -1820,7 +1953,7 @@ function setupMedicationAutocomplete(inputElement) {
                             
                             // Hide tooltip after 5 seconds
                             setTimeout(() => {
-                                tooltipElement.style.display = 'none';
+                                if (tooltipElement) tooltipElement.style.display = 'none';
                             }, 5000);
                         }
                     }
@@ -1855,7 +1988,7 @@ function setupMedicationAutocomplete(inputElement) {
     document.addEventListener('click', (event) => {
         if (!wrapper.contains(event.target)) {
             dropdownList.style.display = 'none';
-            tooltipElement.style.display = 'none';
+            // No tooltipElement in this function
         }
     });
 }
@@ -1977,11 +2110,15 @@ function createMedicationItem(index) {
         <div class="form-row">
             <div class="form-column">
                 <label for="med-strength-${index}">Strength:</label>
-                <input type="text" id="med-strength-${index}" class="med-strength" placeholder="e.g., 500mg" />
+                <input type="text" id="med-strength-${index}" class="med-strength" placeholder="e.g., 500mg" 
+                       autocomplete="nope" autocorrect="off" spellcheck="false" 
+                       name="strength_${index}_${Math.random().toString(36).substring(2, 10)}" />
             </div>
             <div class="form-column">
                 <label for="med-quantity-${index}">Quantity:</label>
-                <input type="text" id="med-quantity-${index}" class="med-quantity" placeholder="e.g., 28" required />
+                <input type="text" id="med-quantity-${index}" class="med-quantity" placeholder="e.g., 28" 
+                       autocomplete="nope" autocorrect="off" spellcheck="false" required 
+                       name="quantity_${index}_${Math.random().toString(36).substring(2, 10)}" />
             </div>
         </div>
 
@@ -2029,11 +2166,15 @@ function createWardStockMedicationItem(index) {
         <div class="form-row">
             <div class="form-column">
                 <label for="ws-med-strength-${index}">Strength:</label>
-                <input type="text" id="ws-med-strength-${index}" class="med-strength" placeholder="e.g., 500mg" />
+                <input type="text" id="ws-med-strength-${index}" class="med-strength" placeholder="e.g., 500mg" 
+                       autocomplete="nope" autocorrect="off" spellcheck="false" 
+                       name="ws_strength_${index}_${Math.random().toString(36).substring(2, 10)}" />
             </div>
             <div class="form-column">
                 <label for="ws-med-quantity-${index}">Quantity:</label>
-                <input type="text" id="ws-med-quantity-${index}" class="med-quantity" placeholder="e.g., 28" required />
+                <input type="text" id="ws-med-quantity-${index}" class="med-quantity" placeholder="e.g., 28" 
+                       autocomplete="nope" autocorrect="off" spellcheck="false" required 
+                       name="ws_quantity_${index}_${Math.random().toString(36).substring(2, 10)}" />
             </div>
         </div>
 
@@ -2090,28 +2231,54 @@ function collectMedicationsData() {
  * @returns {Array} - Array of medication objects
  */
 function collectWardStockMedicationsData() {
-    const medicationItems = document.querySelectorAll('#ward-stock-medications-container .medication-item');
+    console.log('[DEBUG] Starting collectWardStockMedicationsData');
+    
+    // Get all medication items
+    const medicationItems = document.querySelectorAll('#ws-medications-container .medication-item');
+    console.log('[DEBUG] Found medication items:', medicationItems.length);
+    
     const medications = [];
     
-    medicationItems.forEach(item => {
+    medicationItems.forEach((item, index) => {
+        console.log(`[DEBUG] Processing item ${index}:`, item);
+        
         const nameInput = item.querySelector('.med-name');
         const formInput = item.querySelector('.med-form');
         const strengthInput = item.querySelector('.med-strength');
         const quantityInput = item.querySelector('.med-quantity');
         const doseInput = item.querySelector('.med-dose');
         
+        console.log(`[DEBUG] Item ${index} inputs:`, {
+            nameInput: nameInput ? { found: true, value: nameInput.value } : 'not found',
+            formInput: formInput ? { found: true, value: formInput.value } : 'not found',
+            strengthInput: strengthInput ? { found: true, value: strengthInput.value } : 'not found',
+            quantityInput: quantityInput ? { found: true, value: quantityInput.value } : 'not found',
+            doseInput: doseInput ? { found: true, value: doseInput.value } : 'not found'
+        });
+        
         // Only add if we have at least a name and quantity
         if (nameInput && nameInput.value && quantityInput && quantityInput.value) {
-            medications.push({
+            const medication = {
                 name: nameInput.value,
                 form: formInput ? formInput.value : '',
                 strength: strengthInput ? strengthInput.value : '',
                 quantity: quantityInput.value,
                 dose: doseInput ? doseInput.value : ''
+            };
+            
+            medications.push(medication);
+            console.log(`[DEBUG] Added medication:`, medication);
+        } else {
+            console.log(`[DEBUG] Item ${index} skipped: missing name or quantity`, {
+                hasNameInput: !!nameInput,
+                nameValue: nameInput ? nameInput.value : 'N/A',
+                hasQuantityInput: !!quantityInput,
+                quantityValue: quantityInput ? quantityInput.value : 'N/A'
             });
         }
     });
     
+    console.log('[DEBUG] Final medications array:', medications);
     return medications;
 }
 
@@ -2474,148 +2641,6 @@ async function loadRecentOrders() {
                 
                 tableBody.appendChild(row);
             });
-            
-            // Add table styling if not already in stylesheet
-            if (!document.getElementById('orders-table-styles')) {
-                const style = document.createElement('style');
-                style.id = 'orders-table-styles';
-                style.textContent = `
-                    .orders-table {
-                        width: 100%;
-                        border-collapse: separate;
-                        border-spacing: 0;
-                        margin-top: 15px;
-                        font-size: 0.9em;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-                        border-radius: 8px;
-                        overflow: hidden;
-                    }
-                    .orders-table thead th {
-                        text-align: left;
-                        padding: 12px 15px;
-                        background-color: #2196F3;
-                        color: white;
-                        font-weight: bold;
-                        letter-spacing: 0.5px;
-                        border-bottom: 2px solid #0d8aee;
-                    }
-                    .orders-table tbody tr {
-                        transition: all 0.2s ease;
-                        border-bottom: 1px solid #f0f0f0;
-                    }
-                    .orders-table tbody tr:last-child {
-                        border-bottom: none;
-                    }
-                    .orders-table tbody td {
-                        padding: 12px 15px;
-                        border-bottom: 1px solid #eee;
-                        vertical-align: middle;
-                    }
-                    .orders-table tbody tr:nth-child(even) {
-                        background-color: #f9f9f9;
-                    }
-                    .orders-table tbody tr:hover {
-                        background-color: #e3f2fd;
-                        cursor: pointer;
-                        transform: translateY(-1px);
-                        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
-                    }
-                    .order-row {
-                        position: relative;
-                    }
-                    /* Removed View Details overlay that was obscuring information */
-                    .order-id {
-                        font-weight: bold;
-                        color: #2196F3;
-                    }
-                    .order-time {
-                        font-size: 0.85em;
-                        color: #666;
-                        margin-top: 4px;
-                    }
-                    .ward-stock-label {
-                        font-style: italic;
-                        background-color: #e8eaf6;
-                        padding: 3px 8px;
-                        border-radius: 4px;
-                        color: #3f51b5;
-                        display: inline-block;
-                    }
-                    .loading-orders, .error-message {
-                        padding: 25px;
-                        text-align: center;
-                        color: #666;
-                        background-color: #f9f9f9;
-                        border-radius: 8px;
-                        margin: 15px 0;
-                        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-                    }
-                    .error-message {
-                        color: #d32f2f;
-                        border-left: 4px solid #f44336;
-                    }
-                    .medications-info {
-                        max-width: 300px;
-                        line-height: 1.5;
-                    }
-                    .status-cell {
-                        min-width: 120px;
-                    }
-                    .order-status {
-                        display: inline-block;
-                        padding: 4px 8px;
-                        border-radius: 4px;
-                        font-size: 0.8em;
-                        font-weight: bold;
-                        text-transform: uppercase;
-                    }
-                    .status-pending {
-                        background-color: #ffecb3;
-                        color: #ff6f00;
-                    }
-                    .status-processing {
-                        background-color: #b3e5fc;
-                        color: #0277bd;
-                    }
-                    .status-completed {
-                        background-color: #c8e6c9;
-                        color: #2e7d32;
-                    }
-                    .status-cancelled {
-                        background-color: #ffcdd2;
-                        color: #c62828;
-                    }
-                    .cancelled-order td {
-                        color: #777;
-                        text-decoration: line-through;
-                    }
-                    .cancelled-order .status-cell,
-                    .cancelled-order .order-id,
-                    .cancelled-order .status-cancelled {
-                        text-decoration: none !important;
-                    }
-                    .cancellation-info {
-                        margin-top: 5px;
-                        font-size: 0.8em;
-                        color: #555;
-                        text-decoration: none !important;
-                        display: flex;
-                        flex-direction: column;
-                    }
-                    .cancelled-by {
-                        font-weight: bold;
-                        margin-bottom: 2px;
-                    }
-                    .cancellation-reason {
-                        font-style: italic;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        max-width: 130px;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
         } else {
             recentOrdersList.innerHTML = '<div class="no-orders">No recent orders found in database. Create a new order to see it here.</div>';
             
@@ -2645,6 +2670,88 @@ async function loadRecentOrders() {
 }
 
 /**
+ * Extract requester name from an order object, handling various data formats
+ * @param {Object} order - Order object to parse
+ * @returns {string} - Requester name or 'Unknown' if not found
+ */
+function extractRequesterName(order) {
+    if (!order) return 'Unknown';
+    
+    // Debug the requester object
+    console.log('[MODAL] Extracting requester name from:', order);
+    
+    // Handle various formats and nested structures
+    if (order.requester) {
+        if (typeof order.requester === 'string') {
+            return order.requester;
+        }
+        if (order.requester.name) {
+            return order.requester.name;
+        }
+        if (order.requester.firstName && order.requester.surname) {
+            return `${order.requester.firstName} ${order.requester.surname}`;
+        }
+        if (order.requester.first_name && order.requester.surname) {
+            return `${order.requester.first_name} ${order.requester.surname}`;
+        }
+        if (order.requester.fullName) {
+            return order.requester.fullName;
+        }
+        if (order.requester.userName || order.requester.username) {
+            return order.requester.userName || order.requester.username;
+        }
+    }
+    
+    // Check for flattened properties
+    if (order.requesterName) {
+        return order.requesterName;
+    }
+    if (order.requester_name) {
+        return order.requester_name;
+    }
+    if (order.requesterFirstName && order.requesterSurname) {
+        return `${order.requesterFirstName} ${order.requesterSurname}`;
+    }
+    if (order.requester_first_name && order.requester_surname) {
+        return `${order.requester_first_name} ${order.requester_surname}`;
+    }
+    
+    return 'Unknown';
+}
+
+/**
+ * Extract requester role from an order object, handling various data formats
+ * @param {Object} order - Order object to parse
+ * @returns {string} - Requester role or 'Unknown' if not found
+ */
+function extractRequesterRole(order) {
+    if (!order) return 'Unknown';
+    
+    // Handle various formats
+    if (order.requester) {
+        if (order.requester.role) {
+            return order.requester.role;
+        }
+        if (order.requester.userRole) {
+            return order.requester.userRole;
+        }
+        if (order.requester.user_role) {
+            return order.requester.user_role;
+        }
+    }
+    
+    // Check for flattened properties
+    if (order.requesterRole) {
+        return order.requesterRole;
+    }
+    if (order.requester_role) {
+        return order.requester_role;
+    }
+    
+    return 'Unknown';
+}
+
+/**
  * Create HTML content for order details modal
  * @param {Object} order - Order object to display
  * @returns {string} - HTML string for modal content
@@ -2658,6 +2765,9 @@ function createOrderDetailHTML(order) {
     
     // Format timestamp
     const timestamp = new Date(order.timestamp).toLocaleString();
+    
+    // Debug the entire order object to find all available fields
+    console.log('[MODAL] Complete order object:', JSON.parse(JSON.stringify(order)));
     
     // Format cancellation info if available
     let cancellationInfo = '';
@@ -2677,15 +2787,49 @@ function createOrderDetailHTML(order) {
     // Create patient info section
     let patientInfo = '';
     if (order.patient) {
+        // Log full patient object to help debug
+        console.log('[MODAL] Patient data:', order.patient);
+        
+        // Handle different possible field names with more varied formats
+        const patientName = order.patient.name || order.patient.patientName || 'Not provided';
+        const nhsNumber = order.patient.nhsNumber || order.patient.nhs_number || order.patient.nhsId || 
+                         order.patient.nhs || order.nhs_number || order.nhsNumber || order.nhsId || 'Not provided';
+        const hospitalNumber = order.patient.hospitalNumber || order.patient.hospitalId || 
+                             order.patient.hospital_number || order.patient.hospital_id || 
+                             order.hospitalNumber || order.hospitalId || 'Not provided';
+        const wardName = getWardName(order.wardId) || order.patient.ward || 'Not provided';
+        //const bedNumber = order.patient.bed || order.patient.bedNumber || 'Not provided';
+        
         patientInfo = `
             <div class="order-section">
                 <h4>Patient Information</h4>
                 <div class="patient-details">
-                    <p><strong>Name:</strong> ${order.patient.name || 'Not provided'}</p>
-                    <p><strong>NHS Number:</strong> ${order.patient.nhsNumber || 'Not provided'}</p>
-                    <p><strong>Hospital Number:</strong> ${order.patient.hospitalNumber || 'Not provided'}</p>
-                    <p><strong>Ward:</strong> ${order.patient.ward || 'Not provided'}</p>
-                    <p><strong>Bed:</strong> ${order.patient.bed || 'Not provided'}</p>
+                    <p><strong>Name:</strong> ${patientName}</p>
+                    <p><strong>NHS Number:</strong> ${nhsNumber}</p>
+                    <p><strong>Hospital Number:</strong> ${hospitalNumber}</p>
+                    <p><strong>Ward:</strong> ${wardName}</p>
+
+                </div>
+            </div>
+        `;
+    } else if (order.type === 'patient') {
+        // If patient order type but no patient object, try alternative data paths
+        console.log('[MODAL] No patient object, looking for alternative data paths');
+        
+        // For backward compatibility with older order formats
+        const patientName = order.patientName || 'Not provided';
+        const nhsNumber = order.nhsNumber || order.nhsId || order.nhs || order.nhs_number || 'Not provided';
+        const hospitalNumber = order.hospitalNumber || order.hospitalId || order.hospital_number || order.hospital_id || 'Not provided';
+        const wardName = getWardName(order.wardId) || 'Not provided';
+        
+        patientInfo = `
+            <div class="order-section">
+                <h4>Patient Information</h4>
+                <div class="patient-details">
+                    <p><strong>Name:</strong> ${patientName}</p>
+                    <p><strong>NHS Number:</strong> ${nhsNumber}</p>
+                    <p><strong>Hospital Number:</strong> ${hospitalNumber}</p>
+                    <p><strong>Ward:</strong> ${wardName}</p>
                 </div>
             </div>
         `;
@@ -2744,15 +2888,14 @@ function createOrderDetailHTML(order) {
                 <p><strong>Type:</strong> ${order.type || 'N/A'}</p>
                 <p><strong>Status:</strong> <span class="status-badge status-${order.status}">${order.status || 'pending'}</span></p>
                 <p><strong>Created:</strong> ${timestamp}</p>
-                <p><strong>Requester:</strong> ${order.requester ? order.requester.name : 'Unknown'} (${order.requester ? order.requester.role : 'Unknown'})</p>
+                <p><strong>Requester:</strong> ${extractRequesterName(order)} (${extractRequesterRole(order)})</p>
                 ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
             </div>
         </div>
     `;
     
-    // Add history button if we have apiClient with getOrderHistory method
-    const historyButton = window.apiClient && typeof window.apiClient.getOrderHistory === 'function' ?
-        `<button type="button" class="btn btn-info" id="view-history-btn" onclick="viewOrderHistory('${order.id}')">View Audit Trail</button>` : '';
+    // History button is now in the modal footer
+    const hasHistoryAccess = window.apiClient && typeof window.apiClient.getOrderHistory === 'function';
     
     return `
         <div class="order-detail-content">
@@ -2760,9 +2903,6 @@ function createOrderDetailHTML(order) {
             ${order.status === 'cancelled' ? cancellationInfo : ''}
             ${patientInfo}
             ${medicationsHTML}
-            <div class="order-actions">
-                ${historyButton}
-            </div>
         </div>
     `;
 }
@@ -2782,14 +2922,30 @@ async function viewOrderHistory(orderId) {
         const response = await window.apiClient.getOrderHistory(orderId);
         console.log('[HISTORY] History response:', response);
         
-        if (!response || !response.success || !response.history) {
+        if (!response || !response.success) {
             console.error('[HISTORY] Failed to fetch history:', response);
             showToastNotification('Failed to load audit trail: ' + (response?.message || 'Unknown error'), 'error');
             return;
         }
         
+        // Extract history array from the response
+        // API now returns {success: true, history: [array], pagination: {...}}
+        const historyArray = response.history && Array.isArray(response.history) ? response.history : [];
+        console.log('[HISTORY] Extracted history array:', historyArray);
+        
+        // Log the first history entry for debugging if available
+        if (historyArray.length > 0) {
+            console.log('[HISTORY] First history entry:', historyArray[0]);
+            if (historyArray[0].previousData) {
+                console.log('[HISTORY] First entry has previousData:', historyArray[0].previousData);
+            }
+            if (historyArray[0].newData) {
+                console.log('[HISTORY] First entry has newData:', historyArray[0].newData);
+            }
+        }
+        
         // Create and show history modal
-        showHistoryModal(orderId, response.history);
+        showHistoryModal(orderId, historyArray);
     } catch (error) {
         console.error('[HISTORY] Error viewing history:', error);
         showToastNotification('Error loading audit trail: ' + (error.message || 'Unknown error'), 'error');
@@ -2801,8 +2957,192 @@ async function viewOrderHistory(orderId) {
  * @param {string} orderId - Order ID
  * @param {Array} historyData - Array of history entries
  */
+/**
+ * Generates a readable diff between two objects
+ * @param {Object} prevObj - Previous state object
+ * @param {Object} newObj - New state object
+ * @returns {string} - HTML string showing the differences
+ */
+function generateReadableDiff(prevObj, newObj) {
+    // Initialize the HTML output
+    let diffHTML = '<div class="changes-table">';
+    
+    // Track if we found any differences
+    let hasDifferences = false;
+    
+    // Use a consistent table structure but skip generic fields
+    diffHTML += '<h5>Medication Changes</h5>';
+    diffHTML += '<table class="table table-bordered table-sm">';
+    
+    // Special handling for medications array - compare item by item
+    if (prevObj && newObj && 
+        prevObj.medications && newObj.medications && 
+        Array.isArray(prevObj.medications) && Array.isArray(newObj.medications)) {
+        
+        // Map previous medications by name for easy lookup
+        const prevMedMap = new Map();
+        prevObj.medications.forEach((med, index) => {
+            // Use name as key, store with index
+            if (med.name) prevMedMap.set(med.name, { data: med, index });
+        });
+        
+        // Check each medication in the new state
+        newObj.medications.forEach((newMed, newIndex) => {
+            if (!newMed.name) return;
+            
+            const matchingPrevMed = prevMedMap.get(newMed.name);
+            
+            if (matchingPrevMed) {
+                // This med exists in both - check for field changes
+                const prevMed = matchingPrevMed.data;
+                const medFields = new Set([...Object.keys(prevMed), ...Object.keys(newMed)]);
+                
+                let medChanges = [];
+                medFields.forEach(field => {
+                    const prevVal = prevMed[field];
+                    const newVal = newMed[field];
+                    
+                    // Skip fields that aren't actually changing meaningfully
+                    if (JSON.stringify(prevVal) === JSON.stringify(newVal)) {
+                        return; // No change
+                    }
+                    
+                    // Skip fields where both values are essentially empty/not set
+                    const isEmptyValue = val => 
+                        val === undefined || 
+                        val === null || 
+                        val === '' || 
+                        val === 'Not set' || 
+                        val === 'not set' ||
+                        val === 'undefined';
+                        
+                    if (isEmptyValue(prevVal) && isEmptyValue(newVal)) {
+                        return; // Both empty/not set, don't show
+                    }
+                    
+                    medChanges.push({
+                        field,
+                        prev: prevVal,
+                        new: newVal
+                    });
+                });
+                
+                if (medChanges.length > 0) {
+                    hasDifferences = true;
+                    diffHTML += `<tr>
+                        <td><strong>Medication: ${newMed.name}</strong></td>
+                        <td colspan="2">
+                            <ul class="med-changes-list">`;
+                    
+                    medChanges.forEach(change => {
+                        diffHTML += `<li>
+                            <strong>${formatFieldName(change.field)}:</strong>
+                            <span class="prev-value">${formatValueForDisplay(change.prev)}</span>
+                            <span class="arrow-symbol">→</span>
+                            <span class="new-value">${formatValueForDisplay(change.new)}</span>
+                        </li>`;
+                    });
+                    
+                    diffHTML += `</ul></td></tr>`;
+                }
+                
+                // Remove from map to mark as processed
+                prevMedMap.delete(newMed.name);
+            } else {
+                // This is a new medication
+                hasDifferences = true;
+                diffHTML += `<tr>
+                    <td><strong>Added Medication</strong></td>
+                    <td>-</td>
+                    <td class="new-value">${newMed.name} ${newMed.strength || ''} ${newMed.form || ''} (${newMed.quantity || 1})</td>
+                </tr>`;
+            }
+        });
+        
+        // Any medications left in prevMedMap were removed
+        prevMedMap.forEach((value, medName) => {
+            hasDifferences = true;
+            const prevMed = value.data;
+            diffHTML += `<tr>
+                <td><strong>Removed Medication</strong></td>
+                <td class="prev-value">${prevMed.name} ${prevMed.strength || ''} ${prevMed.form || ''} (${prevMed.quantity || 1})</td>
+                <td>-</td>
+            </tr>`;
+        });
+    }
+    
+    diffHTML += '</tbody></table></div>';
+    
+    // If no differences found, return a message
+    if (!hasDifferences) {
+        return '<div class="alert alert-info">No detailed changes detected</div>';
+    }
+    
+    return diffHTML;
+}
+
+/**
+ * Format a field name for display
+ * @param {string} fieldName - Raw field name
+ * @returns {string} - Formatted field name
+ */
+function formatFieldName(fieldName) {
+    return fieldName
+        .replace(/([A-Z])/g, ' $1') // Insert spaces before capital letters
+        .replace(/_/g, ' ') // Replace underscores with spaces
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize each word
+        .join(' ');
+}
+
+/**
+ * Format a value for display in the diff
+ * @param {*} value - Value to format
+ * @returns {string} - Formatted value
+ */
+function formatValueForDisplay(value) {
+    if (value === undefined || value === null) {
+        return '<em class="text-muted">Not set</em>';
+    }
+    
+    if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+            if (value.length === 0) return '<em class="text-muted">Empty list</em>';
+            return `<em>${value.length} items</em>`;
+        }
+        return JSON.stringify(value);
+    }
+    
+    // For simple values
+    return String(value);
+}
+
 function showHistoryModal(orderId, historyData) {
-    console.log('[MODAL] Creating history modal for order:', orderId);
+    console.log('[MODAL] Creating history modal for order:', orderId, 'with data:', historyData);
+    
+    // Ensure we have an array (API might send different structures)
+    const historyArray = Array.isArray(historyData) ? historyData : 
+                         (historyData && historyData.history && Array.isArray(historyData.history)) ? 
+                         historyData.history : [];
+    
+    console.log('[MODAL] Normalized history array length:', historyArray.length);
+    
+    // Add CSS for history diff styling if not already added
+    if (!document.getElementById('history-diff-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'history-diff-styles';
+        styles.textContent = `
+            .changes-table { margin-top: 15px; }
+            .changes-table table { width: 100%; margin-bottom: 15px; }
+            .prev-value { color: #dc3545; text-decoration: line-through; }
+            .new-value { color: #28a745; font-weight: 500; }
+            .med-changes-list { list-style: none; padding-left: 0; }
+            .med-changes-list li { margin-bottom: 5px; padding: 3px; border-bottom: 1px dotted #ccc; }
+            .show-details-btn { margin-bottom: 5px; }
+            .history-details { padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; margin-top: 5px; }
+        `;
+        document.head.appendChild(styles);
+    }
     
     // Create modal container
     let modalOverlay = document.getElementById('history-modal-overlay');
@@ -2827,14 +3167,17 @@ function showHistoryModal(orderId, historyData) {
     
     // Create modal content
     const modalContent = document.createElement('div');
+    modalContent.className = 'history-modal'; // Add class for targeting in CSS
     modalContent.style.backgroundColor = 'white';
     modalContent.style.padding = '20px';
     modalContent.style.borderRadius = '5px';
-    modalContent.style.width = '700px';
+    modalContent.style.width = '800px'; // Slightly wider for better table display
     modalContent.style.maxWidth = '90%';
     modalContent.style.maxHeight = '80vh';
     modalContent.style.overflowY = 'auto';
     modalContent.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    // Ensure consistent rendering across browsers
+    modalContent.style.boxSizing = 'border-box';
     
     // Modal header
     const modalHeader = document.createElement('div');
@@ -2863,7 +3206,7 @@ function showHistoryModal(orderId, historyData) {
     
     // History table
     let historyHTML = '';
-    if (historyData && historyData.length > 0) {
+    if (historyArray && historyArray.length > 0) {
         historyHTML = `
             <table class="table table-striped history-table">
                 <thead>
@@ -2876,47 +3219,112 @@ function showHistoryModal(orderId, historyData) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${historyData.map(entry => {
-                        // Parse JSON data if needed
+                    ${historyArray.map(entry => {
+                        // Parse JSON data if needed and create useful diffs
                         let previousData = '';
                         let newData = '';
+                        let changesHTML = '';
+                        
                         try {
-                            if (entry.previous_data) {
-                                const prevObj = JSON.parse(entry.previous_data);
+                            let prevObj = null;
+                            let newObj = null;
+                            
+                            // Check for various field name formats (camelCase and snake_case)
+                            if (entry.previousData) {
+                                prevObj = typeof entry.previousData === 'string' ? 
+                                    JSON.parse(entry.previousData) : entry.previousData;
                                 previousData = JSON.stringify(prevObj, null, 2);
+                                console.log('[MODAL] Found previousData (camelCase):', prevObj);
+                            } else if (entry.previous_data) {
+                                prevObj = typeof entry.previous_data === 'string' ? 
+                                    JSON.parse(entry.previous_data) : entry.previous_data;
+                                previousData = JSON.stringify(prevObj, null, 2);
+                                console.log('[MODAL] Found previous_data (snake_case):', prevObj);
+                            } else if (entry.previousState) {
+                                prevObj = typeof entry.previousState === 'string' ? 
+                                    JSON.parse(entry.previousState) : entry.previousState;
+                                previousData = JSON.stringify(prevObj, null, 2);
+                                console.log('[MODAL] Found previousState:', prevObj);
                             }
-                            if (entry.new_data) {
-                                const newObj = JSON.parse(entry.new_data);
+                            
+                            if (entry.newData) {
+                                newObj = typeof entry.newData === 'string' ? 
+                                    JSON.parse(entry.newData) : entry.newData;
                                 newData = JSON.stringify(newObj, null, 2);
+                                console.log('[MODAL] Found newData (camelCase):', newObj);
+                            } else if (entry.new_data) {
+                                newObj = typeof entry.new_data === 'string' ? 
+                                    JSON.parse(entry.new_data) : entry.new_data;
+                                newData = JSON.stringify(newObj, null, 2);
+                                console.log('[MODAL] Found new_data (snake_case):', newObj);
+                            }
+                            
+                            // Generate user-friendly diff if we have both objects
+                            if (prevObj && newObj) {
+                                changesHTML = generateReadableDiff(prevObj, newObj);
                             }
                         } catch (e) {
                             console.error('Error parsing history JSON:', e);
+                            changesHTML = '<p class="text-danger">Error parsing change data</p>';
                         }
                         
-                        // Format action type for display
-                        const actionDisplay = entry.action_type
-                            .replace(/_/g, ' ')
-                            .split(' ')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ');
+                        // Format action type for display with null safety
+                        // Handle both snake_case and camelCase field names
+                        let actionDisplay = 'Unknown Action';
+                        const actionType = entry.action_type || entry.actionType;
+                        
+                        if (actionType) {
+                            actionDisplay = actionType
+                                .replace(/_/g, ' ')
+                                .split(' ')
+                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(' ');
+                        } else {
+                            console.log('[HISTORY] Entry missing action_type/actionType:', entry);
+                        }
+                        
+                        // Handle both snake_case and camelCase field names
+                        const timestamp = entry.action_timestamp || entry.timestamp || new Date().toISOString();
+                        const modifiedBy = entry.modified_by || entry.modifiedBy || 'Unknown';
+                        const reason = entry.reason || 'N/A';
+                        
+                        // Generate a unique ID for this history entry
+                        const entryId = 'history-entry-' + (entry.id || Math.random().toString(36).substr(2, 9));
                         
                         return `
-                        <tr>
-                            <td>${new Date(entry.action_timestamp).toLocaleString()}</td>
+                        <tr class="history-main-row" data-entry-id="${entryId}">
+                            <td>${new Date(timestamp).toLocaleString()}</td>
                             <td>${actionDisplay}</td>
-                            <td>${entry.modified_by}</td>
-                            <td>${entry.reason || 'N/A'}</td>
+                            <td>${modifiedBy}</td>
+                            <td>${reason}</td>
                             <td>
                                 ${previousData || newData ? 
-                                    `<button class="btn btn-sm btn-outline-info show-details-btn" 
-                                        onclick="toggleHistoryDetails(this)">Show Details</button>
-                                    <div class="history-details" style="display:none">
-                                        ${previousData ? `<p><strong>Previous:</strong></p><pre>${previousData}</pre>` : ''}
-                                        ${newData ? `<p><strong>New:</strong></p><pre>${newData}</pre>` : ''}
-                                    </div>`
+                                    `<button class="btn btn-sm btn-outline-info toggle-details-btn" data-entry-id="${entryId}">Show Details</button>` 
                                 : 'No details available'}
                             </td>
                         </tr>
+                        ${previousData || newData ? `
+                        <tr class="history-details-row" id="${entryId}-details">
+                            <td colspan="5" style="display: none !important;">
+                                <div class="history-details p-3">
+                                    ${changesHTML || `
+                                        <div class="changes-summary">
+                                            <h5>Order State Changes</h5>
+                                            <table class="table table-bordered table-sm">
+                                                <thead><tr><th>Previous State</th><th>Current State</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>${previousData ? `<pre>${previousData}</pre>` : '-'}</td>
+                                                        <td>${newData ? `<pre>${newData}</pre>` : '-'}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `}
+                                </div>
+                            </td>
+                        </tr>
+                        ` : ''}
                         `;
                     }).join('')}
                 </tbody>
@@ -2948,43 +3356,36 @@ function showHistoryModal(orderId, historyData) {
     // Add modal to overlay
     modalOverlay.appendChild(modalContent);
     
-    // Add needed styles
-    if (!document.getElementById('history-styles')) {
-        const style = document.createElement('style');
-        style.id = 'history-styles';
-        style.textContent = `
-            .history-table {
-                width: 100%;
-                border-collapse: collapse;
+    // Add event listeners to show/hide details
+    const detailButtons = modalContent.querySelectorAll('.toggle-details-btn');
+    detailButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const entryId = this.getAttribute('data-entry-id');
+            const detailsRow = document.getElementById(`${entryId}-details`);
+            
+            // Check if it's currently active
+            const isActive = detailsRow.classList.contains('active');
+            
+            // Toggle the details row visibility using the active class
+            if (isActive) {
+                // Hide it
+                detailsRow.classList.remove('active');
+                this.textContent = 'Show Details';
+            } else {
+                // Show it
+                detailsRow.classList.add('active');
+                this.textContent = 'Hide Details';
+                
+                // Add animation when showing
+                detailsRow.classList.add('highlight-animation');
+                setTimeout(() => detailsRow.classList.remove('highlight-animation'), 1000);
             }
-            .history-table th, .history-table td {
-                padding: 8px;
-                border: 1px solid #ddd;
-            }
-            .history-table th {
-                background-color: #f2f2f2;
-                text-align: left;
-            }
-            .history-details {
-                margin-top: 10px;
-                padding: 10px;
-                background-color: #f9f9f9;
-                border-radius: 4px;
-                border: 1px solid #eee;
-            }
-            .history-details pre {
-                white-space: pre-wrap;
-                font-family: monospace;
-                font-size: 12px;
-                margin-bottom: 10px;
-                padding: 5px;
-                background-color: #f5f5f5;
-                border: 1px solid #ddd;
-                border-radius: 3px;
-            }
-        `;
-        document.head.appendChild(style);
-    }
+        });
+    });
+    
+    // Styles are now in the standalone audit-trail.css file
+    // No need to inject inline styles anymore
+    
 }
 
 /**

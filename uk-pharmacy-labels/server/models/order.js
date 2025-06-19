@@ -1313,154 +1313,168 @@ const OrderModel = {
   getOrderHistory(orderId, options = {}) {
     return new Promise((resolve, reject) => {
       try {
-        const { limit = 100, offset = 0, sortBy = 'action_timestamp', sortOrder = 'DESC' } = options;
+        if (!orderId) {
+          return reject(new Error('Order ID is required'));
+        }
         
-        // Validate sort parameters to prevent SQL injection
-        const validSortColumns = ['action_timestamp', 'action_type', 'modified_by'];
-        const validSortOrders = ['ASC', 'DESC'];
+        const { limit = 100, offset = 0, sortOrder = 'DESC' } = options;
+        const allowedSortOrders = ['ASC', 'DESC'];
         
-        const actualSortBy = validSortColumns.includes(sortBy) ? sortBy : 'action_timestamp';
-        const actualSortOrder = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+        if (!allowedSortOrders.includes(sortOrder.toUpperCase())) {
+          return reject(new Error('Invalid sort order. Must be ASC or DESC'));
+        }
         
-        // Query order history with pagination
+        // Check which schema/table structure we have
         db.all(
-          `SELECT 
-            id, order_id, action_type, action_timestamp, 
-            modified_by, reason, previous_data, new_data 
-          FROM order_history 
-          WHERE order_id = ? 
-          ORDER BY ${actualSortBy} ${actualSortOrder} 
-          LIMIT ? OFFSET ?`,
-          [orderId, limit, offset],
-          function(err, rows) {
+          'PRAGMA table_info(order_history)',
+          [],
+          function(err, columns) {
             if (err) {
-              logger.error('Error getting order history:', err);
+              logger.error('Error checking order_history table:', err);
               return reject(err);
             }
             
-            // Parse JSON data fields
-            const history = rows.map(row => {
-              try {
-                return {
-                  ...row,
-                  previous_data: row.previous_data ? JSON.parse(row.previous_data) : null,
-                  new_data: row.new_data ? JSON.parse(row.new_data) : null
-                };
-              } catch (e) {
-                logger.error('Error parsing JSON in history row:', e);
-                return {
-                  ...row,
-                  previous_data: null,
-                  new_data: null,
-                  parse_error: true
-                };
-              }
-            });
+            // Determine which query to use based on table structure
+            let sql;
+            if (Array.isArray(columns) && columns.some(col => col.name === 'action_timestamp')) {
+              // First schema version
+              sql = `
+                SELECT 
+                  id, order_id, action_type, action_timestamp, 
+                  modified_by, reason, previous_data, new_data 
+                FROM order_history 
+                WHERE order_id = ? 
+                ORDER BY action_timestamp ${sortOrder.toUpperCase()} 
+                LIMIT ? OFFSET ?
+              `;
+            } else {
+              // Second schema version
+              sql = `
+                SELECT 
+                  id, order_id, action, timestamp, user_id, user_name,
+                  details, metadata
+                FROM order_history
+                WHERE order_id = ?
+                ORDER BY timestamp ${sortOrder.toUpperCase()}
+                LIMIT ? OFFSET ?
+              `;
+            }
             
-            // Get total count for pagination
-            db.get(
-              'SELECT COUNT(*) as total FROM order_history WHERE order_id = ?',
-              [orderId],
-              function(err, countResult) {
-                if (err) {
-                  logger.error('Error getting order history count:', err);
-                  // Still return history but without total count
-                  return resolve({ 
-                    success: true, 
-                    history 
-                  });
-                }
-                
-                resolve({ 
+            // Execute the appropriate query
+            db.all(sql, [orderId, limit, offset], (err, rows) => {
+              if (err) {
+                logger.error(`Error retrieving order history for ${orderId}:`, err);
+                return reject(err);
+              }
+              
+              if (!rows || rows.length === 0) {
+                // Return empty history array rather than error
+                return resolve({ 
                   success: true, 
-                  history,
+                  history: [],
                   pagination: {
-                    total: countResult.total,
+                    total: 0,
                     limit,
                     offset,
-                    hasMore: offset + limit < countResult.total
+                    hasMore: false
                   }
                 });
               }
-            );
-          }
-        );
+              
+              // Format the history entries based on schema
+              const history = rows.map(row => {
+                if (row.action_timestamp) {
+                  // First schema format
+                  try {
+                    return {
+                      id: row.id,
+                      orderId: row.order_id,
+                      actionType: row.action_type,
+                      timestamp: row.action_timestamp,
+                      modifiedBy: row.modified_by,
+                      reason: row.reason,
+                      previousData: row.previous_data ? JSON.parse(row.previous_data) : null,
+                      newData: row.new_data ? JSON.parse(row.new_data) : null
+                    };
+                  } catch (e) {
+                    logger.error('Error parsing JSON in history row:', e);
+                    return {
+                      id: row.id,
+                      orderId: row.order_id,
+                      actionType: row.action_type,
+                      timestamp: row.action_timestamp,
+                      modifiedBy: row.modified_by,
+                      reason: row.reason,
+                      previousData: null,
+                      newData: null,
+                      parseError: true
+                    };
+                  }
+                } else {
+                  // Second schema format
+                  let details = row.details;
+                  try {
+                    if (typeof details === 'string' && details.trim()) {
+                      details = JSON.parse(details);
+                    }
+                  } catch (e) {
+                    // Keep as-is if not valid JSON
+                  }
+                  
+                  let metadata = row.metadata;
+                  try {
+                    if (typeof metadata === 'string' && metadata.trim()) {
+                      metadata = JSON.parse(metadata);
+                    }
+                  } catch (e) {
+                    // Keep as-is if not valid JSON
+                  }
+                  
+                  return {
+                    id: row.id,
+                    orderId: row.order_id,
+                    action: row.action,
+                    timestamp: row.timestamp,
+                    userId: row.user_id,
+                    userName: row.user_name,
+                    details,
+                    metadata
+                  };
+                }
+              });
+              
+              // Get total count for pagination
+              db.get(
+                'SELECT COUNT(*) as total FROM order_history WHERE order_id = ?',
+                [orderId],
+                function(err, countResult) {
+                  if (err) {
+                    logger.error('Error getting order history count:', err);
+                    // Still return history but without total count
+                    return resolve({ 
+                      success: true, 
+                      history 
+                    });
+                  }
+                  
+                  resolve({ 
+                    success: true, 
+                    history,
+                    pagination: {
+                      total: countResult ? countResult.total : history.length,
+                      limit,
+                      offset,
+                      hasMore: countResult ? (offset + limit < countResult.total) : false
+                    }
+                  });
+                }
+              );
+            });
+          });
       } catch (error) {
         logger.error('Error getting order history:', error);
         reject(error);
       }
-    });
-  },
-  /**
-   * Get the complete history for an order
-   * @param {string} orderId - Order ID
-   * @param {Object} options - Query options
-   * @returns {Promise} - Promise resolving to order history
-   */
-  getOrderHistory(orderId, options = {}) {
-    return new Promise((resolve, reject) => {
-      if (!orderId) {
-        return reject(new Error('Order ID is required'));
-      }
-      
-      const { limit = 100, offset = 0, sortOrder = 'DESC' } = options;
-      const allowedSortOrders = ['ASC', 'DESC'];
-      
-      if (!allowedSortOrders.includes(sortOrder.toUpperCase())) {
-        return reject(new Error('Invalid sort order. Must be ASC or DESC'));
-      }
-      
-      const sql = `
-        SELECT 
-          id, order_id, action, timestamp, user_id, user_name,
-          details, metadata
-        FROM order_history
-        WHERE order_id = ?
-        ORDER BY timestamp ${sortOrder.toUpperCase()}
-        LIMIT ? OFFSET ?
-      `;
-      
-      db.all(sql, [orderId, limit, offset], (err, rows) => {
-        if (err) {
-          console.error(`Error retrieving order history for ${orderId}:`, err);
-          return reject(err);
-        }
-        
-        // Format the history entries
-        const history = rows.map(row => {
-          // Try to parse the details and metadata if they are JSON strings
-          let details = row.details;
-          try {
-            if (typeof details === 'string' && details.trim()) {
-              details = JSON.parse(details);
-            }
-          } catch (e) {
-            // Keep as-is if not valid JSON
-          }
-          
-          let metadata = row.metadata;
-          try {
-            if (typeof metadata === 'string' && metadata.trim()) {
-              metadata = JSON.parse(metadata);
-            }
-          } catch (e) {
-            // Keep as-is if not valid JSON
-          }
-          
-          return {
-            id: row.id,
-            orderId: row.order_id,
-            action: row.action,
-            timestamp: row.timestamp,
-            userId: row.user_id,
-            userName: row.user_name,
-            details,
-            metadata
-          };
-        });
-        
-        resolve(history);
-      });
     });
   },
 
