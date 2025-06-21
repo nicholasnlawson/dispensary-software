@@ -30,7 +30,8 @@ function createRecentMedicationAlertModal() {
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning">
-                    <strong>Warning:</strong> The following medications have been recently ordered for this patient within the last 14 days:
+                    <strong id="recent-medications-header">Warning: Recent Medication Orders (Last 14 days)</strong>
+                    <p>These medications have been recently ordered:</p>
                 </div>
                 <div id="recent-medications-list"></div>
             </div>
@@ -77,17 +78,30 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
     
     const modal = document.getElementById('recent-medication-alert-modal');
     const listContainer = document.getElementById('recent-medications-list');
+    const headerElement = document.getElementById('recent-medications-header');
     
     if (!modal || !listContainer) return;
     
     // Clear previous content
     listContainer.innerHTML = '';
     
+    // Determine if these are ward stock orders by checking the first order's type
+    const isWardStock = recentOrders.length > 0 && recentOrders[0].type === 'ward-stock';
+    
+    // Update header message to reflect correct time window
+    if (headerElement) {
+        const timeWindow = isWardStock ? '2 days' : '14 days';
+        headerElement.textContent = `Warning: Recent Medication Orders (Last ${timeWindow})`;
+    }
+    
     // Build HTML for recent medications
     let alertHTML = '<table class="table table-striped">'
         + '<thead><tr>'
         + '<th>Medication</th>'
-        + '<th>Dose</th>'
+        + '<th>Formulation</th>'
+        + '<th>Strength</th>'
+        + (isWardStock ? '' : '<th>Dose</th>')  // Only show dose column for patient orders
+        + '<th>Quantity</th>'
         + '<th>Order Date</th>'
         + '<th>Status</th>'
         + '<th>Requested By</th>'
@@ -97,10 +111,24 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
         const orderDate = new Date(order.timestamp);
         const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
         
+        // Extract medication details - handle potential missing data gracefully
+        const medName = order.medication.name || '-';
+        const formulation = order.medication.formulation || '-';
+        
+        // Get strength directly from the medication object
+        const strength = order.medication.strength || '-';
+        console.log(`[DEBUG] Strength from backend: '${strength}' for medication '${medName}'`);
+        
+        const quantity = order.medication.quantity || '-';
+        const dose = order.medication.dose || '-';
+        
         alertHTML += `
             <tr>
-                <td>${order.medication.name}</td>
-                <td>${order.medication.dose || '-'}</td>
+                <td>${medName}</td>
+                <td>${formulation}</td>
+                <td>${strength}</td>
+                ${isWardStock ? '' : `<td>${dose}</td>`}
+                <td>${quantity}</td>
                 <td>${formattedDate}</td>
                 <td>${order.status.toUpperCase()}</td>
                 <td>${order.requesterName || 'Unknown'}</td>
@@ -141,14 +169,14 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
  * Check for recent medication orders for a patient
  * @param {Object} patientData - Patient data
  * @param {Array} medications - Medications to check
- * @returns {Promise} - Promise resolving to array of recent orders
+ * @returns {Promise} - Promise resolving to object with recentOrders array and warning flag
  */
 async function checkRecentMedicationOrders(patientData, medications) {
     try {
         // If no API client, skip check
         if (!window.apiClient || typeof window.apiClient.post !== 'function') {
             console.warn('API client not available for recent medication check');
-            return [];
+            return { recentOrders: [], warning: false };
         }
         
         // Call the API endpoint
@@ -168,15 +196,22 @@ async function checkRecentMedicationOrders(patientData, medications) {
             medications: medications
         });
         
+        console.log('[DEBUG] Recent check API response:', response);
+        
         if (response && response.success) {
-            return response.recentOrders || [];
+            // Return both the orders array and the warning flag
+            return {
+                recentOrders: response.recentOrders || [],
+                warning: response.warning === true,
+                warningMessage: response.warningMessage
+            };
         } else {
             console.error('Error checking recent medications:', response?.message || 'Unknown error');
-            return [];
+            return { recentOrders: [], warning: false };
         }
     } catch (error) {
         console.error('Exception checking recent medications:', error);
-        return [];
+        return { recentOrders: [], warning: false };
     }
 }
 
@@ -2178,12 +2213,7 @@ function createWardStockMedicationItem(index) {
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-column">
-                <label for="ws-med-dose-${index}">Dose:</label>
-                <input type="text" id="ws-med-dose-${index}" class="med-dose" placeholder="e.g., 1-2 tablets daily" autocomplete="off" />
-            </div>
-        </div>
+        <!-- Dose field removed as it's not needed for ward stock orders -->
     `;
     
     // Add remove button functionality
@@ -2246,14 +2276,12 @@ function collectWardStockMedicationsData() {
         const formInput = item.querySelector('.med-form');
         const strengthInput = item.querySelector('.med-strength');
         const quantityInput = item.querySelector('.med-quantity');
-        const doseInput = item.querySelector('.med-dose');
         
         console.log(`[DEBUG] Item ${index} inputs:`, {
             nameInput: nameInput ? { found: true, value: nameInput.value } : 'not found',
             formInput: formInput ? { found: true, value: formInput.value } : 'not found',
             strengthInput: strengthInput ? { found: true, value: strengthInput.value } : 'not found',
-            quantityInput: quantityInput ? { found: true, value: quantityInput.value } : 'not found',
-            doseInput: doseInput ? { found: true, value: doseInput.value } : 'not found'
+            quantityInput: quantityInput ? { found: true, value: quantityInput.value } : 'not found'
         });
         
         // Only add if we have at least a name and quantity
@@ -2262,8 +2290,7 @@ function collectWardStockMedicationsData() {
                 name: nameInput.value,
                 form: formInput ? formInput.value : '',
                 strength: strengthInput ? strengthInput.value : '',
-                quantity: quantityInput.value,
-                dose: doseInput ? doseInput.value : ''
+                quantity: quantityInput.value
             };
             
             medications.push(medication);
@@ -2346,7 +2373,7 @@ async function submitPatientOrder() {
         };
         
         // Check for recent medication orders before submission
-        const patientData = {
+        const patient = {
             patientName: patientName,
             nhsNumber: patientNHS,
             hospitalNumber: patientID
@@ -2354,11 +2381,13 @@ async function submitPatientOrder() {
         
         // Attempt to check for recent orders
         try {
-            const recentOrders = await checkRecentMedicationOrders(patientData, medications);
+            console.log(`[DEBUG] Checking recent patient orders`);
+            const result = await checkRecentMedicationOrders(patient, medications);
+            console.log('[DEBUG] Patient check result:', result);
             
-            // If recent orders found, show alert and wait for user confirmation
-            if (recentOrders && recentOrders.length > 0) {
-                showRecentMedicationAlert(recentOrders, () => {
+            // Check the warning flag from API response (preferred) or fall back to checking order count
+            if (result.warning || (result.recentOrders && result.recentOrders.length > 0)) {
+                showRecentMedicationAlert(result.recentOrders, () => {
                     // User clicked 'Proceed Anyway'
                     submitPatientOrderFinal(orderData);
                 });
@@ -2449,16 +2478,22 @@ async function submitWardStockOrder() {
         // This is a bit different from patient orders as we're checking by ward rather than patient
         // We use the ward ID as a proxy for "patient" in the recent check API
         try {
+            // Format the ward ID with 'ward-' prefix to signal this is a ward stock check
+            // This allows the backend to distinguish between ward stock and patient orders
+            const formattedWardId = wardId.startsWith('ward-') ? wardId : `ward-${wardId}`;
+            
             const patientData = {
-                // Use ward ID as the hospital number to check for ward-specific recent orders
-                hospitalNumber: wardId
+                // Use formatted ward ID as the hospital number to check for ward-specific recent orders
+                hospitalNumber: formattedWardId
             };
             
-            const recentOrders = await checkRecentMedicationOrders(patientData, medications);
+            console.log(`[DEBUG] Checking recent ward stock orders for ward: ${formattedWardId}`);
+            const result = await checkRecentMedicationOrders(patientData, medications);
+            console.log('[DEBUG] Ward stock check result:', result);
             
-            // If recent orders found, show alert and wait for user confirmation
-            if (recentOrders && recentOrders.length > 0) {
-                showRecentMedicationAlert(recentOrders, () => {
+            // Check the warning flag from API response (preferred) or fall back to checking order count
+            if (result.warning || (result.recentOrders && result.recentOrders.length > 0)) {
+                showRecentMedicationAlert(result.recentOrders, () => {
                     // User clicked 'Proceed Anyway'
                     submitWardStockOrderFinal(orderData);
                 });

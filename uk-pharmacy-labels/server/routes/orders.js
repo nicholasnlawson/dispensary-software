@@ -42,12 +42,18 @@ router.post('/recent-check', hasRole(['ordering']), async (req, res) => {
     // Add explicit warning flag based on presence of recent orders
     const hasRecentOrders = Array.isArray(recentOrders) && recentOrders.length > 0;
     
+    // Determine if this is a ward stock order (hospital number starts with 'ward-')
+    const isWardStock = patientData.hospitalNumber && patientData.hospitalNumber.startsWith('ward-');
+    
+    // Use appropriate time window in message (2 days for ward stock, 14 days for patient orders)
+    const timeWindow = isWardStock ? '2 days' : '14 days';
+    
     res.json({
       success: true,
       recentOrders,
       warning: hasRecentOrders,
       warningMessage: hasRecentOrders ? 
-        `This medication was ordered ${recentOrders.length > 1 ? recentOrders.length + ' times' : 'once'} in the last 14 days` : 
+        `This medication was ordered ${recentOrders.length > 1 ? recentOrders.length + ' times' : 'once'} in the last ${timeWindow}` : 
         null
     });
   } catch (error) {

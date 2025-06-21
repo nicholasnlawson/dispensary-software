@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ward Stock Duplicate Warning Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .panel {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .log {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ward Stock Duplicate Warning Test</h1>
+        
+        <div class="panel">
+            <h2>Test Patient Order (14-day window)</h2>
+            <p>This tests the patient medication order duplicate warning with a 14-day window.</p>
+            <button id="test-patient-order">Test Patient Order</button>
+        </div>
+        
+        <div class="panel">
+            <h2>Test Ward Stock Order (2-day window)</h2>
+            <p>This tests the ward stock order duplicate warning with a 2-day window.</p>
+            <button id="test-ward-stock-order">Test Ward Stock Order</button>
+        </div>
+        
+        <div class="panel">
+            <h2>Log</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Log function
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Mock API client for testing
+        const apiClient = {
+            post: async (endpoint, data) => {
+                log(`API request to ${endpoint}`);
+                log(`Data: ${JSON.stringify(data, null, 2)}`);
+                
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Mock responses based on request type
+                if (endpoint === '/orders/recent-check') {
+                    // Check if this is a ward stock request
+                    const isWardStock = data.patient.hospitalNumber && 
+                                       data.patient.hospitalNumber.startsWith('ward-');
+                    
+                    // Create appropriate mock response based on order type
+                    if (isWardStock) {
+                        return mockWardStockResponse(data);
+                    } else {
+                        return mockPatientResponse(data);
+                    }
+                }
+                
+                return { success: false, message: 'Endpoint not mocked' };
+            }
+        };
+
+        // Mock ward stock response (2-day window)
+        function mockWardStockResponse(data) {
+            log('Generating mock ward stock response (2-day window)');
+            
+            // Extract ward ID from request
+            const wardId = data.patient.hospitalNumber.replace('ward-', '');
+            
+            // Get yesterday's date for recent order
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // Create mock orders for each medication in the request
+            const recentOrders = data.medications.map((med, index) => ({
+                id: `mock-order-${index}`,
+                type: 'ward-stock',
+                timestamp: yesterday.toISOString(),
+                status: 'completed',
+                requesterName: 'Test User',
+                wardId: wardId,
+                medication: {
+                    name: med.name,
+                    quantity: med.quantity,
+                    form: med.form || 'tablets'
+                }
+            }));
+            
+            return {
+                success: true,
+                recentOrders: recentOrders,
+                warning: recentOrders.length > 0,
+                warningMessage: `This medication was ordered ${recentOrders.length > 1 ? 
+                    recentOrders.length + ' times' : 'once'} in the last 2 days`
+            };
+        }
+        
+        // Mock patient response (14-day window)
+        function mockPatientResponse(data) {
+            log('Generating mock patient response (14-day window)');
+            
+            // Get date 7 days ago for recent order
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            // Create mock orders for each medication in the request
+            const recentOrders = data.medications.map((med, index) => ({
+                id: `mock-order-${index}`,
+                type: 'patient',
+                timestamp: sevenDaysAgo.toISOString(),
+                status: 'completed',
+                requesterName: 'Test Doctor',
+                wardId: 'test-ward',
+                medication: {
+                    name: med.name,
+                    dose: '1 tablet twice daily',
+                    quantity: med.quantity,
+                    form: med.form || 'tablets'
+                },
+                patientName: data.patient.name || 'Test Patient'
+            }));
+            
+            return {
+                success: true,
+                recentOrders: recentOrders,
+                warning: recentOrders.length > 0,
+                warningMessage: `This medication was ordered ${recentOrders.length > 1 ? 
+                    recentOrders.length + ' times' : 'once'} in the last 14 days`
+            };
+        }
+        
+        // Create modal if it doesn't exist
+        function createRecentMedicationAlertModal() {
+            // Check if container already exists
+            if (document.getElementById('recent-medication-alert-modal')) {
+                return;
+            }
+            
+            // Create modal container
+            const modalContainer = document.createElement('div');
+            modalContainer.id = 'recent-medication-alert-modal';
+            modalContainer.style.position = 'fixed';
+            modalContainer.style.top = '0';
+            modalContainer.style.left = '0';
+            modalContainer.style.width = '100%';
+            modalContainer.style.height = '100%';
+            modalContainer.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modalContainer.style.display = 'flex';
+            modalContainer.style.justifyContent = 'center';
+            modalContainer.style.alignItems = 'center';
+            modalContainer.style.zIndex = '1000';
+            
+            // Create modal content
+            modalContainer.innerHTML = `
+                <div style="background-color: white; padding: 20px; border-radius: 5px; max-width: 600px; width: 90%;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Recent Medication Alert</h3>
+                        <span style="cursor: pointer; font-size: 20px;" id="close-modal">&times;</span>
+                    </div>
+                    <div>
+                        <div style="background-color: #fff3cd; padding: 10px; border: 1px solid #ffeeba; margin-bottom: 15px;">
+                            <strong id="recent-medications-header">Warning: Recent Medication Orders</strong>
+                            <p>These medications have been recently ordered:</p>
+                        </div>
+                        <div id="recent-medications-list"></div>
+                    </div>
+                    <div style="text-align: right; margin-top: 15px;">
+                        <button style="background-color: #6c757d; margin-right: 10px;" id="cancel-order-submit-btn">Cancel</button>
+                        <button style="background-color: #007bff;" id="proceed-order-submit-btn">Proceed Anyway</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modalContainer);
+            
+            // Add close functionality
+            document.getElementById('close-modal').addEventListener('click', () => {
+                modalContainer.style.display = 'none';
+            });
+            
+            // Add button functionality
+            document.getElementById('cancel-order-submit-btn').addEventListener('click', () => {
+                modalContainer.style.display = 'none';
+                log('User cancelled order');
+            });
+            
+            document.getElementById('proceed-order-submit-btn').addEventListener('click', () => {
+                modalContainer.style.display = 'none';
+                log('User proceeded with order despite warning');
+            });
+        }
+        
+        // Show the recent medication alert modal
+        function showRecentMedicationAlert(recentOrders) {
+            // Create modal if it doesn't exist
+            createRecentMedicationAlertModal();
+            
+            const modal = document.getElementById('recent-medication-alert-modal');
+            const listContainer = document.getElementById('recent-medications-list');
+            const headerElement = document.getElementById('recent-medications-header');
+            
+            if (!modal || !listContainer) return;
+            
+            // Clear previous content
+            listContainer.innerHTML = '';
+            
+            // Determine if these are ward stock orders by checking the first order's type
+            const isWardStock = recentOrders.length > 0 && recentOrders[0].type === 'ward-stock';
+            
+            // Update header message to reflect correct time window
+            if (headerElement) {
+                const timeWindow = isWardStock ? '2 days' : '14 days';
+                headerElement.textContent = `Warning: Recent Medication Orders (Last ${timeWindow})`;
+            }
+            
+            // Build HTML for recent medications
+            let alertHTML = `<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th style="padding: 8px; text-align: left;">Medication</th>
+                        ${isWardStock ? '' : '<th style="padding: 8px; text-align: left;">Dose</th>'}
+                        <th style="padding: 8px; text-align: left;">Order Date</th>
+                        <th style="padding: 8px; text-align: left;">Status</th>
+                        <th style="padding: 8px; text-align: left;">Requested By</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            recentOrders.forEach(order => {
+                const orderDate = new Date(order.timestamp);
+                const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
+                
+                alertHTML += `
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 8px;">${order.medication.name}</td>
+                        ${isWardStock ? '' : `<td style="padding: 8px;">${order.medication.dose || '-'}</td>`}
+                        <td style="padding: 8px;">${formattedDate}</td>
+                        <td style="padding: 8px;">${order.status.toUpperCase()}</td>
+                        <td style="padding: 8px;">${order.requesterName || 'Unknown'}</td>
+                    </tr>
+                `;
+            });
+            
+            alertHTML += '</tbody></table>';
+            listContainer.innerHTML = alertHTML;
+            
+            // Show modal
+            modal.style.display = 'flex';
+        }
+        
+        // Test functions
+        async function testPatientOrder() {
+            log('Testing patient medication order duplicate warning...');
+            
+            // Mock data for patient order
+            const patientData = {
+                name: 'Test Patient',
+                nhsNumber: 'NHS12345',
+                hospitalNumber: 'HOSP12345'
+            };
+            
+            const medications = [
+                { name: 'Paracetamol 500mg', dose: '1 tablet four times a day', quantity: '28' },
+                { name: 'Amoxicillin 250mg', dose: '1 capsule three times a day', quantity: '21' }
+            ];
+            
+            try {
+                // Call mock API
+                const response = await apiClient.post('/orders/recent-check', {
+                    patient: patientData,
+                    medications: medications
+                });
+                
+                log(`API response: ${JSON.stringify(response, null, 2)}`);
+                
+                // Show alert if there are recent orders
+                if (response.warning && response.recentOrders && response.recentOrders.length > 0) {
+                    showRecentMedicationAlert(response.recentOrders);
+                } else {
+                    log('No recent orders found, no warning displayed');
+                }
+            } catch (error) {
+                log(`Error: ${error.message || error}`);
+            }
+        }
+        
+        async function testWardStockOrder() {
+            log('Testing ward stock order duplicate warning...');
+            
+            // Mock data for ward stock order
+            const wardData = {
+                hospitalNumber: 'ward-TEST123' // Using ward-prefix to signal ward stock
+            };
+            
+            const medications = [
+                { name: 'Paracetamol 500mg', quantity: '100' },
+                { name: 'Amoxicillin 250mg', quantity: '50' }
+            ];
+            
+            try {
+                // Call mock API
+                const response = await apiClient.post('/orders/recent-check', {
+                    patient: wardData,
+                    medications: medications
+                });
+                
+                log(`API response: ${JSON.stringify(response, null, 2)}`);
+                
+                // Show alert if there are recent orders
+                if (response.warning && response.recentOrders && response.recentOrders.length > 0) {
+                    showRecentMedicationAlert(response.recentOrders);
+                } else {
+                    log('No recent orders found, no warning displayed');
+                }
+            } catch (error) {
+                log(`Error: ${error.message || error}`);
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('test-patient-order').addEventListener('click', testPatientOrder);
+        document.getElementById('test-ward-stock-order').addEventListener('click', testWardStockOrder);
+        
+        // Initialize
+        window.apiClient = apiClient;
+        log('Test page loaded. Click the buttons above to test duplicate warnings.');
+    </script>
+</body>
+</html>

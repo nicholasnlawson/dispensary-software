@@ -1496,15 +1496,27 @@ const OrderModel = {
       
       // We need at least one identifier to find the patient
       // For reliable results, prioritize hospital/NHS numbers over names (which may be encrypted)
+      // Note: For ward stock orders, the hospitalNumber is used to store the wardId
       if (!hospitalNumber && !nhsNumber && !patientName) {
         logger.info('Cannot check recent medications: No patient identifiers provided');
         return resolve([]);
       }
+      
+      // Check if this is a ward stock request (hospital number is actually a ward ID)
+      const isWardStock = hospitalNumber && hospitalNumber.startsWith('ward-');
 
-      // Calculate date 14 days ago
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-      const fourteenDaysAgoStr = fourteenDaysAgo.toISOString();
+      // Calculate cutoff date - 2 days for ward stock, 14 days for patient meds
+      const cutoffDate = new Date();
+      if (isWardStock) {
+        // Use 2-day window for ward stock orders
+        cutoffDate.setDate(cutoffDate.getDate() - 2);
+        logger.info(`Using 2-day window for ward stock duplicate check`);
+      } else {
+        // Use 14-day window for patient medication orders
+        cutoffDate.setDate(cutoffDate.getDate() - 14);
+        logger.info(`Using 14-day window for patient medication duplicate check`);
+      }
+      const cutoffDateStr = cutoffDate.toISOString();
 
       // Build medication names list for the query
       const medicationNames = medications.map(med => med.name?.toLowerCase()).filter(name => name);
@@ -1513,44 +1525,66 @@ const OrderModel = {
       }
 
       // Prepare query parameters
-      const queryParams = [fourteenDaysAgoStr];
+      const queryParams = [cutoffDateStr];
       
-      // Build patient matching condition prioritizing hospital/NHS numbers
-      // NOTE: patient_name will be encrypted if encryption is enabled, so we can't reliably use it
-      // for SQL matching. Instead, rely on hospital_id and nhs number which are not encrypted.
-      const patientConditions = [];
+      // Build matching condition based on whether this is a ward stock order or patient order
+      // For ward stock: use ward_id in orders table
+      // For patient: use patient identifiers from order_patients table
+      let whereConditions = [];
       
-      // LOGGING: All patient info we have
-      logger.info(`DEBUG - Patient data received: ${JSON.stringify(patientData)}`);
+      // LOGGING: All data we have
+      logger.info(`DEBUG - Data received: ${JSON.stringify(patientData)}`);
+      logger.info(`DEBUG - Is Ward Stock: ${isWardStock}`);
 
-      // Prioritize hospital number (most reliable, unencrypted identifier)
-      if (hospitalNumber) {
-        patientConditions.push('LOWER(p.patient_hospital_id) = LOWER(?)');
-        queryParams.push(hospitalNumber);
-        logger.info(`DEBUG - Using hospital number for matching: LOWER(p.patient_hospital_id) = LOWER('${hospitalNumber}')`);
+      if (isWardStock) {
+        // For ward stock orders, match directly on ward_id in orders table
+        whereConditions.push('o.type = "ward-stock"');
+        whereConditions.push('o.ward_id = ?');
+        // Strip the "ward-" prefix when matching ward_id in the database
+        const actualWardId = hospitalNumber.replace(/^ward-/, '');
+        queryParams.push(actualWardId); // Strip prefix to match the stored value
+        logger.info(`DEBUG - Using ward_id for matching: o.ward_id = '${actualWardId}' (from ${hospitalNumber})`);
+      } else {
+        // For patient orders, use patient identifiers
+        whereConditions.push('o.type = "patient"');
+        
+        // Build patient matching condition prioritizing hospital/NHS numbers
+        // NOTE: patient_name will be encrypted if encryption is enabled, so we can't reliably use it
+        // for SQL matching. Instead, rely on hospital_id and nhs number which are not encrypted.
+        const patientConditions = [];
+        
+        // Prioritize hospital number (most reliable, unencrypted identifier)
+        if (hospitalNumber) {
+          patientConditions.push('LOWER(p.patient_hospital_id) = LOWER(?)');
+          queryParams.push(hospitalNumber);
+          logger.info(`DEBUG - Using hospital number for matching: LOWER(p.patient_hospital_id) = LOWER('${hospitalNumber}')`);
+        }
+        
+        // Next priority: NHS number (also unencrypted)
+        if (nhsNumber) {
+          patientConditions.push('p.patient_nhs = ?');
+          queryParams.push(nhsNumber);
+          logger.info(`DEBUG - Using NHS number for matching: p.patient_nhs = '${nhsNumber}'`);
+        }
+        
+        // Only use patient name if we have no other identifiers AND encryption isn't configured
+        // This prevents trying to match plaintext against encrypted values
+        if (!hospitalNumber && !nhsNumber && patientName && !encryption.isEncryptionConfigured()) {
+          patientConditions.push('LOWER(p.patient_name) LIKE LOWER(?)');
+          queryParams.push(`%${patientName}%`);
+        }
+        
+        // If no usable patient matching conditions for a patient order, return empty results
+        if (patientConditions.length === 0) {
+          logger.info('Cannot build patient condition: No usable unencrypted patient identifiers');
+          return resolve([]);
+        }
+        
+        // Add patient conditions to the where clause
+        whereConditions.push(`(${patientConditions.join(' OR ')})`);
       }
       
-      // Next priority: NHS number (also unencrypted)
-      if (nhsNumber) {
-        patientConditions.push('p.patient_nhs = ?');
-        queryParams.push(nhsNumber);
-        logger.info(`DEBUG - Using NHS number for matching: p.patient_nhs = '${nhsNumber}'`);
-      }
-      
-      // Only use patient name if we have no other identifiers AND encryption isn't configured
-      // This prevents trying to match plaintext against encrypted values
-      if (!hospitalNumber && !nhsNumber && patientName && !encryption.isEncryptionConfigured()) {
-        patientConditions.push('LOWER(p.patient_name) LIKE LOWER(?)');
-        queryParams.push(`%${patientName}%`);
-      }
-      
-      // If no usable patient matching conditions, return empty results
-      if (patientConditions.length === 0) {
-        logger.info('Cannot build patient condition: No usable unencrypted patient identifiers');
-        return resolve([]);
-      }
-      
-      const patientCondition = `AND (${patientConditions.join(' OR ')})`;
+      const whereConditionStr = whereConditions.map(cond => `AND ${cond}`).join(' ');
 
       // Transform medication names for more flexible matching
       const transformedMedNames = medicationNames.map(name => {
@@ -1590,18 +1624,36 @@ const OrderModel = {
       const medicationCondition = `AND (${medConditions.join(' OR ')})`;
       
       // Build the SQL query with proper joins
-      const sql = `
-        SELECT o.id, o.type, o.timestamp, o.status, o.requester_name, o.ward_id,
-               m.name as medication_name, m.dose, m.quantity, m.form as formulation,
-               p.patient_name, p.patient_hospital_id, p.patient_nhs
-        FROM orders o
-        JOIN order_patients p ON o.id = p.order_id
-        JOIN order_medications m ON o.id = m.order_id
-        WHERE o.timestamp >= ?
-          ${patientCondition}
-          ${medicationCondition}
-        ORDER BY o.timestamp DESC
-      `;
+      let sql;
+      
+      if (isWardStock) {
+        // For ward stock orders, we don't need to join with patient table
+        sql = `
+          SELECT o.id, o.type, o.timestamp, o.status, o.requester_name, o.ward_id,
+                 m.name as medication_name, m.quantity, m.form as formulation,
+                 NULL as patient_name, NULL as patient_hospital_id, NULL as patient_nhs
+          FROM orders o
+          JOIN order_medications m ON o.id = m.order_id
+          WHERE o.timestamp >= ?
+            ${whereConditionStr}
+            ${medicationCondition}
+          ORDER BY o.timestamp DESC
+        `;
+      } else {
+        // For patient orders, join with patient table
+        sql = `
+          SELECT o.id, o.type, o.timestamp, o.status, o.requester_name, o.ward_id,
+                 m.name as medication_name, m.dose, m.quantity, m.form as formulation,
+                 p.patient_name, p.patient_hospital_id, p.patient_nhs
+          FROM orders o
+          JOIN order_patients p ON o.id = p.order_id
+          JOIN order_medications m ON o.id = m.order_id
+          WHERE o.timestamp >= ?
+            ${whereConditionStr}
+            ${medicationCondition}
+          ORDER BY o.timestamp DESC
+        `;
+      }
 
       // Log the query for debugging
       logger.info('Recent medication check SQL:', sql);
@@ -1693,7 +1745,8 @@ const OrderModel = {
               name: row.medication_name,
               dose: row.dose,
               quantity: row.quantity,
-              formulation: row.formulation
+              formulation: row.formulation,
+              strength: row.strength || null
             }
           };
         });
