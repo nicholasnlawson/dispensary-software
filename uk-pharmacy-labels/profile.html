@@ -109,12 +109,143 @@
       display: inline-block;
       width: 100px;
     }
+    
+    /* Password visibility toggle styles */
+    .password-container {
+      position: relative;
+      width: 100%;
+    }
+    
+    .password-container input {
+      width: 100%;
+      padding-right: 40px;
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .password-toggle svg {
+      width: 24px;
+      height: 24px;
+      fill: #005EB8;
+    }
+    
+    .password-toggle .eye-closed {
+      display: none;
+    }
+    
+    .password-toggle.show-password .eye-open {
+      display: none;
+    }
+    
+    .password-toggle.show-password .eye-closed {
+      display: inline;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e5e5;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: #005EB8;
+    }
+    
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close:hover,
+    .close:focus {
+      color: #000;
+      text-decoration: none;
+    }
+    
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #e5e5e5;
+    }
+    
+    .modal-btn {
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .btn-confirm {
+      background-color: #007f3b;
+      color: white;
+      border: none;
+    }
+    
+    .btn-confirm:hover {
+      background-color: #00662e;
+    }
+    
+    .btn-cancel {
+      background-color: #f8f9fa;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+    
+    .btn-cancel:hover {
+      background-color: #e9ecef;
+    }
   </style>
 </head>
 <body>
   <nav class="main-nav">
     <img src="images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
     <ul>
+      <a href="home.html" class="nav-link">Home</a>
       <a href="remote-ordering/ward/index.html" class="nav-link">Ward Orders</a>
       <a href="remote-ordering/pharmacy/index.html" class="nav-link">Pharmacy Supply</a>
       <a href="admin/index.html" class="nav-link" id="admin-nav-link">Admin</a>
@@ -158,15 +289,39 @@
           <form id="password-form">
             <div class="form-row">
               <label for="current-password">Current Password</label>
-              <input type="password" id="current-password" name="current-password" required>
+              <div class="password-container">
+                <input type="password" id="current-password" name="current-password" required>
+                <button type="button" class="password-toggle" aria-label="Toggle current password visibility">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path class="eye-open" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    <path class="eye-closed" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="form-row">
               <label for="new-password">New Password</label>
-              <input type="password" id="new-password" name="new-password" required>
+              <div class="password-container">
+                <input type="password" id="new-password" name="new-password" required>
+                <button type="button" class="password-toggle" aria-label="Toggle new password visibility">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path class="eye-open" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    <path class="eye-closed" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="form-row">
               <label for="confirm-password">Confirm New Password</label>
-              <input type="password" id="confirm-password" name="confirm-password" required>
+              <div class="password-container">
+                <input type="password" id="confirm-password" name="confirm-password" required>
+                <button type="button" class="password-toggle" aria-label="Toggle confirm password visibility">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path class="eye-open" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    <path class="eye-closed" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
             <button type="submit" class="btn-update">Change Password</button>
           </form>
@@ -175,9 +330,44 @@
     </div>
   </main>
 
-  <script src="node_modules/crypto-js/crypto-js.js"></script>
+  <!-- Confirmation modals -->
+  <div id="password-confirm-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Confirm Password Change</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to change your password?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn btn-cancel">Cancel</button>
+        <button id="confirm-password-change" class="modal-btn btn-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="email-confirm-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Confirm Email Change</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to update your email address?</p>
+        <p>New email: <span id="confirm-email-text"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn btn-cancel">Cancel</button>
+        <button id="confirm-email-change" class="modal-btn btn-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/lib/crypto-js.js"></script>
   <script src="js/auth-utils.js"></script>
   <script src="js/api-client.js"></script>
+  <script src="js/nav-controller.js"></script>
   <script src="js/profile.js"></script>
 </body>
 </html>

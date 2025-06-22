@@ -48,7 +48,9 @@ function initializeDatabase() {
         'migrations/add-patient-indexes.sql',
         'migrations/add-dose-to-medications.sql',
         'migrations/add-dose-to-order-medications.sql',
-        'migrations/add-cancellation-fields.sql'
+        'migrations/add-cancellation-fields.sql',
+        'migrations/add-admin-role-types.sql',
+        'migrations/remove-admin-legacy-role.sql'
     ];
     
     const migrations = migrationFiles.map(file => {

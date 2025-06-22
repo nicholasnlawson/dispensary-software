@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const wardModel = require('../models/ward'); // Reusing the ward model which has hospital methods
-const { verifyToken, hasRole } = require('../middleware/auth');
+const { verifyToken, hasRole, hasFullAdminAccess } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 // Apply authentication middleware to all routes
@@ -64,9 +64,9 @@ router.get('/:id', async (req, res) => {
 
 /**
  * Create new hospital
- * Admin only
+ * Full admin only (admin or super-admin)
  */
-router.post('/', hasRole('admin'), async (req, res) => {
+router.post('/', hasFullAdminAccess(), async (req, res) => {
   try {
     const { name, address } = req.body;
     
@@ -97,9 +97,9 @@ router.post('/', hasRole('admin'), async (req, res) => {
 
 /**
  * Update hospital
- * Admin only
+ * Full admin only (admin or super-admin)
  */
-router.put('/:id', hasRole('admin'), async (req, res) => {
+router.put('/:id', hasFullAdminAccess(), async (req, res) => {
   try {
     const hospital = await wardModel.updateHospital(
       req.params.id,
@@ -133,9 +133,9 @@ router.put('/:id', hasRole('admin'), async (req, res) => {
 
 /**
  * Delete hospital
- * Admin only
+ * Full admin only (admin or super-admin)
  */
-router.delete('/:id', hasRole('admin'), async (req, res) => {
+router.delete('/:id', hasFullAdminAccess(), async (req, res) => {
   try {
     const success = await wardModel.deleteHospital(req.params.id, req.user.id, req.ip);
     

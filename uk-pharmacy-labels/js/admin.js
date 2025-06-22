@@ -4,12 +4,15 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check authentication and admin role
-  if (!AuthUtils.isAuthenticated() || !AuthUtils.hasRole('admin')) {
+  // Check authentication and admin roles (any admin role can manage users)
+  if (!AuthUtils.isAuthenticated() || !AuthUtils.hasAnyAdminRole()) {
     // Redirect non-admin users to login
     window.location.href = '../login.html';
     return;
   }
+  
+  // Additional check - only super-admin users can modify other users' roles to super-admin
+  const canManageSuperAdmin = AuthUtils.hasRole('super-admin');
   
   // DOM Elements
   const addUserBtn = document.getElementById('add-user-btn');
@@ -48,6 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Password validation
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
+    
+    // Check if super-admin role is being assigned by non-super-admin user
+    const superAdminCheckbox = document.querySelector('input[value="super-admin"]');
+    if (superAdminCheckbox && superAdminCheckbox.checked && !canManageSuperAdmin) {
+      showAlert('You do not have permission to assign super-admin role', 'error');
+      return;
+    }
     
     // In edit mode, both password fields can be empty to keep current password
     // Otherwise, ensure passwords match if either field has a value

@@ -3,6 +3,19 @@
  * This file contains standardized CSS that works across Chrome, Safari, Firefox and Edge
  */
 
+/* Section header with action buttons */
+.section-header-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.small-btn {
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+
 /* Order Detail Modal */
 #order-detail-modal {
   display: none;
@@ -31,6 +44,122 @@
   -webkit-transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden; /* Safari performance boost */
   backface-visibility: hidden;
+}
+
+/* Search Modal Styles */
+#search-orders-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+#search-orders-modal .modal-content {
+  max-width: 700px;
+}
+
+#search-orders-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+#search-orders-modal .close-modal {
+  font-size: 1.5em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+#search-orders-modal .close-modal:hover {
+  color: #f44336;
+}
+
+.search-form {
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.form-column {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-column input,
+.form-column select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.location-select {
+  height: 36px;
+  background-color: #fff;
+}
+
+.search-btn {
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 25px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+  background-color: #0d8aee;
+}
+
+#search-results {
+  max-height: 500px;
+  overflow-y: auto;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 15px;
+}
+
+#search-results .empty-state,
+#search-results .loading-results,
+#search-results .no-results {
+  padding: 30px;
+  text-align: center;
+  color: #666;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin: 20px 0;
+  font-size: 1.1em;
+  border: 1px dashed #ddd;
+}
+
+#search-results .loading-results {
+  color: #2196F3;
+  background-color: #e3f2fd;
+  border-color: #bbdefb;
+}
+
+#search-results .no-results {
+  color: #e53935;
+  background-color: #ffebee;
+  border-color: #ffcdd2;
 }
 
 /* Animations - with browser prefixes */

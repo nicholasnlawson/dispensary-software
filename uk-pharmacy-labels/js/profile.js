@@ -16,6 +16,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const passwordForm = document.getElementById('password-form');
   const alertBox = document.getElementById('alert-box');
   
+  // Modal Elements
+  const passwordConfirmModal = document.getElementById('password-confirm-modal');
+  const emailConfirmModal = document.getElementById('email-confirm-modal');
+  const confirmEmailText = document.getElementById('confirm-email-text');
+  const confirmPasswordChangeBtn = document.getElementById('confirm-password-change');
+  const confirmEmailChangeBtn = document.getElementById('confirm-email-change');
+  
+  // Password toggle elements
+  const passwordToggles = document.querySelectorAll('.password-toggle');
+  
   // Load and display user data
   loadUserData();
 
@@ -28,24 +38,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  // Set up password visibility toggle functionality
+  passwordToggles.forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const passwordInput = toggle.parentElement.querySelector('input');
+      
+      // Toggle password visibility
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggle.classList.add('show-password');
+      } else {
+        passwordInput.type = 'password';
+        toggle.classList.remove('show-password');
+      }
+    });
+  });
+  
+  // Close modals when clicking on X or outside the modal
+  document.querySelectorAll('.modal .close, .modal .btn-cancel').forEach(element => {
+    element.addEventListener('click', () => {
+      passwordConfirmModal.style.display = 'none';
+      emailConfirmModal.style.display = 'none';
+    });
+  });
+  
+  // Close modal when clicking outside of it
+  window.addEventListener('click', (e) => {
+    if (e.target === passwordConfirmModal) {
+      passwordConfirmModal.style.display = 'none';
+    }
+    if (e.target === emailConfirmModal) {
+      emailConfirmModal.style.display = 'none';
+    }
+  });
+  
   // Handle email update form submission
-  emailForm.addEventListener('submit', async (e) => {
+  emailForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     const newEmail = document.getElementById('email').value;
     
-    try {
-      await updateUserEmail(newEmail);
-      showAlert('Email updated successfully', 'success');
-      loadUserData(); // Reload user data to show updated email
-      emailForm.reset();
-    } catch (error) {
-      showAlert(`Error: ${error.message}`, 'error');
-    }
+    // Show confirmation modal
+    confirmEmailText.textContent = newEmail;
+    emailConfirmModal.style.display = 'block';
+    
+    // Set up confirmation button action
+    confirmEmailChangeBtn.onclick = async () => {
+      try {
+        await updateUserEmail(newEmail);
+        showAlert('Email updated successfully', 'success');
+        loadUserData(); // Reload user data to show updated email
+        emailForm.reset();
+        emailConfirmModal.style.display = 'none';
+      } catch (error) {
+        showAlert(`Error: ${error.message}`, 'error');
+        emailConfirmModal.style.display = 'none';
+      }
+    };
   });
   
   // Handle password change form submission
-  passwordForm.addEventListener('submit', async (e) => {
+  passwordForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     const currentPassword = document.getElementById('current-password').value;
@@ -58,13 +111,30 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    try {
-      await changePassword(currentPassword, newPassword);
-      showAlert('Password changed successfully', 'success');
-      passwordForm.reset();
-    } catch (error) {
-      showAlert(`Error: ${error.message}`, 'error');
-    }
+    // Show confirmation modal
+    passwordConfirmModal.style.display = 'block';
+    
+    // Set up confirmation button action
+    confirmPasswordChangeBtn.onclick = async () => {
+      try {
+        await changePassword(currentPassword, newPassword);
+        showAlert('Password changed successfully', 'success');
+        passwordForm.reset();
+        passwordConfirmModal.style.display = 'none';
+        
+        // Reset password fields to type "password"
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+          if (input.id.includes('password')) {
+            input.type = 'password';
+            const toggle = input.parentElement.querySelector('.password-toggle');
+            toggle.classList.remove('show-password');
+          }
+        });
+      } catch (error) {
+        showAlert(`Error: ${error.message}`, 'error');
+        passwordConfirmModal.style.display = 'none';
+      }
+    };
   });
   
   /**

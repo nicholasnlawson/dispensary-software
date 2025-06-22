@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const encryptedUserData = encryptData(JSON.stringify({
         id: data.user.id,
         username: data.user.username,
+        email: data.user.email,
         roles: data.user.roles
       }));
       localStorage.setItem('userData', encryptedUserData);
@@ -88,19 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {Array} roles - User roles
    */
   function redirectUserByRole(roles) {
-    if (roles.includes('admin')) {
-      // Admin gets access to admin panel
-      window.location.href = 'admin/index.html';
-    } else if (roles.includes('pharmacy')) {
-      // Pharmacy staff get access to pharmacy functionality
-      window.location.href = 'index.html';
-    } else if (roles.includes('ordering')) {
-      // Ordering staff get access to ordering functionality
-      window.location.href = 'remote-ordering/ward/index.html';
-    } else {
-      // Fallback to main page
-      window.location.href = 'index.html';
-    }
+    // All users are redirected to the home page after login
+    // Role-specific access is handled via navigation and permissions
+    window.location.href = 'home.html';
   }
 
   // Check if user is already logged in

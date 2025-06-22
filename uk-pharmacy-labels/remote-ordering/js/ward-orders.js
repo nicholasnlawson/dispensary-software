@@ -85,8 +85,16 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
     // Clear previous content
     listContainer.innerHTML = '';
     
-    // Determine if these are ward stock orders by checking the first order's type
+    // Determine if these are ward stock orders    // Check for ward stock vs patient order type
     const isWardStock = recentOrders.length > 0 && recentOrders[0].type === 'ward-stock';
+    
+    // Debug log entire order structure
+    console.log('[DEBUG] Recent order data structure:', JSON.stringify(recentOrders, null, 2));
+    if (recentOrders.length > 0) {
+        console.log('[DEBUG] First order type:', recentOrders[0].type);
+        console.log('[DEBUG] First order medication:', recentOrders[0].medication);
+        console.log('[DEBUG] Ward ID available:', recentOrders[0].wardId);
+    }
     
     // Update header message to reflect correct time window
     if (headerElement) {
@@ -100,8 +108,9 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
         + '<th>Medication</th>'
         + '<th>Formulation</th>'
         + '<th>Strength</th>'
-        + (isWardStock ? '' : '<th>Dose</th>')  // Only show dose column for patient orders
+        + '<th>Dose</th>'  // Always show dose column
         + '<th>Quantity</th>'
+        + '<th>Ward</th>'  // Always show ward column
         + '<th>Order Date</th>'
         + '<th>Status</th>'
         + '<th>Requested By</th>'
@@ -117,18 +126,24 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
         
         // Get strength directly from the medication object
         const strength = order.medication.strength || '-';
-        console.log(`[DEBUG] Strength from backend: '${strength}' for medication '${medName}'`);
         
         const quantity = order.medication.quantity || '-';
         const dose = order.medication.dose || '-';
+        
+        // Get ward info
+        const wardInfo = order.wardName || order.wardId || '-';
+        
+        // Log medication object to see if dose is present
+        console.log(`[DEBUG] Medication data for ${medName}:`, order.medication);
         
         alertHTML += `
             <tr>
                 <td>${medName}</td>
                 <td>${formulation}</td>
                 <td>${strength}</td>
-                ${isWardStock ? '' : `<td>${dose}</td>`}
+                <td>${dose}</td>
                 <td>${quantity}</td>
+                <td>${wardInfo}</td>
                 <td>${formattedDate}</td>
                 <td>${order.status.toUpperCase()}</td>
                 <td>${order.requesterName || 'Unknown'}</td>
@@ -1221,9 +1236,269 @@ async function cancelOrder(orderId) {
     }
 }
 
+/**
+ * Create the search orders modal container
+ */
+function createSearchOrdersModal() {
+    // This modal is now created in HTML
+    // Just need to add event listeners and ensure it's properly set up
+    setupSearchModalHandlers();
+}
+
+/**
+ * Open the search orders modal
+ */
+function openSearchOrdersModal() {
+    const modal = document.getElementById('search-orders-modal');
+    if (!modal) return;
+    
+    // Clear previous search results and reset form
+    document.getElementById('search-orders-form').reset();
+    document.getElementById('search-results').innerHTML = '<p class="empty-state">Enter a search term to find medication orders</p>';
+    
+    // Populate location dropdown with wards
+    populateLocationDropdown();
+    
+    // Show the modal with animation classes
+    modal.style.display = 'block';
+    modal.classList.add('show-modal');
+    
+    // Enhance modal for cross-browser compatibility
+    enhanceModalForCrossBrowser(modal);
+}
+
+/**
+ * Populate the location dropdown with available wards
+ */
+function populateLocationDropdown() {
+    const locationSelect = document.getElementById('location-filter');
+    if (!locationSelect) return;
+    
+    // Keep the first 'All Locations' option
+    while (locationSelect.options.length > 1) {
+        locationSelect.options.remove(1);
+    }
+    
+    // Add ward options from cache
+    const wards = Object.entries(window.wardsCache || {});
+    wards.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    
+    wards.forEach(([wardId, wardData]) => {
+        const option = document.createElement('option');
+        option.value = wardId;
+        option.textContent = wardData.name;
+        locationSelect.appendChild(option);
+    });
+}
+
+/**
+ * Close the search orders modal
+ */
+function closeSearchOrdersModal() {
+    const modal = document.getElementById('search-orders-modal');
+    if (!modal) return;
+    
+    modal.style.display = 'none';
+    modal.classList.remove('show-modal');
+}
+
+/**
+ * Setup search modal event handlers
+ */
+function setupSearchModalHandlers() {
+    // Close button handler
+    const closeButton = document.querySelector('#search-orders-modal .close-modal');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeSearchOrdersModal);
+    }
+    
+    // Close when clicking outside the modal
+    const modal = document.getElementById('search-orders-modal');
+    if (modal) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeSearchOrdersModal();
+            }
+        });
+    }
+    
+    // Search form submission
+    const searchForm = document.getElementById('search-orders-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const searchTerm = document.getElementById('medication-search').value.trim();
+            const locationId = document.getElementById('location-filter').value;
+            
+            if (searchTerm) {
+                searchOrdersByMedication(searchTerm, locationId);
+            }
+        });
+    }
+    
+    // Open modal button handler
+    const searchButton = document.getElementById('search-orders-btn');
+    if (searchButton) {
+        searchButton.addEventListener('click', openSearchOrdersModal);
+    }
+}
+
+/**
+ * Search orders by medication name and other optional filters
+ * @param {string} searchTerm - Term to search for in medication names and patient names
+ * @param {string} locationId - Optional ward/location ID to filter by
+ */
+async function searchOrdersByMedication(searchTerm, locationId) {
+    const resultsContainer = document.getElementById('search-results');
+    if (!resultsContainer) return;
+    
+    try {
+        // Show loading indicator
+        resultsContainer.innerHTML = '<div class="loading-results">Searching orders...</div>';
+        
+        // Check if API client is available
+        if (!window.apiClient) {
+            console.error('API client not available for searching orders');
+            resultsContainer.innerHTML = '<div class="error-message">Error: Unable to search orders. API client not available.</div>';
+            return;
+        }
+        
+        // Split search term into individual tokens for multi-word search
+        const searchTokens = searchTerm.toLowerCase().split(/\s+/).filter(token => token.length > 0);
+        
+        // Call the API endpoint to search orders
+        const response = await window.apiClient.searchOrdersByMedication({ 
+            medicationName: searchTerm,
+            searchTokens: searchTokens.join(','),
+            wardId: locationId || undefined
+        });
+        
+        console.log('Search orders response:', response);
+        
+        const orders = response.orders || [];
+        
+        if (orders.length > 0) {
+            // Display search results using the same format as recent orders
+            resultsContainer.innerHTML = `
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Patient</th>
+                            <th>Ward</th>
+                            <th>Medication Details</th>
+                            <th>Status</th>
+                            <th>Requester</th>
+                        </tr>
+                    </thead>
+                    <tbody id="search-results-table-body"></tbody>
+                </table>
+            `;
+            
+            const tableBody = document.getElementById('search-results-table-body');
+            
+            orders.forEach(order => {
+                const row = document.createElement('tr');
+                row.className = 'order-row';
+                
+                // Format timestamp and order ID
+                const orderDate = new Date(order.timestamp);
+                const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Format patient info (if patient order)
+                let patientInfo = '';
+                if (order.type === 'patient' && order.patient) {
+                    // Patient name may be encrypted, use identifiers as default display
+                    const patientDetails = [];
+                    if (order.patient.name && order.patient.name !== 'undefined') {
+                        // Try to decrypt if encrypted
+                        let patientName = order.patient.name;
+                        try {
+                            if (window.apiClient && typeof window.apiClient.decryptData === 'function' && 
+                                patientName.startsWith('U2FsdGVk')) {
+                                const decrypted = window.apiClient.decryptData(patientName);
+                                if (decrypted) patientName = decrypted;
+                            }
+                        } catch (e) {
+                            console.warn('Failed to decrypt patient name:', e);
+                        }
+                        patientDetails.push(patientName);
+                    }
+                    
+                    // Add identifiers if available
+                    const identifier = order.patient.hospitalId || order.patient.nhs || '';
+                    if (identifier) patientDetails.push(`(${identifier})`);
+                    
+                    patientInfo = patientDetails.join(' ');
+                } else {
+                    patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
+                }
+                
+                // Format medications - concatenate all medications into a single string
+                const medicationsList = order.medications.map(med => {
+                    const details = [];
+                    if (med.name) details.push(med.name);
+                    if (med.strength) details.push(med.strength);
+                    if (med.form) details.push(med.form);
+                    if (med.dose) details.push(med.dose);
+                    if (med.quantity) details.push(`× ${med.quantity}`);
+                    return details.join(' ');
+                }).join('<br>');
+                
+                // Format requester info
+                const requesterInfo = extractRequesterName(order) || 'Unknown';
+                
+                // Add cancellation info if order is cancelled
+                let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
+                if (order.status === 'cancelled') {
+                    const cancelledBy = order.cancelledBy || 'Unknown';
+                    const reason = order.cancellationReason || order.cancelReason || 'No reason provided';
+                    statusContent += `
+                        <div class="cancellation-info">
+                            <span class="cancelled-by">By: ${cancelledBy}</span>
+                            <span class="cancellation-reason" title="${reason}">${reason.length > 20 ? reason.substring(0, 20) + '...' : reason}</span>
+                        </div>
+                    `;
+                    row.classList.add('cancelled-order');
+                }
+                
+                row.innerHTML = `
+                    <td class="order-id">
+                        <div>${order.id}</div>
+                        <div class="order-time">${formattedDate}</div>
+                    </td>
+                    <td class="patient-info">${patientInfo}</td>
+                    <td class="ward-info">${getWardName(order.wardId)}</td>
+                    <td class="medications-info">${medicationsList}</td>
+                    <td class="status-cell">
+                        ${statusContent}
+                    </td>
+                    <td class="requester-info">${requesterInfo}</td>
+                `;
+                
+                // Make row clickable to show details
+                row.style.cursor = 'pointer';
+                row.dataset.orderId = order.id;
+                row.addEventListener('click', () => showOrderDetails(order));
+                
+                tableBody.appendChild(row);
+            });
+        } else {
+            resultsContainer.innerHTML = `
+                <div class="no-results">No orders found containing "${searchTerm}". Try a different search term.</div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error searching orders:', error);
+        resultsContainer.innerHTML = `<div class="error-message">Error searching orders: ${error.message}</div>`;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Create toast container for notifications
     createToastContainer();
+    // Create search orders modal
+    createSearchOrdersModal();
     
     // Create order details modal
     createOrderDetailModal();
@@ -2488,17 +2763,22 @@ async function submitWardStockOrder() {
             };
             
             console.log(`[DEBUG] Checking recent ward stock orders for ward: ${formattedWardId}`);
-            const result = await checkRecentMedicationOrders(patientData, medications);
-            console.log('[DEBUG] Ward stock check result:', result);
-            
-            // Check the warning flag from API response (preferred) or fall back to checking order count
-            if (result.warning || (result.recentOrders && result.recentOrders.length > 0)) {
-                showRecentMedicationAlert(result.recentOrders, () => {
+            apiClient.checkRecentMedications(patientData, medications, wardId)
+              .then(result => {
+                console.log('[DEBUG] Recent medications API response:', JSON.stringify(result, null, 2));
+                if (result && result.warning) {
+                  const {recentOrders, warningMessage} = result;
+                  console.log('[DEBUG] Recent orders to display:', JSON.stringify(recentOrders, null, 2));
+                  showRecentMedicationAlert(recentOrders, warningMessage, () => {
                     // User clicked 'Proceed Anyway'
                     submitWardStockOrderFinal(orderData);
-                });
-                return; // Exit here, submitWardStockOrderFinal will be called by callback if user confirms
-            }
+                  });
+                  return; // Exit here, submitWardStockOrderFinal will be called by callback if user confirms
+                } else {
+                  // No recent orders, continue with normal submission
+                  submitWardStockOrderFinal(orderData);
+                }
+              });
         } catch (error) {
             // Log error but continue with submission
             console.error('Error checking recent ward stock orders:', error);

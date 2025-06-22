@@ -70,9 +70,39 @@ router.post('/recent-check', hasRole(['ordering']), async (req, res) => {
  * GET /api/orders
  * Get all orders with optional filtering
  * Accessible to admin, pharmacy, and ordering roles
+ * Now supports medication search with ?search=medication&medicationName=xyz parameter
  */
 router.get('/', hasRole(['admin', 'pharmacy', 'ordering']), async (req, res) => {
   try {
+    // Check if this is a medication search request
+    if (req.query.search === 'medication' && req.query.medicationName) {
+      console.log('Processing medication search for:', req.query.medicationName);
+      
+      const options = {
+        limit: req.query.limit ? parseInt(req.query.limit) : 50,
+        wardId: req.query.wardId || null,
+        searchTokens: req.query.searchTokens ? req.query.searchTokens.split(',') : []
+      };
+      
+      console.log('Search options:', options);
+      
+      // Use advanced search if we have tokens or wardId
+      let orders;
+      if (options.searchTokens.length > 0 || options.wardId) {
+        orders = await OrderModel.advancedOrderSearch(req.query.medicationName, options);
+      } else {
+        // Fall back to the basic search if no tokens or wardId
+        orders = await OrderModel.searchOrdersByMedication(req.query.medicationName, options);
+      }
+      
+      return res.json({
+        success: true,
+        orders,
+        count: orders.length
+      });
+    }
+    
+    // Standard order filtering
     const filters = {
       status: req.query.status,
       type: req.query.type,
@@ -434,6 +464,43 @@ router.post('/:id/medications', hasRole(['pharmacy', 'ordering']), async (req, r
     res.status(500).json({
       success: false,
       message: 'Error adding medication to order',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/orders/search/medication
+ * Search for orders by medication name
+ * Accessible to admin, pharmacy, and ordering roles
+ */
+router.get('/search/medication', async (req, res) => {
+  try {
+    const { medicationName, limit } = req.query;
+    
+    if (!medicationName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Medication name is required for search'
+      });
+    }
+    
+    const options = {
+      limit: limit ? parseInt(limit) : 50
+    };
+    
+    const orders = await OrderModel.searchOrdersByMedication(medicationName, options);
+    
+    res.json({
+      success: true,
+      orders,
+      count: orders.length
+    });
+  } catch (error) {
+    console.error('Error searching orders by medication:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error searching orders',
       error: error.message
     });
   }

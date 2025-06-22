@@ -17,6 +17,7 @@
         class="nhs-logo"
       />
       <ul>
+        <a href="../home.html" class="nav-link">Home</a>
         <a href="../remote-ordering/ward/index.html" class="nav-link"
           >Ward Orders</a
         >
@@ -185,7 +186,10 @@
               <label>Roles</label>
               <div class="checkbox-group">
                 <label class="checkbox-label">
-                  <input type="checkbox" name="roles" value="admin" /> Admin
+                  <input type="checkbox" name="roles" value="super-admin" /> Super Admin
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="roles" value="user-admin" /> User Admin
                 </label>
                 <label class="checkbox-label">
                   <input type="checkbox" name="roles" value="pharmacy" />
@@ -433,10 +437,12 @@
       </div>
     </div>
 
-    <script src="../node_modules/crypto-js/crypto-js.js"></script>
+    <script src="../js/lib/crypto-js.js"></script>
     <script src="../js/auth-utils.js"></script>
     <script src="../js/api-client.js"></script>
+    <script src="../js/nav-controller.js"></script>
     <script src="../js/admin.js"></script>
     <script src="../js/admin-wards.js"></script>
+    <script src="../js/admin-navigation.js"></script>
   </body>
 </html>

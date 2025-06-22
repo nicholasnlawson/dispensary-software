@@ -1479,18 +1479,181 @@ const OrderModel = {
   },
 
   /**
-   * Check for recent medication orders for a patient within the last 14 days
-   * @param {Object} patientData - Patient identification data
-   * @param {Array} medications - List of medications to check
-   * @returns {Promise} - Promise resolving to array of recent orders
+   * Search for orders by medication name
+   * @param {string} medicationName - Medication name to search for
+   * @param {Object} options - Optional parameters (limit, offset, etc.)
+   * @returns {Promise} - Promise resolving to array of matching orders
    */
-  checkRecentMedicationOrders(patientData, medications) {
+  /**
+   * Search for orders by medication name
+   * @param {string} medicationName - Medication name to search for
+   * @param {Object} options - Optional parameters (limit, offset, etc.)
+   * @returns {Promise} - Promise resolving to array of matching orders
+   */
+  searchOrdersByMedication(medicationName, options = {}) {
     return new Promise((resolve, reject) => {
-      // Validate inputs
-      if (!patientData || !medications || !Array.isArray(medications)) {
-        return resolve([]);
+      const limit = options.limit || 50; // Default to 50 results
+      const offset = options.offset || 0;
+
+      if (!medicationName) {
+        return resolve([]); // Return empty array if no search term
       }
 
+      // Use LIKE query to search for medication name
+      const searchParam = `%${medicationName}%`;
+
+      // Query orders that have medications matching the search term
+      db.all(
+        `SELECT DISTINCT o.* 
+         FROM orders o
+         JOIN order_medications m ON o.id = m.order_id
+         WHERE m.name LIKE ? 
+         ORDER BY o.timestamp DESC
+         LIMIT ? OFFSET ?`,
+        [searchParam, limit, offset],
+        async (err, orders) => {
+          if (err) {
+            console.error('Error searching orders by medication:', err);
+            return reject(err);
+          }
+
+          // If no matching orders, return empty array
+          if (!orders || orders.length === 0) {
+            return resolve([]);
+          }
+
+          try {
+            // Process each order to get full details
+            const orderPromises = orders.map(order => this.getOrderById(order.id));
+            const fullOrders = await Promise.all(orderPromises);
+            
+            // Filter out any null results (in case any orders were deleted)
+            resolve(fullOrders.filter(order => order != null));
+          } catch (error) {
+            console.error('Error fetching full order details:', error);
+            reject(error);
+          }
+        }
+      );
+    }).catch(error => {
+      console.error('Error in searchOrdersByMedication:', error);
+      throw error;
+    });
+  },
+  
+  /**
+   * Advanced search for orders with multiple filter criteria
+   * - Search by tokens across medication names and patient names
+   * - Filter by ward/location
+   * 
+   * @param {string} primarySearchTerm - Main search term (displayed in UI)
+   * @param {Object} options - Search options
+   * @param {Array} options.searchTokens - Array of search tokens for multi-word search
+   * @param {string} options.wardId - Optional ward ID to filter by location
+   * @param {number} options.limit - Maximum number of results to return
+   * @param {number} options.offset - Offset for pagination
+   * @returns {Promise} - Promise resolving to array of matching orders
+   */
+  advancedOrderSearch(primarySearchTerm, options = {}) {
+    return new Promise((resolve, reject) => {
+      const limit = options.limit || 50;
+      const offset = options.offset || 0;
+      const wardId = options.wardId || null;
+      const searchTokens = options.searchTokens || [];
+      
+      console.log(`Advanced search with tokens: [${searchTokens.join(', ')}], wardId: ${wardId}`);
+      
+      if (!primarySearchTerm && searchTokens.length === 0) {
+        return resolve([]);
+      }
+      
+      // Build dynamic query based on search parameters
+      let query = `
+        SELECT DISTINCT o.* 
+        FROM orders o
+        JOIN order_medications m ON o.id = m.order_id
+        LEFT JOIN order_patients p ON o.id = p.order_id
+        WHERE 1=1`;
+      
+      const params = [];
+      
+      // Add medication name conditions
+      if (searchTokens.length > 0) {
+        // Create groups of conditions for each token
+        const tokenConditions = [];
+        
+        searchTokens.forEach(token => {
+          const tokenParam = `%${token}%`;
+          // For each token, create a condition group that matches either medication or patient name
+          tokenConditions.push(`(m.name LIKE ? OR p.patient_name LIKE ?)`);
+          params.push(tokenParam, tokenParam);
+        });
+        
+        // Join token conditions with AND to require all tokens to match
+        query += ` AND (${ tokenConditions.join(' AND ') })`;
+      } else if (primarySearchTerm) {
+        // Basic search if no tokens
+        const searchParam = `%${primarySearchTerm}%`;
+        query += ` AND (m.name LIKE ? OR p.patient_name LIKE ?)`;
+        params.push(searchParam, searchParam);
+      }
+      
+      // Add ward filter if specified
+      if (wardId) {
+        query += ` AND o.ward_id = ?`;
+        params.push(wardId);
+      }
+      
+      // Add order and limit
+      query += `
+        ORDER BY o.timestamp DESC
+        LIMIT ? OFFSET ?`;
+      
+      params.push(limit, offset);
+      
+      // Execute the query
+      db.all(query, params, async (err, orders) => {
+        if (err) {
+          console.error('Error in advanced search:', err);
+          return reject(err);
+        }
+        
+        // If no matching orders, return empty array
+        if (!orders || orders.length === 0) {
+          return resolve([]);
+        }
+        
+        try {
+          // Process each order to get full details
+          const orderPromises = orders.map(order => this.getOrderById(order.id));
+          const fullOrders = await Promise.all(orderPromises);
+          
+          // Filter out any null results (in case any orders were deleted)
+          resolve(fullOrders.filter(order => order != null));
+        } catch (error) {
+          console.error('Error fetching full order details:', error);
+          reject(error);
+        }
+      });
+    }).catch(error => {
+      console.error('Error in advancedOrderSearch:', error);
+      throw error;
+    });
+  },
+
+  /**
+   * Check for recent medication orders for a patient or ward stock within the last 14/2 days
+   * @param {Object} patientData - Patient identification data
+   * @param {Array} medications - List of medications to check
+   * @param {string} wardId - Ward ID for ward stock orders
+   * @param {Function} callback - Callback function
+   */
+  checkRecentMedicationOrders(patientData, medications, wardId, callback) {
+    console.log('[DEBUG - OrderModel] Starting checkRecentMedicationOrders with:', 
+               JSON.stringify({patientData, medications: medications.map(m => m.name || m.medication_name), wardId}, null, 2));
+    
+    return new Promise((resolve, reject) => {
+          
       // Extract patient identifiers
       const { patientName, nhsNumber, hospitalNumber } = patientData;
       
@@ -1627,34 +1790,38 @@ const OrderModel = {
       let sql;
       
       if (isWardStock) {
-        // For ward stock orders, we don't need to join with patient table
+        // For ward stock orders, we don't need to join with patient table, but we do need to join with wards table to get ward name
         sql = `
           SELECT o.id, o.type, o.timestamp, o.status, o.requester_name, o.ward_id,
-                 m.name as medication_name, m.quantity, m.form as formulation,
-                 NULL as patient_name, NULL as patient_hospital_id, NULL as patient_nhs
+                 m.name as medication_name, m.quantity, m.form as formulation, m.strength, m.dose,
+                 NULL as patient_name, NULL as patient_hospital_id, NULL as patient_nhs,
+                 w.name as ward_name
           FROM orders o
           JOIN order_medications m ON o.id = m.order_id
+          LEFT JOIN wards w ON o.ward_id = w.id
           WHERE o.timestamp >= ?
             ${whereConditionStr}
             ${medicationCondition}
           ORDER BY o.timestamp DESC
         `;
       } else {
-        // For patient orders, join with patient table
+        // For patient orders, join with patient table and wards table
         sql = `
           SELECT o.id, o.type, o.timestamp, o.status, o.requester_name, o.ward_id,
-                 m.name as medication_name, m.dose, m.quantity, m.form as formulation,
-                 p.patient_name, p.patient_hospital_id, p.patient_nhs
+                 m.name as medication_name, m.quantity, m.dose, m.form as formulation, m.strength,
+                 p.patient_name, p.patient_hospital_id, p.patient_nhs,
+                 w.name as ward_name
           FROM orders o
           JOIN order_patients p ON o.id = p.order_id
           JOIN order_medications m ON o.id = m.order_id
+          LEFT JOIN wards w ON o.ward_id = w.id
           WHERE o.timestamp >= ?
             ${whereConditionStr}
             ${medicationCondition}
           ORDER BY o.timestamp DESC
         `;
       }
-
+      
       // Log the query for debugging
       logger.info('Recent medication check SQL:', sql);
       logger.info('Parameters:', JSON.stringify(queryParams));
@@ -1711,9 +1878,30 @@ const OrderModel = {
           });
         }
 
-        // Process results, decrypt patient names if available
+        // Map each row to a structured order object
         const recentOrders = rows.map(row => {
-          // Get the patient name - it might be encrypted
+          // Debug the raw database row
+          logger.info('Raw database row for recent order:', JSON.stringify(row));
+          
+          // Create the medication object within the order
+          const medication = {
+            name: row.medication_name,
+            formulation: row.formulation || row.form, // Support both column names
+            quantity: row.quantity,
+            strength: row.strength,
+            dose: row.dose || null // Always include dose field even if null
+          };
+
+          // Get ward name from ward_id if available
+          let wardName = null;
+          if (row.ward_name) {
+            // Use the ward name from the query result
+            wardName = row.ward_name;
+          } else if (row.ward_id) {
+            // Fallback if ward name wasn't joined
+            wardName = `Ward ${row.ward_id}`;
+          }
+
           let displayPatientName = "Patient";
           
           // Try to decrypt patient name from the row if encryption is enabled
@@ -1730,25 +1918,24 @@ const OrderModel = {
             displayPatientName = row.patient_name;
           }
 
-          return {
-            orderId: row.id,
-            orderType: row.type,
+          const orderObject = {
+            id: row.id,
+            type: row.type,
             timestamp: row.timestamp,
-            daysAgo: Math.floor((new Date() - new Date(row.timestamp)) / (1000 * 60 * 60 * 24)),
             status: row.status,
-            requesterName: row.requester_name,
+            requesterName: row.requester_name, 
             wardId: row.ward_id,
+            wardName: wardName,
             patientName: displayPatientName,
             patientHospitalId: row.patient_hospital_id,
-            patientNHS: row.patient_nhs,
-            medication: {
-              name: row.medication_name,
-              dose: row.dose,
-              quantity: row.quantity,
-              formulation: row.formulation,
-              strength: row.strength || null
-            }
+            patientNhs: row.patient_nhs,
+            medication
           };
+          
+          // Debug the mapped order object
+          logger.info('Mapped order object for response:', JSON.stringify(orderObject));
+          
+          return orderObject;
         });
 
         logger.info(`Found ${recentOrders.length} recent medication orders`);

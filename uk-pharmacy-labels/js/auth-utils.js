@@ -66,6 +66,29 @@ const AuthUtils = {
   },
 
   /**
+   * Check if user has any admin role (user-admin or super-admin)
+   * @returns {boolean} - True if user has any admin role, false otherwise
+   */
+  hasAnyAdminRole() {
+    const userData = this.getUserData();
+    if (!userData || !userData.roles) return false;
+    
+    const adminRoles = ['user-admin', 'super-admin'];
+    return adminRoles.some(role => userData.roles.includes(role));
+  },
+
+  /**
+   * Check if user has full admin access (super-admin only)
+   * @returns {boolean} - True if user has full admin access, false otherwise
+   */
+  hasFullAdminAccess() {
+    const userData = this.getUserData();
+    if (!userData || !userData.roles) return false;
+    
+    return userData.roles.includes('super-admin');
+  },
+
+  /**
    * Decrypts data using AES encryption
    * @param {string} encryptedData - Data to decrypt
    * @returns {string} - Decrypted data

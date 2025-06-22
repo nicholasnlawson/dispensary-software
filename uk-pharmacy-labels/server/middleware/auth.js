@@ -59,4 +59,46 @@ const hasRole = (roles) => {
   };
 };
 
-module.exports = { verifyToken, hasRole, requireRole: hasRole };
+// Middleware to check if user has any admin role (admin, user-admin, or super-admin)
+const hasAdminAccess = () => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+    
+    const adminRoles = ['admin', 'user-admin', 'super-admin'];
+    const hasAnyAdminRole = adminRoles.some(role => req.user.roles.includes(role));
+    
+    if (!hasAnyAdminRole) {
+      return res.status(403).json({ success: false, message: 'Access denied: admin permissions required' });
+    }
+    
+    next();
+  };
+};
+
+// Middleware to check if user has full admin access (admin or super-admin)
+const hasFullAdminAccess = () => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+    
+    const fullAdminRoles = ['admin', 'super-admin'];
+    const hasFullAdmin = fullAdminRoles.some(role => req.user.roles.includes(role));
+    
+    if (!hasFullAdmin) {
+      return res.status(403).json({ success: false, message: 'Access denied: full admin permissions required' });
+    }
+    
+    next();
+  };
+};
+
+module.exports = { 
+  verifyToken, 
+  hasRole, 
+  hasAdminAccess, 
+  hasFullAdminAccess,
+  requireRole: hasRole 
+};

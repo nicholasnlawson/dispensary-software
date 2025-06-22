@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:"
+    />
+    <title>Medication Management System - Home</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="favicon_io/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="favicon_io/favicon-16x16.png"
+    />
+    <link rel="apple-touch-icon" href="favicon_io/apple-touch-icon.png" />
+    <style>
+      .welcome-section {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      .module-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      }
+      .card h3 {
+        color: #005eb8;
+        margin-top: 0;
+      }
+      .card-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+      }
+      .welcome-banner {
+        background: #005eb8;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+      }
+      .welcome-banner h2 {
+        margin-top: 0;
+      }
+      .user-greeting {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="main-nav">
+      <img
+        src="images/nhs_trust_logo.png"
+        alt="NHS Trust Logo"
+        class="nhs-logo"
+      />
+      <ul>
+        <a href="home.html" class="nav-link active">Home</a>
+        <a href="remote-ordering/ward/index.html" class="nav-link"
+          >Ward Orders</a
+        >
+        <a href="remote-ordering/pharmacy/index.html" class="nav-link"
+          >Pharmacy Supply</a
+        >
+        <a href="admin/index.html" class="nav-link" id="admin-nav-link"
+          >Admin</a
+        >
+        <a href="profile.html" class="nav-link">My Profile</a>
+        <a href="#" class="nav-link logout-link" id="logout-link">Logout</a>
+      </ul>
+    </nav>
+    <header>
+      <div class="nhs-header">
+        <div class="header-content">
+          <h1>NHS Trust Medication Management System</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="welcome-section">
+        <div class="welcome-banner">
+          <h2>Welcome to the Medication Management System</h2>
+          <p>
+            You are logged in as
+            <span id="user-name" class="user-greeting">User</span>
+          </p>
+        </div>
+
+        <h2>System Overview</h2>
+        <p>
+          This system provides comprehensive medication management for
+          healthcare professionals. Select a module below to get started:
+        </p>
+
+        <div class="module-cards">
+          <a href="remote-ordering/ward/index.html" class="card-link">
+            <div class="card">
+              <h3>Ward Ordering</h3>
+              <p>
+                Create and manage medication orders for patients or ward stock.
+                Track order history and status updates.
+              </p>
+            </div>
+          </a>
+
+          <a href="remote-ordering/pharmacy/index.html" class="card-link">
+            <div class="card">
+              <h3>Pharmacy Supply</h3>
+              <p>
+                Process incoming medication orders, generate labels, and manage
+                pharmacy supply workflow.
+              </p>
+            </div>
+          </a>
+
+          <a href="index.html" class="card-link">
+            <div class="card">
+              <h3>Label Generation</h3>
+              <p>
+                Generate medication labels in instances where the primary system
+                is unavailable.
+              </p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <!-- Footer content removed as requested -->
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/lib/crypto-js.js"></script>
+    <script src="js/auth-utils.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/home.js"></script>
+  </body>
+</html>

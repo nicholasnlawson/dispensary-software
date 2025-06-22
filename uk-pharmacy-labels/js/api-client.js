@@ -217,7 +217,7 @@ class ApiClient {
    * @returns {Promise} - Promise resolving to success message
    */
   async changePassword(passwordData) {
-    return await this.request(`/users/${passwordData.userId}/password`, 'PUT', {
+    return await this.request(`/users/change-password`, 'POST', {
       currentPassword: passwordData.currentPassword,
       newPassword: passwordData.newPassword
     });
@@ -229,7 +229,7 @@ class ApiClient {
    * @returns {Promise} - Promise resolving to updated profile
    */
   async updateUserProfile(profileData) {
-    return await this.request(`/users/${profileData.userId}/profile`, 'PUT', {
+    return await this.request(`/users/${profileData.userId}`, 'PUT', {
       email: profileData.email
     });
   }
@@ -617,31 +617,16 @@ class ApiClient {
       console.log('[API] Current user for cancellation:', currentUser);
       
       // Determine the cancelledBy value based on available user properties
-      let cancelledBy = 'Unknown User';
-      if (currentUser) {
-        if (currentUser.username) {
-          // Use username if available (most likely format: "N Lawson")
-          cancelledBy = currentUser.username;
-        } else if (currentUser.first_name && currentUser.surname) {
-          // Fall back to first_name + surname if available
-          cancelledBy = `${currentUser.first_name} ${currentUser.surname}`;
-        } else if (currentUser.name) {
-          // Fall back to name if available
-          cancelledBy = currentUser.name;
-        }
-      }
+      const cancelledBy = currentUser ? (currentUser.name || currentUser.username || 'Unknown User') : 'Unknown User';
       
-      console.log('[API] Using cancelledBy:', cancelledBy);
-      
-      // Backend PUT /:id/cancel expects reason, cancelledBy, timestamp
-      const cancelPayload = {
-        reason: reason,
+      const cancelData = {
+        reason: reason || 'Cancelled via UI',
         cancelledBy: cancelledBy,
         timestamp: new Date().toISOString()
       };
       
-      console.log('[API] Making PUT request to /orders/' + orderId + '/cancel', cancelPayload);
-      const response = await this.request(`/orders/${orderId}/cancel`, 'PUT', cancelPayload);
+      console.log('[API] Making PUT request to /orders/' + orderId + '/cancel', cancelData);
+      const response = await this.request(`/orders/${orderId}/cancel`, 'PUT', cancelData);
       console.log('[API] cancelOrder response:', response);
       return response;
     } catch (error) {
@@ -649,6 +634,45 @@ class ApiClient {
       return { 
         success: false, 
         message: error.message || 'Failed to cancel order' 
+      };
+    }
+  }
+  
+  /**
+   * Search orders by medication name and other optional filters
+   * @param {Object} options - Search options
+   * @param {string} options.medicationName - Primary search term
+   * @param {string} [options.searchTokens] - Comma-separated list of search tokens for multi-word search
+   * @param {string} [options.wardId] - Optional ward ID to filter results by location
+   * @param {number} [options.limit=50] - Maximum number of results to return
+   * @returns {Promise<Object>} Response with orders matching the search criteria
+   */
+  async searchOrdersByMedication(options = {}) {
+    try {
+      if (!options.medicationName) {
+        throw new Error('Search term is required');
+      }
+      
+      // Prepare query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('medicationName', options.medicationName);
+      
+      // Add optional parameters if provided
+      if (options.searchTokens) queryParams.append('searchTokens', options.searchTokens);
+      if (options.wardId) queryParams.append('wardId', options.wardId);
+      if (options.limit) queryParams.append('limit', options.limit);
+      
+      console.log('[API] Making GET request to /orders?search=medication with params:', options);
+      
+      const response = await this.request(`/orders?search=medication&${queryParams.toString()}`, 'GET');
+      console.log('[API] searchOrdersByMedication response:', response);
+      return response;
+    } catch (error) {
+      console.error('[API] Error searching orders:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to search orders', 
+        orders: [] 
       };
     }
   }

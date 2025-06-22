@@ -5,10 +5,14 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check if user is authenticated and has admin role
-  const user = window.apiClient.getCurrentUser();
-  if (!user || !window.apiClient.hasRole('admin')) {
-    window.location.href = '/login.html';
+  // Check if user is authenticated and has full admin access (super-admin or admin)
+  if (!AuthUtils.isAuthenticated() || !AuthUtils.hasFullAdminAccess()) {
+    // If user is logged in but doesn't have full admin access, redirect to dashboard
+    if (AuthUtils.isAuthenticated()) {
+      window.location.href = '/dashboard.html';
+    } else {
+      window.location.href = '/login.html';
+    }
     return;
   }
 
