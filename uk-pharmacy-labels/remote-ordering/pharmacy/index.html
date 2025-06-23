@@ -42,74 +42,23 @@
 
     <main class="container">
         <div class="pharmacy-dashboard">
-          <div class="order-filters">
-            <h2>Incoming Orders</h2>
+          <div class="recent-orders">
+            <div class="section-header-with-actions">
+              <h2>Incoming Orders</h2>
+            </div>
             <div class="filter-controls">
               <div class="filter-group">
-                <label for="filter-urgency">Filter by Urgency:</label>
-                <select id="filter-urgency">
-                  <option value="all">All</option>
-                  <option value="emergency">Emergency</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="routine">Routine</option>
-                </select>
-              </div>
-
-              <div class="filter-group">
-                <label for="filter-type">Order Type:</label>
-                <select id="filter-type">
-                  <option value="all">All</option>
-                  <option value="patient">Patient</option>
-                  <option value="ward-stock">Ward Stock</option>
-                </select>
-              </div>
-
-              <div class="filter-group">
-                <label for="filter-ward">Ward:</label>
+                <label for="filter-ward">Filter by Ward:</label>
                 <select id="filter-ward">
-                  <option value="all">All</option>
-                  <option value="ward-1">Ward 1</option>
-                  <option value="ward-2">Ward 2</option>
-                  <option value="ward-3">Ward 3</option>
-                  <option value="ward-4">Ward 4</option>
-                  <option value="ward-5">Ward 5</option>
-                  <option value="ward-6">Ward 6</option>
-                  <option value="ward-7">Ward 7</option>
-                </select>
-              </div>
-
-              <div class="filter-group">
-                <label for="filter-status">Status:</label>
-                <select id="filter-status">
-                  <option value="all">All</option>
-                  <option value="pending" selected>Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="all">All Wards</option>
+                  <!-- Wards will be loaded dynamically -->
                 </select>
               </div>
             </div>
-          </div>
 
-          <div class="orders-list">
-            <div id="orders-container">
-              <div class="orders-table">
-                <div class="table-header">
-                  <div class="col col-id">ID</div>
-                  <div class="col col-time">Time</div>
-                  <div class="col col-ward">Ward</div>
-                  <div class="col col-type">Type</div>
-                  <div class="col col-urgency">Urgency</div>
-                  <div class="col col-patient">Patient</div>
-                  <div class="col col-status">Status</div>
-                  <div class="col col-actions">Actions</div>
-                </div>
-                <div id="orders-list">
-                  <!-- Orders will be populated here -->
-                  <p class="empty-state">No orders to display</p>
-                </div>
-              </div>
-            </div>
+          <div id="orders-list">
+            <p class="empty-state">No orders to display</p>
+            <!-- Orders will be populated here -->
           </div>
 
           <!-- Order Details Panel -->
@@ -124,7 +73,7 @@
             <div class="panel-actions">
               <button id="process-order-btn" class="primary-btn">Process Order</button>
               <button id="generate-labels-btn" class="secondary-btn">Generate Labels</button>
-              <button id="reject-order-btn" class="danger-btn">Reject Order</button>
+              <button id="reject-order-btn" class="reject-btn">Reject</button>
             </div>
           </div>
           
@@ -136,31 +85,7 @@
             </div>
             <div id="processing-content" class="panel-content">
               <div class="processing-form">
-                <h3>Medications to Supply</h3>
-                <div id="medications-to-supply">
-                  <!-- Medication items will be loaded here -->
-                </div>
-                
-                <div class="form-group">
-                  <h3>Supply Details</h3>
-                  <div class="form-row">
-                    <div class="form-column">
-                      <label for="supplied-by">Supplied By:</label>
-                      <input type="text" id="supplied-by" required />
-                    </div>
-                    <div class="form-column">
-                      <label for="checked-by">Checked By:</label>
-                      <input type="text" id="checked-by" />
-                    </div>
-                  </div>
-                  
-                  <div class="form-row">
-                    <div class="form-column full-width">
-                      <label for="supply-notes">Supply Notes:</label>
-                      <textarea id="supply-notes" rows="2" placeholder="Any additional notes"></textarea>
-                    </div>
-                  </div>
-                </div>
+                <!-- Processing form will be loaded here -->
               </div>
             </div>
             <div class="panel-actions">
@@ -171,39 +96,15 @@
           </div>
         </div>
         
-        <!-- Statistics Panel -->
-        <div class="statistics-panel">
-          <h2>Today's Statistics</h2>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-value" id="pending-count">0</div>
-              <div class="stat-label">Pending Orders</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="urgent-count">0</div>
-              <div class="stat-label">Urgent Orders</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="completed-count">0</div>
-              <div class="stat-label">Completed Today</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="processing-time">0m</div>
-              <div class="stat-label">Avg. Processing Time</div>
-            </div>
+        <!-- Utilities Section -->
+        <div class="utilities-section">
+          <h2>Utilities</h2>
+          <div class="utility-buttons">
+            <a href="../../index.html" class="utility-btn">
+              <span class="utility-icon">🏷️</span>
+              <span class="utility-text">Label Generator</span>
+            </a>
           </div>
-          
-          <!-- Quick Links Section -->
-          <div class="quick-links">
-            <h3>Quick Links</h3>
-            <div class="links-grid">
-              <a href="../../index.html" class="quick-link">
-                <span class="link-icon">🏷️</span>
-                <span class="link-text">Label Generator</span>
-              </a>
-              <a href="reports.html" class="quick-link">
-                <span class="link-icon">📊</span>
-                <span class="link-text">Reports</span>
               </a>
               <a href="inventory.html" class="quick-link">
                 <span class="link-icon">📦</span>
