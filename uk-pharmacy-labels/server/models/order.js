@@ -638,6 +638,7 @@ const OrderModel = {
                       form: med.form,
                       strength: med.strength,
                       quantity: med.quantity,
+                      dose: med.dose,
                       notes: med.notes
                     }));
                   } else {

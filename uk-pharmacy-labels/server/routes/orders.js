@@ -224,10 +224,15 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
     };
 
     const result = await OrderModel.createOrder(orderData);
+    
+    // Get the full order data to return to the client
+    const fullOrder = await OrderModel.getOrderById(result.id);
+    
     res.status(201).json({
       success: true,
       message: 'Order created successfully',
-      orderId: result.id
+      orderId: result.id,
+      order: fullOrder
     });
   } catch (error) {
     console.error('Error creating order:', error);
@@ -241,13 +246,13 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
 
 /**
  * PUT /api/orders/:id
- * Update an order's status or processing information
+ * Update an order's status, processing information, or medication details
  * Accessible to pharmacy and ordering roles
  */
 router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
   try {
     const orderId = req.params.id;
-    const { status, processedBy, checkedBy, processingNotes } = req.body;
+    const { status, processedBy, checkedBy, processingNotes, medications, notes } = req.body;
 
     // Validate status if provided
     if (status && !['pending', 'processing', 'completed', 'cancelled'].includes(status)) {
@@ -256,25 +261,84 @@ router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
         message: 'Invalid order status'
       });
     }
+    
+    // Validate medications if provided
+    if (medications && Array.isArray(medications)) {
+      // Validate each medication has required fields
+      for (const med of medications) {
+        if (!med.name || !med.quantity) {
+          return res.status(400).json({ 
+            success: false,
+            message: 'All medications must have a name and quantity' 
+          });
+        }
+        // Ensure dose field is present (can be null/empty)
+        if (!('dose' in med)) {
+          med.dose = null;
+        }
+      }
+    }
 
-    // Update the order
-    const result = await OrderModel.updateOrder(orderId, {
-      status,
-      processedBy,
-      checkedBy,
-      processingNotes
-    });
-
-    if (!result.success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found or no changes made'
+    // Track if we need to update medications separately
+    let medicationsUpdated = false;
+    let basicUpdateResult = { success: true };
+    
+    // If medications are provided, use the dedicated method to update them
+    if (medications && Array.isArray(medications)) {
+      try {
+        // Get current user info for audit trail
+        const modifiedBy = req.user ? req.user.username : 'system';
+        
+        // Update medications with proper audit trail
+        const medResult = await OrderModel.updateOrderMedications(orderId, {
+          medications,
+          modifiedBy,
+          reason: 'Medication details updated via API'
+        });
+        
+        if (!medResult.success) {
+          return res.status(404).json({
+            success: false,
+            message: medResult.message || 'Failed to update medications'
+          });
+        }
+        
+        medicationsUpdated = true;
+        console.log('Medications updated successfully');
+      } catch (medError) {
+        console.error('Error updating medications:', medError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error updating medications',
+          error: medError.message
+        });
+      }
+    }
+    
+    // Only update basic fields if there are any to update
+    if (status || processedBy || checkedBy || processingNotes || notes !== undefined) {
+      // Update the basic order fields
+      basicUpdateResult = await OrderModel.updateOrder(orderId, {
+        status,
+        processedBy,
+        checkedBy,
+        processingNotes,
+        notes // Add notes to update payload
       });
+      
+      if (!basicUpdateResult.success && !medicationsUpdated) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found or no changes made'
+        });
+      }
     }
 
     res.json({
       success: true,
-      message: 'Order updated successfully'
+      message: medicationsUpdated ? 
+        'Order and medications updated successfully' : 
+        'Order updated successfully'
     });
   } catch (error) {
     console.error('Error updating order:', error);

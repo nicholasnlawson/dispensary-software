@@ -2488,7 +2488,14 @@ function createWardStockMedicationItem(index) {
             </div>
         </div>
 
-        <!-- Dose field removed as it's not needed for ward stock orders -->
+        <div class="form-row">
+            <div class="form-column">
+                <label for="ws-med-dose-${index}">Dose:</label>
+                <input type="text" id="ws-med-dose-${index}" class="med-dose" placeholder="e.g., 1-2 tablets daily" 
+                       autocomplete="nope" autocorrect="off" spellcheck="false" 
+                       name="ws_dose_${index}_${Math.random().toString(36).substring(2, 10)}" />
+            </div>
+        </div>
     `;
     
     // Add remove button functionality
@@ -2551,12 +2558,14 @@ function collectWardStockMedicationsData() {
         const formInput = item.querySelector('.med-form');
         const strengthInput = item.querySelector('.med-strength');
         const quantityInput = item.querySelector('.med-quantity');
+        const doseInput = item.querySelector('.med-dose');
         
         console.log(`[DEBUG] Item ${index} inputs:`, {
             nameInput: nameInput ? { found: true, value: nameInput.value } : 'not found',
             formInput: formInput ? { found: true, value: formInput.value } : 'not found',
             strengthInput: strengthInput ? { found: true, value: strengthInput.value } : 'not found',
-            quantityInput: quantityInput ? { found: true, value: quantityInput.value } : 'not found'
+            quantityInput: quantityInput ? { found: true, value: quantityInput.value } : 'not found',
+            doseInput: doseInput ? { found: true, value: doseInput.value } : 'not found'
         });
         
         // Only add if we have at least a name and quantity
@@ -2565,7 +2574,8 @@ function collectWardStockMedicationsData() {
                 name: nameInput.value,
                 form: formInput ? formInput.value : '',
                 strength: strengthInput ? strengthInput.value : '',
-                quantity: quantityInput.value
+                quantity: quantityInput.value,
+                dose: doseInput ? doseInput.value : ''
             };
             
             medications.push(medication);
@@ -3159,34 +3169,12 @@ function createOrderDetailHTML(order) {
                 <div class="medications-list">
                     ${order.medications.map((med, index) => `
                         <div class="medication-item" data-index="${index}">
-                            <div class="medication-row">
-                                <div class="medication-field">
-                                    <label>Name:</label>
-                                    <span class="medication-name">${med.name || 'N/A'}</span>
-                                </div>
-                                <div class="medication-field">
-                                    <label>Strength:</label>
-                                    <span class="medication-strength">${med.strength || 'N/A'}</span>
-                                </div>
-                                <div class="medication-field">
-                                    <label>Form:</label>
-                                    <span class="medication-form">${med.form || 'N/A'}</span>
-                                </div>
-                                <div class="medication-field">
-                                    <label>Quantity:</label>
-                                    <span class="medication-quantity">${med.quantity || 'N/A'}</span>
-                                </div>
-                                <div class="medication-field">
-                                    <label>Dose:</label>
-                                    <span class="medication-dose">${med.dose || 'N/A'}</span>
-                                </div>
-                                ${med.notes ? `
-                                <div class="medication-field full-width">
-                                    <label>Notes:</label>
-                                    <span class="medication-notes">${med.notes}</span>
-                                </div>
-                                ` : ''}
-                            </div>
+                            <p><strong>Name:</strong> ${med.name || 'N/A'}</p>
+                            <p><strong>Strength:</strong> ${med.strength || 'N/A'}</p>
+                            <p><strong>Form:</strong> ${med.form || 'N/A'}</p>
+                            <p><strong>Quantity:</strong> ${med.quantity || 'N/A'}</p>
+                            <p><strong>Dose:</strong> ${med.dose || 'N/A'}</p>
+                            ${med.notes ? `<p><strong>Notes:</strong> ${med.notes}</p>` : ''}
                         </div>
                     `).join('')}
                 </div>

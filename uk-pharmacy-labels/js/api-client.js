@@ -493,6 +493,14 @@ class ApiClient {
       
       const result = await this.post('/orders', orderData);
       console.log('Order created successfully on server:', result);
+      
+      // If the response includes the full order object, return it
+      if (result && result.order) {
+        console.log('Full order data received:', result.order);
+        return result.order;
+      }
+      
+      // Otherwise return the original response for backward compatibility
       return result;
     } catch (error) {
       console.error('Error creating order:', error);
