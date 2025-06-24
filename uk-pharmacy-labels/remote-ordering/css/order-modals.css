@@ -150,6 +150,23 @@
   border: 1px dashed #ddd;
 }
 
+/* Full width medication styling */
+.table-full-width {
+  width: 100%;
+}
+
+.th-full-width {
+  width: 100%;
+}
+
+.cell-no-padding {
+  padding: 0;
+}
+
+.medication-full-width {
+  width: 100%;
+}
+
 #search-results .loading-results {
   color: #2196F3;
   background-color: #e3f2fd;

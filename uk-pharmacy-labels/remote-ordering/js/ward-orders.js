@@ -699,40 +699,64 @@ function renderOrderDetails(editMode) {
                 <h4 class="modal-section-title" style="margin: 0;">Medications</h4>
                 ${editMode ? `<button type="button" class="btn btn-sm" id="add-medication-btn" onclick="addNewMedication()">Add Medication</button>` : ''}
             </div>
-            <table class="order-metadata-table" id="medications-table">
+            <table class="order-metadata-table table-full-width" id="medications-table">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Details</th>
-                        ${editMode ? '<th class="medication-actions">Actions</th>' : ''}
+                        ${editMode ? '<th class="th-full-width">Medication Details</th>' : `<th>Name</th>
+                        <th>Details</th>`}
                     </tr>
                 </thead>
                 <tbody>
     `;
     
     if (editMode) {
-        // Edit mode: Show editable fields for each medication
+        // Edit mode: Show editable fields for each medication using form-group layout
         currentOrder.medications.forEach((med, index) => {
             detailsHTML += `
                 <tr class="medication-row" data-index="${index}">
-                    <td>
-                        <input type="text" class="medication-name" value="${med.name || ''}" placeholder="Medication name">
-                    </td>
-                    <td>
-                        <div class="medication-form-row">
-                            <input type="text" class="medication-strength" value="${med.strength || ''}" placeholder="Strength">
-                            <input type="text" class="medication-form" value="${med.form || ''}" placeholder="Form">
-                            <input type="number" class="medication-quantity medication-small-input" value="${med.quantity || ''}" placeholder="Qty">
+                    <td class="th-full-width cell-no-padding">
+                        <div class="medication-item medication-edit-item medication-full-width">
+                            <!-- Name field -->
+                            <div class="form-group">
+                                <label>Name:</label>
+                                <input type="text" class="form-control medication-name" value="${med.name || ''}" placeholder="Medication name">
+                            </div>
+                            
+                            <!-- Strength field -->
+                            <div class="form-group">
+                                <label>Strength:</label>
+                                <input type="text" class="form-control medication-strength" value="${med.strength || ''}" placeholder="Strength">
+                            </div>
+                            
+                            <!-- Form field -->
+                            <div class="form-group">
+                                <label>Form:</label>
+                                <input type="text" class="form-control medication-form" value="${med.form || ''}" placeholder="Form">
+                            </div>
+                            
+                            <!-- Quantity field -->
+                            <div class="form-group">
+                                <label>Quantity:</label>
+                                <input type="text" class="form-control medication-quantity" value="${med.quantity || ''}" placeholder="Quantity">
+                            </div>
+                            
+                            <!-- Dose field -->
+                            <div class="form-group">
+                                <label>Dose:</label>
+                                <input type="text" class="form-control medication-dose" value="${med.dose || ''}" placeholder="Dose instructions">
+                            </div>
+                            
+                            <!-- Notes field -->
+                            <div class="form-group">
+                                <label>Notes:</label>
+                                <input type="text" class="form-control medication-notes" value="${med.notes || ''}" placeholder="Notes (optional)">
+                            </div>
+                            
+                            <!-- Action buttons -->
+                            <div class="form-group medication-actions">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeMedication(${index})">Remove</button>
+                            </div>
                         </div>
-                        <div class="medication-form-row">
-                            <input type="text" class="medication-dose" value="${med.dose || ''}" placeholder="Dose instructions">
-                        </div>
-                        <div class="medication-form-row">
-                            <input type="text" class="medication-notes" value="${med.notes || ''}" placeholder="Notes (optional)">
-                        </div>
-                    </td>
-                    <td class="medication-actions">
-                        <button type="button" class="btn btn-danger btn-sm" onclick="removeMedication(${index})">Remove</button>
                     </td>
                 </tr>
             `;

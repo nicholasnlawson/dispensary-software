@@ -2165,6 +2165,36 @@ function renderOrderDetails(editMode = false) {
                 doseGroup.appendChild(doseInput);
                 medItem.appendChild(doseGroup);
                 
+                // Notes field
+                const notesGroup = document.createElement('div');
+                notesGroup.className = 'form-group';
+                
+                const notesLabel = document.createElement('label');
+                notesLabel.textContent = 'Notes:';
+                notesGroup.appendChild(notesLabel);
+                
+                const notesInput = document.createElement('input');
+                notesInput.type = 'text';
+                notesInput.className = 'form-control med-notes';
+                notesInput.value = med.notes || '';
+                notesInput.placeholder = 'Optional';
+                notesGroup.appendChild(notesInput);
+                medItem.appendChild(notesGroup);
+                
+                // Add a remove button
+                const actionGroup = document.createElement('div');
+                actionGroup.className = 'form-group medication-actions';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-danger btn-sm';
+                removeBtn.textContent = 'Remove';
+                removeBtn.onclick = function() {
+                    removeMedication(index);
+                };
+                actionGroup.appendChild(removeBtn);
+                medItem.appendChild(actionGroup);
+                
                 medsList.appendChild(medItem);
             });
             
@@ -2184,6 +2214,20 @@ function renderOrderDetails(editMode = false) {
         // Append the element properly instead of using innerHTML
         contentContainer.appendChild(createOrderDetailHTML(currentOrder));
     }
+}
+
+/**
+ * Remove a medication from the current order
+ * @param {number} index - Index of the medication to remove
+ */
+function removeMedication(index) {
+    if (!currentOrder || !currentOrder.medications || index < 0 || index >= currentOrder.medications.length) return;
+    
+    // Remove the medication
+    currentOrder.medications.splice(index, 1);
+    
+    // Re-render in edit mode
+    renderOrderDetails(true);
 }
 
 /**
