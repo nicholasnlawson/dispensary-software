@@ -234,7 +234,8 @@ function displayOrders(orders, container) {
         // Make the entire row clickable
         row.style.cursor = 'pointer';
         row.addEventListener('click', () => {
-            openOrderDetailsPanel(order.id);
+            // Use the modal instead of the side panel
+            showOrderDetails(order);
         });
         
         tableBody.appendChild(row);
@@ -665,6 +666,269 @@ function rejectOrder(orderId) {
             });
         }
     }
+}
+
+/**
+ * Show order details in modal
+ * @param {Object} order - Order object
+ */
+async function showOrderDetails(order) {
+    console.log('[MODAL] showOrderDetails called with order:', order);
+    
+    if (!order) {
+        console.error('[MODAL] No order provided to showOrderDetails');
+        return;
+    }
+    
+    // Store current order for actions
+    window.currentOrder = order;
+    console.log('[MODAL] Set currentOrder:', window.currentOrder);
+    
+    // Get modal elements
+    const modal = document.getElementById('order-detail-modal');
+    const content = document.getElementById('modal-order-content');
+    
+    if (!modal || !content) {
+        console.error('[MODAL] Modal or content element not found');
+        return;
+    }
+    
+    // Populate modal content
+    content.innerHTML = createOrderDetailHTML(order);
+    console.log('[MODAL] Modal content populated');
+    
+    // Setup buttons based on order status
+    setupModalButtons(order);
+    
+    // Show modal
+    modal.style.display = 'block';
+    modal.classList.remove('hidden');
+    console.log('[MODAL] Modal shown');
+    
+    // Setup close handlers
+    setupModalCloseHandlers();
+}
+
+/**
+ * Create HTML content for order details modal
+ * @param {Object} order - Order object to display
+ * @returns {string} - HTML string for modal content
+ */
+function createOrderDetailHTML(order) {
+    console.log('[MODAL] createOrderDetailHTML called with order:', order);
+    
+    if (!order) {
+        return '<p>No order data available</p>';
+    }
+    
+    // Format timestamp
+    const timestamp = new Date(order.timestamp).toLocaleString();
+    
+    // Format patient info section
+    let patientInfo = '';
+    if (order.patient) {
+        // Handle different possible field names with more varied formats
+        const patientName = order.patient.name || order.patient.patientName || 'Not provided';
+        const nhsNumber = order.patient.nhsNumber || order.patient.nhs_number || order.patient.nhsId || 
+                        order.patient.nhs || order.nhs_number || order.nhsNumber || order.nhsId || 'Not provided';
+        const hospitalNumber = order.patient.hospitalNumber || order.patient.hospitalId || 
+                            order.patient.hospital_number || order.patient.hospital_id || 
+                            order.hospitalNumber || order.hospitalId || 'Not provided';
+        const wardName = order.wardName || 'Not provided';
+        
+        patientInfo = `
+            <div class="order-section">
+                <h4>Patient Information</h4>
+                <div class="patient-details">
+                    <p><strong>Name:</strong> ${patientName}</p>
+                    <p><strong>NHS Number:</strong> ${nhsNumber}</p>
+                    <p><strong>Hospital Number:</strong> ${hospitalNumber}</p>
+                    <p><strong>Ward:</strong> ${wardName}</p>
+                </div>
+            </div>
+        `;
+    } else if (order.type === 'patient') {
+        // If patient order type but no patient object, try alternative data paths
+        console.log('[MODAL] No patient object, looking for alternative data paths');
+        
+        // For backward compatibility with older order formats
+        const patientName = order.patientName || 'Not provided';
+        const nhsNumber = order.nhsNumber || order.nhsId || order.nhs || order.nhs_number || 'Not provided';
+        const hospitalNumber = order.hospitalNumber || order.hospitalId || order.hospital_number || order.hospital_id || 'Not provided';
+        const wardName = order.wardName || 'Not provided';
+        
+        patientInfo = `
+            <div class="order-section">
+                <h4>Patient Information</h4>
+                <div class="patient-details">
+                    <p><strong>Name:</strong> ${patientName}</p>
+                    <p><strong>NHS Number:</strong> ${nhsNumber}</p>
+                    <p><strong>Hospital Number:</strong> ${hospitalNumber}</p>
+                    <p><strong>Ward:</strong> ${wardName}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create medications section
+    let medicationsHTML = '';
+    if (order.medications && order.medications.length > 0) {
+        medicationsHTML = `
+            <div class="order-section">
+                <h4>Medications</h4>
+                <div class="medications-list">
+                    ${order.medications.map((med, index) => `
+                        <div class="medication-item" data-index="${index}">
+                            <div class="medication-row">
+                                <div class="medication-field">
+                                    <label>Name:</label>
+                                    <span class="medication-name">${med.name || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Strength:</label>
+                                    <span class="medication-strength">${med.strength || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Form:</label>
+                                    <span class="medication-form">${med.form || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Quantity:</label>
+                                    <span class="medication-quantity">${med.quantity || 'N/A'}</span>
+                                </div>
+                                <div class="medication-field">
+                                    <label>Dose:</label>
+                                    <span class="medication-dose">${med.dose || 'N/A'}</span>
+                                </div>
+                                ${med.notes ? `
+                                <div class="medication-field full-width">
+                                    <label>Notes:</label>
+                                    <span class="medication-notes">${med.notes}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create order info section
+    const orderInfo = `
+        <div class="order-section">
+            <h4>Order Information</h4>
+            <div class="order-details">
+                <p><strong>Order ID:</strong> ${order.id}</p>
+                <p><strong>Type:</strong> ${order.type || 'N/A'}</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${order.status}">${order.status || 'pending'}</span></p>
+                <p><strong>Created:</strong> ${timestamp}</p>
+                <p><strong>Requester:</strong> ${order.requesterName || 'Unknown'}</p>
+                ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
+            </div>
+        </div>
+    `;
+    
+    return `
+        <div class="order-detail-content">
+            ${orderInfo}
+            ${patientInfo}
+            ${medicationsHTML}
+        </div>
+    `;
+}
+
+/**
+ * Setup the modal buttons based on order status
+ * @param {Object} order - The order object
+ */
+function setupModalButtons(order) {
+    console.log('[MODAL] Setting up modal buttons for order status:', order?.status);
+    
+    // Get button elements
+    const processBtn = document.getElementById('process-order-modal-btn');
+    const rejectBtn = document.getElementById('reject-order-modal-btn');
+    const historyBtn = document.getElementById('view-history-btn');
+    const closeBtn = document.querySelector('.modal-close-btn');
+    
+    // Setup history button if it exists
+    if (historyBtn && order?.id) {
+        console.log('[MODAL] Found history button, setting up event listener');
+        historyBtn.onclick = function() {
+            console.log('[MODAL] View history button clicked');
+            if (window.apiClient && typeof window.apiClient.getOrderHistory === 'function') {
+                // If history API is available, call it
+                viewOrderHistory(order.id);
+            } else {
+                console.log('[MODAL] History API not available');
+                alert('Order history functionality not available');
+            }
+        };
+        
+        // Show/hide based on API availability
+        const hasHistoryAccess = window.apiClient && typeof window.apiClient.getOrderHistory === 'function';
+        historyBtn.style.display = hasHistoryAccess ? 'inline-block' : 'none';
+    }
+    
+    // Process button
+    if (processBtn && order) {
+        // Only enable process button for pending orders
+        const canProcess = order.status === 'pending';
+        processBtn.disabled = !canProcess;
+        processBtn.style.display = canProcess ? 'inline-block' : 'none';
+        
+        // Setup click handler
+        processBtn.onclick = function() {
+            console.log('[MODAL] Process button clicked');
+            document.getElementById('order-detail-modal').style.display = 'none';
+            openProcessingPanel(order.id);
+        };
+    }
+    
+    // Reject button
+    if (rejectBtn && order) {
+        // Only enable reject button for pending orders
+        const canReject = order.status === 'pending';
+        rejectBtn.disabled = !canReject;
+        rejectBtn.style.display = canReject ? 'inline-block' : 'none';
+        
+        // Setup click handler
+        rejectBtn.onclick = function() {
+            console.log('[MODAL] Reject button clicked');
+            document.getElementById('order-detail-modal').style.display = 'none';
+            rejectOrder(order.id);
+        };
+    }
+}
+
+/**
+ * Setup modal close handlers
+ */
+function setupModalCloseHandlers() {
+    const modal = document.getElementById('order-detail-modal');
+    const closeBtn = document.querySelector('.modal-close');
+    const closeModalBtn = document.querySelector('.modal-close-btn');
+    
+    // Close button in header
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+    
+    // Close button in footer
+    if (closeModalBtn) {
+        closeModalBtn.onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+    
+    // Click outside modal
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
 }
 
 /**

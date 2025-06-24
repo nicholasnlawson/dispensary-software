@@ -61,8 +61,8 @@
             <!-- Orders will be populated here -->
           </div>
 
-          <!-- Order Details Panel -->
-          <div id="order-details-panel" class="panel hidden">
+          <!-- Order Details Panel - DISABLED: Replaced by modal -->
+          <div id="order-details-panel" class="panel hidden disabled-panel">
             <div class="panel-header">
               <h2>Order Details</h2>
               <button id="close-panel-btn" class="close-btn">&times;</button>
@@ -99,22 +99,27 @@
         <!-- Utilities Section -->
         <div class="utilities-section">
           <h2>Utilities</h2>
-          <div class="utility-buttons">
-            <a href="../../index.html" class="utility-btn">
-              <span class="utility-icon">🏷️</span>
-              <span class="utility-text">Label Generator</span>
-            </a>
+          <div class="utility-links">
+            <a href="../js/label-generator.js" class="utility-link" id="label-generator-link">Label Generator</a>
           </div>
-              </a>
-              <a href="inventory.html" class="quick-link">
-                <span class="link-icon">📦</span>
-                <span class="link-text">Inventory</span>
-              </a>
-              <a href="settings.html" class="quick-link">
-                <span class="link-icon">⚙️</span>
-                <span class="link-text">Settings</span>
-              </a>
-            </div>
+        </div>
+      </div>
+      
+      <!-- Order Detail Modal (Hidden by default) -->
+      <div id="order-detail-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Order Details</h3>
+            <span class="modal-close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div id="modal-order-content"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+            <button type="button" class="btn btn-audit" id="view-history-btn">View Audit Trail</button>
+            <button type="button" class="btn btn-primary" id="process-order-modal-btn">Process</button>
+            <button type="button" class="btn btn-warning" id="reject-order-modal-btn">Reject</button>
           </div>
         </div>
       </div>
