@@ -145,7 +145,7 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
                 <td>${quantity}</td>
                 <td>${wardInfo}</td>
                 <td>${formattedDate}</td>
-                <td>${order.status.toUpperCase()}</td>
+                <td>${formatStatusDisplay(order.status)}</td>
                 <td>${order.requesterName || 'Unknown'}</td>
             </tr>
         `;
@@ -1473,7 +1473,7 @@ async function searchOrdersByMedication(searchTerm, locationId) {
                 const requesterInfo = extractRequesterName(order) || 'Unknown';
                 
                 // Add cancellation info if order is cancelled
-                let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
+                let statusContent = `<span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span>`;
                 if (order.status === 'cancelled') {
                     const cancelledBy = order.cancelledBy || 'Unknown';
                     const reason = order.cancellationReason || order.cancelReason || 'No reason provided';
@@ -2953,10 +2953,10 @@ async function loadRecentOrders() {
                 }).join('<br>');
                 
                 // Format requester info
-                const requesterInfo = order.requesterName || 'Unknown';
+                const requesterInfo = extractRequesterName(order) || 'Unknown';
                 
                 // Add cancellation info if order is cancelled
-                let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
+                let statusContent = `<span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span>`;
                 if (order.status === 'cancelled') {
                     const cancelledBy = order.cancelledBy || 'Unknown';
                     const reason = order.cancellationReason || order.cancelReason || 'No reason provided';
@@ -3294,6 +3294,20 @@ function generateReadableDiff(prevObj, newObj) {
     // Initialize the HTML output
     let diffHTML = '<div class="changes-table">';
     
+    // Special handling for status changes
+    if (prevObj && newObj && 'status' in prevObj && 'status' in newObj && prevObj.status !== newObj.status) {
+        diffHTML += `
+            <div class="status-change-section">
+                <h5>Status Change</h5>
+                <div class="status-change-container">
+                    <span class="status-tag status-${prevObj.status}">${formatStatusDisplay(prevObj.status)}</span>
+                    <span class="status-arrow">→</span>
+                    <span class="status-tag status-${newObj.status}">${formatStatusDisplay(newObj.status)}</span>
+                </div>
+            </div>
+        `;
+    }
+    
     // Track if we found any differences
     let hasDifferences = false;
     
@@ -3409,17 +3423,42 @@ function generateReadableDiff(prevObj, newObj) {
 }
 
 /**
- * Format a field name for display
- * @param {string} fieldName - Raw field name
+ * Format a field name for display (converts snake_case/camelCase to Title Case)
+ * @param {string} fieldName - The field name to format
  * @returns {string} - Formatted field name
  */
 function formatFieldName(fieldName) {
-    return fieldName
-        .replace(/([A-Z])/g, ' $1') // Insert spaces before capital letters
-        .replace(/_/g, ' ') // Replace underscores with spaces
+    if (!fieldName) return 'Unknown Field';
+    
+    // Replace underscores with spaces
+    const withSpaces = fieldName.replace(/_/g, ' ');
+    
+    // Handle camelCase - insert spaces before capital letters
+    const withCamelSpaces = withSpaces.replace(/([A-Z])/g, ' $1');
+    
+    // Title case - capitalize first letter of each word
+    return withCamelSpaces
         .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize each word
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ');
+}
+
+/**
+ * Formats a status value for display in a user-friendly format
+ * @param {string} status - The raw status value from the database
+ * @returns {string} - Formatted status for display
+ */
+function formatStatusDisplay(status) {
+    if (!status) return 'Unknown';
+    
+    // Handle hyphenated statuses (e.g., 'in-progress')
+    const formattedStatus = status
+        .replace(/-/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    
+    return formattedStatus;
 }
 
 /**
@@ -3467,6 +3506,20 @@ function showHistoryModal(orderId, historyData) {
             .med-changes-list li { margin-bottom: 5px; padding: 3px; border-bottom: 1px dotted #ccc; }
             .show-details-btn { margin-bottom: 5px; }
             .history-details { padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; margin-top: 5px; }
+            
+            /* Status change styling */
+            .status-change-section { margin: 10px 0; padding: 10px; border-radius: 4px; background-color: #f5f5f5; }
+            .status-change-container { display: flex; align-items: center; justify-content: center; gap: 15px; }
+            .status-tag { padding: 5px 10px; border-radius: 4px; font-weight: 500; }
+            .status-arrow { font-size: 20px; color: #666; }
+            
+            /* Status tag colors */
+            .status-pending { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+            .status-in-progress { background-color: #e6e6fa; border: 1px solid #d1d1f0; color: #4b0082; }
+            .status-processing { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
+            .status-completed { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+            .status-cancelled { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+            .status-unfulfilled { background-color: #fff6f6; border: 1px solid #f5c6cb; color: #9a3f38; }
         `;
         document.head.appendChild(styles);
     }

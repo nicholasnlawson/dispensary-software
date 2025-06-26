@@ -15,6 +15,29 @@ let isOrderInEditMode = false;
 let groupSelectionMode = false;
 
 /**
+ * Convert a raw order status into user-friendly text.
+ * Exposed globally so any module or inline HTML can reuse it.
+ * @param {string} status
+ * @returns {string}
+ */
+function formatStatusDisplay(status) {
+    if (!status) return 'Not Set';
+    const map = {
+        'pending': 'Pending',
+        'in-progress': 'In Progress',
+        'processing': 'Processing',
+        'unfulfilled': 'Unfulfilled',
+        'completed': 'Completed',
+        'cancelled': 'Cancelled'
+    };
+    return map[status] || status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+// make accessible across scripts
+if (typeof window !== 'undefined') {
+    window.formatStatusDisplay = formatStatusDisplay;
+}
+
+/**
  * Updates the selected orders count and enables/disables the Create Group button
  */
 function updateSelectedOrdersCount() {
@@ -51,25 +74,26 @@ function toggleSelectAllOrders(event) {
  * Updates the status of a group of orders
  * @param {Array} orderIds - Array of order IDs to update
  * @param {string} status - The new status to set (e.g., 'in-progress')
+ * @param {string} reason - Reason for the status change (for audit trail)
  * @returns {Promise} - Promise that resolves when all orders are updated
  */
-function updateGroupOrderStatuses(orderIds, status) {
-    console.log(`Updating ${orderIds.length} orders to status: ${status}`);
+function updateGroupOrderStatuses(orderIds, status, reason = null) {
+    console.log(`Updating ${orderIds.length} orders to status: ${status} with reason: ${reason || 'No reason provided'}`);
     
     // Check if OrderManager is available for bulk update
     if (window.OrderManager && typeof window.OrderManager.updateOrdersStatus === 'function') {
-        return window.OrderManager.updateOrdersStatus(orderIds, status);
+        return window.OrderManager.updateOrdersStatus(orderIds, status, reason);
     }
     
     // Fallback to API client if available
     if (window.apiClient && typeof window.apiClient.updateOrdersStatus === 'function') {
-        return window.apiClient.updateOrdersStatus(orderIds, status);
+        return window.apiClient.updateOrdersStatus(orderIds, status, reason);
     }
     
     // If apiClient with generic request method is available, use it per order (includes auth)
     if (window.apiClient && typeof window.apiClient.put === 'function') {
         const promises = orderIds.map(orderId => {
-            return window.apiClient.put(`/orders/${orderId}/status`, { status })
+            return window.apiClient.put(`/orders/${orderId}/status`, { status, reason })
                 .then(res => {
                     if (!res.success) {
                         throw new Error(`API client failed to update order ${orderId} status`);
@@ -98,7 +122,7 @@ function updateGroupOrderStatuses(orderIds, status) {
         return fetch(`/api/orders/${orderId}/status`, {
             method: 'PUT',
             headers: headers,
-            body: JSON.stringify({ status }),
+            body: JSON.stringify({ status, reason }),
             credentials: 'include' // Include cookies for session-based auth
         })
         .then(response => {
@@ -542,7 +566,8 @@ function handleGroupCreationSuccess(result, orderIds, groupNumber) {
     showNotification(`Order group "${groupNumber}" created successfully`, 'success');
     
     // Update all order statuses to 'in-progress'
-    updateGroupOrderStatuses(orderIds, 'in-progress')
+    const groupReason = `Added to order group: ${groupNumber}`;
+    updateGroupOrderStatuses(orderIds, 'in-progress', groupReason)
         .then(() => {
             console.log('All orders in group updated to in-progress status');
             
@@ -1272,7 +1297,7 @@ function createOrderTableRow(order, tableBody, allowSelection = true) {
     const requesterInfo = order.requesterName || 'Unknown';
     
     // Add status with formatting
-    let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
+    let statusContent = `<span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span>`;
     
     // Create and add each cell to the row
     // Order ID cell
@@ -2023,9 +2048,26 @@ function generateReadableDiff(prevObj, newObj) {
     // Track if we found any differences
     let hasDifferences = false;
     
-    // Use a consistent table structure but skip generic fields
-    diffHTML += '<h5>Medication Changes</h5>';
-    diffHTML += '<table class="table table-bordered table-sm">';
+    // Check for status changes specifically
+    if (prevObj && newObj && prevObj.status && newObj.status && prevObj.status !== newObj.status) {
+        hasDifferences = true;
+        diffHTML += '<h5>Status Change</h5>';
+        diffHTML += '<table class="table table-bordered table-sm">';
+        diffHTML += '<thead><tr><th>Field</th><th>Previous Value</th><th>New Value</th></tr></thead><tbody>';
+        diffHTML += `<tr>
+            <td><strong>Status</strong></td>
+            <td class="prev-value">${formatStatusDisplay(prevObj.status)}</td>
+            <td class="new-value">${formatStatusDisplay(newObj.status)}</td>
+        </tr>`;
+        diffHTML += '</tbody></table>';
+    }
+    
+    // Handle medication changes if present
+    if (prevObj && newObj && 
+        (prevObj.medications || newObj.medications) && 
+        !(prevObj.status && newObj.status && prevObj.status !== newObj.status)) {
+        diffHTML += '<h5>Medication Changes</h5>';
+        diffHTML += '<table class="table table-bordered table-sm">';
     
     // Special handling for medications array - compare item by item
     if (prevObj && newObj && 
@@ -2135,6 +2177,29 @@ function generateReadableDiff(prevObj, newObj) {
 }
 
 /**
+ * Format a status value for display
+ * @param {string} status - Raw status value
+ * @returns {string} - Formatted status for display
+ */
+function formatStatusDisplay(status) {
+    if (!status) return 'Not Set';
+    
+    // Map of status values to user-friendly display text
+    const statusDisplayMap = {
+        'pending': 'Pending',
+        'in-progress': 'In Progress',
+        'processing': 'Processing',
+        'unfulfilled': 'Unfulfilled',
+        'completed': 'Completed',
+        'cancelled': 'Cancelled'
+    };
+    
+    return statusDisplayMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+}
+
+/**
  * Format a field name for display
  * @param {string} fieldName - Raw field name
  * @returns {string} - Formatted field name
@@ -2142,10 +2207,7 @@ function generateReadableDiff(prevObj, newObj) {
 function formatFieldName(fieldName) {
     return fieldName
         .replace(/([A-Z])/g, ' $1') // Insert spaces before capital letters
-        .replace(/_/g, ' ') // Replace underscores with spaces
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize each word
-        .join(' ');
+        .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
 }
 
 /**
@@ -2298,29 +2360,49 @@ function showHistoryModal(orderId, historyData) {
                             if (entry.previousData) {
                                 prevObj = typeof entry.previousData === 'string' ? 
                                     JSON.parse(entry.previousData) : entry.previousData;
-                                previousData = JSON.stringify(prevObj, null, 2);
+                                if (prevObj && Object.keys(prevObj).length === 1 && prevObj.status) {
+                                    previousData = formatStatusDisplay(prevObj.status);
+                                } else {
+                                    previousData = JSON.stringify(prevObj, null, 2);
+                                }
                                 console.log('[MODAL] Found previousData (camelCase):', prevObj);
                             } else if (entry.previous_data) {
                                 prevObj = typeof entry.previous_data === 'string' ? 
                                     JSON.parse(entry.previous_data) : entry.previous_data;
-                                previousData = JSON.stringify(prevObj, null, 2);
+                                if (prevObj && Object.keys(prevObj).length === 1 && prevObj.status) {
+                                    previousData = formatStatusDisplay(prevObj.status);
+                                } else {
+                                    previousData = JSON.stringify(prevObj, null, 2);
+                                }
                                 console.log('[MODAL] Found previous_data (snake_case):', prevObj);
                             } else if (entry.previousState) {
                                 prevObj = typeof entry.previousState === 'string' ? 
                                     JSON.parse(entry.previousState) : entry.previousState;
-                                previousData = JSON.stringify(prevObj, null, 2);
+                                if (prevObj && Object.keys(prevObj).length === 1 && prevObj.status) {
+                                    previousData = formatStatusDisplay(prevObj.status);
+                                } else {
+                                    previousData = JSON.stringify(prevObj, null, 2);
+                                }
                                 console.log('[MODAL] Found previousState:', prevObj);
                             }
                             
                             if (entry.newData) {
                                 newObj = typeof entry.newData === 'string' ? 
                                     JSON.parse(entry.newData) : entry.newData;
-                                newData = JSON.stringify(newObj, null, 2);
+                                if (newObj && Object.keys(newObj).length === 1 && newObj.status) {
+                                    newData = formatStatusDisplay(newObj.status);
+                                } else {
+                                    newData = JSON.stringify(newObj, null, 2);
+                                }
                                 console.log('[MODAL] Found newData (camelCase):', newObj);
                             } else if (entry.new_data) {
                                 newObj = typeof entry.new_data === 'string' ? 
                                     JSON.parse(entry.new_data) : entry.new_data;
-                                newData = JSON.stringify(newObj, null, 2);
+                                if (newObj && Object.keys(newObj).length === 1 && newObj.status) {
+                                    newData = formatStatusDisplay(newObj.status);
+                                } else {
+                                    newData = JSON.stringify(newObj, null, 2);
+                                }
                                 console.log('[MODAL] Found new_data (snake_case):', newObj);
                             }
                             

@@ -401,9 +401,20 @@ const OrderModel = {
     });
   },
   // Update order status and processing details
-  updateOrder(orderId, updateData) {
-    return new Promise((resolve, reject) => {
-      const { status, processedBy, checkedBy, processingNotes, notes } = updateData;
+  async updateOrder(orderId, updateData) {
+  // Extract audit info first so they are not written to the orders table
+const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
+
+  // Fetch current order for audit comparison once before we start SQL operations
+  let existingOrder = null;
+  try {
+    existingOrder = await OrderModel.getOrderById(orderId);
+  } catch (err) {
+    console.error('Error fetching current order for audit trail:', err);
+  }
+
+  return new Promise((resolve, reject) => {
+      const { status, processedBy, checkedBy, processingNotes, notes } = fieldsToUpdate;
 
       // Build update query based on provided data
       const updates = [];
@@ -459,6 +470,32 @@ const OrderModel = {
             return reject(err);
           }
           
+          if (this.changes > 0 && status && existingOrder && existingOrder.status !== status) {
+            // Insert audit trail entry for status change
+            const previousStatus = existingOrder.status;
+            const timestamp = new Date().toISOString();
+            db.run(
+              `INSERT INTO order_history (
+                order_id, action_type, action_timestamp,
+                modified_by, reason, previous_data, new_data
+              ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [
+                orderId,
+                'status_change',
+                timestamp,
+                modifiedBy,
+                reason || `Status changed to ${status}`,
+                JSON.stringify({ status: previousStatus }),
+                JSON.stringify({ status })
+              ],
+              (err2) => {
+                if (err2) {
+                  console.error('Error inserting status change audit trail:', err2);
+                }
+              }
+            );
+          }
+
           resolve({ 
             success: this.changes > 0,
             message: this.changes > 0 ? 'Order updated' : 'Order not found'

@@ -8,6 +8,7 @@ const router = express.Router();
 const OrderModel = require('../models/order');
 const { verifyToken, hasRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const { db } = require('../db/init');
 
 // Apply authentication middleware to all routes
 router.use(verifyToken);
@@ -255,7 +256,7 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
 router.put('/:id/status', hasRole(['pharmacy', 'ordering']), async (req, res) => {
   try {
     const orderId = req.params.id;
-    const { status } = req.body;
+    const { status, reason } = req.body;
 
     if (!status) {
       return res.status(400).json({
@@ -273,8 +274,11 @@ router.put('/:id/status', hasRole(['pharmacy', 'ordering']), async (req, res) =>
       });
     }
 
-    // Update order via existing model method
-    const updateResult = await OrderModel.updateOrder(orderId, { status });
+    // Determine user for audit trail
+    const modifiedBy = req.user ? req.user.username : 'system';
+    
+    // Update order via model (now handles audit trail internally)
+    const updateResult = await OrderModel.updateOrder(orderId, { status, modifiedBy, reason });
 
     if (!updateResult.success) {
       return res.status(404).json({
@@ -282,8 +286,37 @@ router.put('/:id/status', hasRole(['pharmacy', 'ordering']), async (req, res) =>
         message: updateResult.message || 'Order not found'
       });
     }
+    
+    // Audit trail entry handled inside OrderModel.updateOrder
+    /* Redundant manual audit logging removed */
+    /*
+      db.run(
+        `INSERT INTO order_history (
+          order_id, action_type, action_timestamp,
+          modified_by, reason, previous_data, new_data
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          'status_change',
+          new Date().toISOString(),
+          modifiedBy,
+          reason || `Status changed to ${status}`,
+          JSON.stringify({ status: currentOrder.status }),
+          JSON.stringify({ status: status })
+        ],
+        function(err) {
+          if (err) {
+            console.error('Error logging status change to audit trail:', err);
+            // Don't reject as this shouldn't block the status update
+            resolve();
+          } else {
+            resolve();
+          }
+        }
+      );
+    */
 
-    // Optionally return updated order data
+    // Return updated order data
     const updatedOrder = await OrderModel.getOrderById(orderId);
 
     return res.json({
