@@ -12,10 +12,661 @@ let selectedOrderId = null;
 let wardFilter = null;
 let currentOrder = null;
 let isOrderInEditMode = false;
+let groupSelectionMode = false;
+
+/**
+ * Updates the selected orders count and enables/disables the Create Group button
+ */
+function updateSelectedOrdersCount() {
+    const selectedCheckboxes = document.querySelectorAll('.order-select-checkbox:checked');
+    const selectedCount = selectedCheckboxes.length;
+    const countDisplay = document.getElementById('selected-count');
+    const createGroupBtn = document.getElementById('create-order-group-btn');
+    
+    if (countDisplay) {
+        countDisplay.textContent = `${selectedCount} ${selectedCount === 1 ? 'order' : 'orders'} selected`;
+    }
+    
+    if (createGroupBtn) {
+        createGroupBtn.disabled = selectedCount === 0;
+    }
+}
+
+/**
+ * Handles the select-all checkbox toggle
+ * @param {Event} event - The change event
+ */
+function toggleSelectAllOrders(event) {
+    const isChecked = event.target.checked;
+    const checkboxes = document.querySelectorAll('.order-select-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+    });
+    
+    updateSelectedOrdersCount();
+}
+
+/**
+ * Updates the status of a group of orders
+ * @param {Array} orderIds - Array of order IDs to update
+ * @param {string} status - The new status to set (e.g., 'in-progress')
+ * @returns {Promise} - Promise that resolves when all orders are updated
+ */
+function updateGroupOrderStatuses(orderIds, status) {
+    console.log(`Updating ${orderIds.length} orders to status: ${status}`);
+    
+    // Check if OrderManager is available for bulk update
+    if (window.OrderManager && typeof window.OrderManager.updateOrdersStatus === 'function') {
+        return window.OrderManager.updateOrdersStatus(orderIds, status);
+    }
+    
+    // Fallback to API client if available
+    if (window.apiClient && typeof window.apiClient.updateOrdersStatus === 'function') {
+        return window.apiClient.updateOrdersStatus(orderIds, status);
+    }
+    
+    // If apiClient with generic request method is available, use it per order (includes auth)
+    if (window.apiClient && typeof window.apiClient.put === 'function') {
+        const promises = orderIds.map(orderId => {
+            return window.apiClient.put(`/orders/${orderId}/status`, { status })
+                .then(res => {
+                    if (!res.success) {
+                        throw new Error(`API client failed to update order ${orderId} status`);
+                    }
+                    return res;
+                });
+        });
+        return Promise.all(promises);
+    }
+    
+    // Last resort: raw fetch with token/cookies
+    // Get authentication token if available
+    const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    
+    const updatePromises = orderIds.map(orderId => {
+        // Prepare headers with authentication
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Add authorization header if token exists
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        
+        return fetch(`/api/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify({ status }),
+            credentials: 'include' // Include cookies for session-based auth
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Failed to update order ${orderId} status: ${response.status} ${response.statusText}`);
+                throw new Error(`Failed to update order ${orderId} status`);
+            }
+            return response.json();
+        });
+    });
+    
+    return Promise.all(updatePromises);
+}
+
+/**
+ * Shows the create order group modal
+ * Collects selected order IDs and displays a form to create a group
+ */
+function showCreateGroupModal() {
+    // Get all selected order checkboxes
+    const selectedCheckboxes = document.querySelectorAll('.order-select-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showNotification('Please select at least one order to group', 'warning');
+        return;
+    }
+    
+    console.log('[showCreateGroupModal] Starting to create modal');
+    
+    // Get all the selected orders data (not just IDs)
+    const selectedOrderIds = [];
+    const selectedOrders = [];
+    const patients = new Set();
+    const wards = new Set();
+    
+    // Check if OrderManager is available
+    const hasOrderManager = window.OrderManager && typeof window.OrderManager.getOrderById === 'function';
+    if (!hasOrderManager) {
+        console.error('[showCreateGroupModal] OrderManager not available - full data may not be accessible');
+    }
+    
+    selectedCheckboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const orderId = row.dataset.orderId;
+        
+        if (orderId) {
+            selectedOrderIds.push(orderId);
+            
+            // IMPORTANT: Always get orders from OrderManager which has the COMPLETE data
+            let order;
+            
+            if (hasOrderManager) {
+                // Get complete order data from OrderManager
+                order = window.OrderManager.getOrderById(orderId);
+                console.log(`[OrderManager] Complete order data for ${orderId}:`, order);
+            } 
+            
+            // Only fallback to DOM extraction if OrderManager is completely unavailable
+            if (!order) {
+                console.warn(`[Warning] Falling back to DOM extraction for order ${orderId} - data may be incomplete`);
+                order = getOrderFromRow(row);
+            }
+            
+            if (order) {
+                console.log(`[Debug] Order ${orderId} for modal:`, JSON.stringify(order, null, 2));
+                
+                selectedOrders.push(order);
+                
+                // Collect patient names and wards for grouping info
+                if (order.patient?.name) {
+                    patients.add(order.patient.name);
+                }
+                
+                if (order.wardName) {
+                    wards.add(order.wardName);
+                } else if (order.wardId) {
+                    wards.add(`Ward ${order.wardId}`);
+                }
+            }
+        }
+    });
+    
+    // Generate 5-character alphanumeric group number (uppercase)
+    const charSet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // exclude confusing chars
+    const groupNumber = Array.from({ length: 5 }, () => charSet[Math.floor(Math.random() * charSet.length)]).join('');
+
+    // Leave notes blank for user input
+    const autoNotes = '';
+
+    // Generate medication details list with patient + ward context
+    let medicationsList = '';
+    selectedOrders.forEach(order => {
+        // Extract data from the order object - now using OrderManager data which has all fields
+        console.log('[Modal] Processing complete order object:', order);
+        
+        // PATIENT DATA
+        const patientName = order.patient?.name || 'Unknown';
+        
+        // HOSPITAL NUMBER
+        // Based on user's logs, the hospitalId or nhs field contains the hospital number
+        let hospitalNo = 'N/A';
+        if (order.patient) {
+            // Try all possible fields from most to least likely based on user's logs
+            hospitalNo = order.patient.hospitalId || 
+                        order.patient.nhs || 
+                        order.patient.hospitalNumber || 
+                        'N/A';
+            console.log('[Modal] Hospital number extracted:', hospitalNo);
+        }
+        
+        // WARD NAME
+        const wardName = order.wardName || 
+                        (order.wardId && !isNaN(order.wardId) ? `Ward ${order.wardId}` : order.wardId) || 
+                        'N/A';
+
+        // MEDICATIONS
+        if (order.medications && order.medications.length > 0) {
+            order.medications.forEach(med => {
+                // Log full medication object to help with debugging
+                console.log('[Modal] Processing medication:', med);
+                
+                const parts = [];
+                
+                // Create single-line comma separated display for medications
+                const medParts = [];
+                
+                // Start with basic medication info - name, strength, form
+                const basicInfo = [];
+                if (med.name) basicInfo.push(med.name);
+                if (med.strength) basicInfo.push(med.strength);
+                if (med.form) basicInfo.push(med.form);
+                medParts.push(basicInfo.join(' '));
+                
+                // Add dose if available - only if it has actual content
+                if (med.dose && String(med.dose).trim()) {
+                    medParts.push(`Dose: ${med.dose.trim()}`);
+                }
+                console.log('[Modal] Dose value:', med.dose);
+                
+                // Add quantity if available - only if it has actual content
+                if (med.quantity && String(med.quantity).trim()) {
+                    medParts.push(`Quantity: ${med.quantity.trim()}`);
+                } else if (med.quantity === '') {
+                    // For empty string quantity, often this means the data exists but wasn't properly extracted
+                    console.log('[Modal] Empty quantity, checking if we can find it elsewhere');
+                    // Try looking for quantity in other fields or related data
+                    if (order.orderDetails && order.orderDetails.quantity) {
+                        medParts.push(`Quantity: ${order.orderDetails.quantity}`);
+                    }
+                }
+                console.log('[Modal] Quantity value:', med.quantity);
+                
+                // Check both patient data and medication data for hospital number
+                let displayHospitalNo = hospitalNo;
+                
+                // If medication has hospital number, prefer that
+                if (med.hospitalNumber && med.hospitalNumber.trim()) {
+                    displayHospitalNo = med.hospitalNumber;
+                }
+                
+                // Add hospital number if available - only if it's not N/A
+                if (displayHospitalNo && displayHospitalNo !== 'N/A') {
+                    medParts.push(`Hospital #: ${displayHospitalNo}`);
+                } else if (order.patient && order.patient.hospitalNumber) {
+                    medParts.push(`Hospital #: ${order.patient.hospitalNumber}`);
+                }
+                
+                // Add patient name and ward
+                medParts.push(`Patient: ${patientName}`);
+                medParts.push(`Ward: ${wardName}`);
+                
+                // Join all parts with commas for single-line display
+                const medInfo = medParts.join(', ');
+                
+                // Use the single-line format for each medication
+                console.log('[Modal] Generated medication info:', medInfo);
+                medicationsList += `<li class="med-item">${medInfo}</li>`;
+            });
+        }
+    });
+    
+    // Create and show the modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Order Group</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>You are creating a group with ${selectedOrderIds.length} order${selectedOrderIds.length > 1 ? 's' : ''}.</p>
+                
+                <div class="form-group">
+                    <label for="group-number">Group Number:</label>
+                    <input type="text" id="group-number" class="form-control" value="${groupNumber}" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="group-notes">Notes:</label>
+                    <textarea id="group-notes" class="form-control" placeholder="Add any notes (optional)">${autoNotes}</textarea>
+                </div>
+                
+                <div class="selected-medications">
+                    <h3>Selected Medications</h3>
+                    <style>
+                        .selected-medications-list {
+                            list-style-type: none;
+                            padding: 0;
+                        }
+                        .med-item {
+                            padding: 8px;
+                            margin-bottom: 10px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                        }
+                    </style>
+                    <ul class="selected-medications-list medications-list-scrollable">
+                        ${medicationsList || '<li>No medications found</li>'}
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-group" class="btn btn-secondary">Cancel</button>
+                <button id="create-group" class="btn btn-primary">Create Group</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Set up event handlers
+    const closeBtn = modal.querySelector('.close-modal');
+    const cancelBtn = modal.querySelector('#cancel-group');
+    const createBtn = modal.querySelector('#create-group');
+    
+    // Close modal handlers
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Create group handler
+    createBtn.addEventListener('click', () => {
+        const groupNumber = document.getElementById('group-number').value;
+        const groupNotes = document.getElementById('group-notes').value;
+        
+        createOrderGroup(selectedOrderIds, groupNumber, groupNotes);
+        document.body.removeChild(modal);
+    });
+}
+
+/**
+ * Extract order data from a table row
+ * @param {HTMLElement} row - The order row element
+ * @returns {Object|null} - The order data or null if not found
+ */
+function getOrderFromRow(row) {
+    if (!row || !row.dataset.orderId) return null;
+    
+    const orderId = row.dataset.orderId;
+    
+    // Try to find the order in our loaded orders
+    const orderData = {
+        id: orderId,
+        type: '', // Will be set below if patient info exists
+        patient: {},
+        medications: [],
+        wardName: '',
+        wardId: ''
+    };
+    
+    // Extract patient name if exists
+    const patientCell = row.querySelector('.patient-info');
+    if (patientCell) {
+        if (patientCell.textContent.includes('Ward Stock')) {
+            orderData.type = 'ward';
+        } else {
+            orderData.type = 'patient';
+            // Try to extract patient name (excluding ID if present)
+            const patientText = patientCell.textContent.trim();
+            const nameMatch = patientText.match(/^([^(]+)/); // Match everything before a '('
+            if (nameMatch) {
+                orderData.patient.name = nameMatch[1].trim();
+            }
+            
+            // Extract hospital number if present in patient cell
+            const hospitalMatch = patientText.match(/\((\w+\d+)\)/);
+            if (hospitalMatch) {
+                orderData.patient.hospitalNumber = hospitalMatch[1];
+            }
+        }
+    }
+    
+    // Extract ward info
+    const wardCell = row.querySelector('.ward-info');
+    if (wardCell) {
+        orderData.wardName = wardCell.textContent.trim();
+        orderData.wardId = wardCell.textContent.trim();
+    }
+    
+    // Extract medications with improved parsing
+    const medsCell = row.querySelector('.medications-info');
+    if (medsCell) {
+        const medLines = medsCell.innerHTML.split('<br>');
+        medLines.forEach(medLine => {
+            if (medLine.trim()) {
+                console.log('[DOM Extraction] Processing med line:', medLine);
+                
+                // More sophisticated parsing
+                const medText = medLine.trim();
+                
+                // Extract quantity (often shown as ×28 or similar)
+                const quantityMatch = medText.match(/×([\d.]+)/);
+                const quantity = quantityMatch ? quantityMatch[1] : '';
+                
+                // Extract dose (often shown in format like '1 tablet ON')
+                const dosePattern = /(\d+[\s\w]+(?:ON|TWICE|THREE|FOUR|DAILY|WEEKLY|MONTHLY|AS))\b/i;
+                const doseMatch = medText.match(dosePattern);
+                const dose = doseMatch ? doseMatch[1] : '';
+                
+                // Extract basic parts (name, strength, form)
+                // Handle case where some parts might be missing
+                let remainingText = medText;
+                if (quantityMatch) remainingText = remainingText.replace(quantityMatch[0], '');
+                if (doseMatch) remainingText = remainingText.replace(doseMatch[0], '');
+                
+                // Split the remaining text for basic medication info
+                const basicParts = remainingText.trim().split(/\s+/).filter(Boolean);
+                
+                // Hospital number extraction (often in parentheses after patient name)
+                const hospitalMatch = medText.match(/\((\w+\d+)\)/);
+                const hospitalNumber = hospitalMatch ? hospitalMatch[1] : '';
+                
+                // Create medication object with all extracted fields
+                const med = {
+                    name: basicParts[0] || '',
+                    strength: basicParts[1] || '',
+                    form: basicParts[2] || '',
+                    dose: dose,
+                    quantity: quantity,
+                    hospitalNumber: hospitalNumber
+                };
+                
+                console.log('[DOM Extraction] Extracted medication:', med);
+                orderData.medications.push(med);
+            }
+        });
+    }
+    
+    // Hospital number extraction is now handled above in the patient info block
+    
+    return orderData;
+}
+
+/**
+ * Create an order group with selected orders
+ * @param {Array<string>} orderIds - IDs of orders to group
+ * @param {string} groupNumber - Group number/identifier
+ * @param {string} notes - Additional notes for the group
+ */
+function createOrderGroup(orderIds, groupNumber, notes) {
+    // Show loading indicator
+    showNotification('Creating order group...', 'info');
+    
+    // Prepare request data
+    const data = {
+        orderIds,
+        groupNumber,
+        notes,
+        status: 'in-progress' // Send status with group creation
+    };
+    
+    console.log('Creating order group with data:', data);
+    
+    // Use OrderManager or fallback to direct fetch
+    if (window.OrderManager && typeof window.OrderManager.createOrderGroup === 'function') {
+        return window.OrderManager.createOrderGroup(data)
+            .then(result => {
+                handleGroupCreationSuccess(result, orderIds, groupNumber);
+            })
+            .catch(error => {
+                handleGroupCreationError(error);
+            });
+    }
+    
+    // Use apiClient if available (preferred way with built-in auth)
+    if (window.apiClient && typeof window.apiClient.post === 'function') {
+        return window.apiClient.post('/order-groups', data)
+            .then(result => {
+                handleGroupCreationSuccess(result, orderIds, groupNumber);
+            })
+            .catch(error => {
+                handleGroupCreationError(error);
+            });
+    }
+    
+    // Fallback to direct API call with auth headers
+    const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // Add authorization header if token exists
+    if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    fetch('/api/order-groups', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(data),
+        credentials: 'include' // Include cookies for session-based auth
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Failed to create order group: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        handleGroupCreationSuccess(result, orderIds, groupNumber);
+    })
+    .catch(error => {
+        handleGroupCreationError(error);
+    });
+}
+
+/**
+ * Handle successful order group creation
+ * @param {Object} result - API response
+ * @param {Array<string>} orderIds - IDs of grouped orders
+ * @param {string} groupNumber - The group number
+ */
+function handleGroupCreationSuccess(result, orderIds, groupNumber) {
+    console.log('Group creation success:', result);
+    showNotification(`Order group "${groupNumber}" created successfully`, 'success');
+    
+    // Update all order statuses to 'in-progress'
+    updateGroupOrderStatuses(orderIds, 'in-progress')
+        .then(() => {
+            console.log('All orders in group updated to in-progress status');
+            
+            // Refresh orders list to show the new grouping and status changes
+            loadOrders();
+            
+            // Uncheck all checkboxes
+            const checkboxes = document.querySelectorAll('.order-select-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Exit group selection mode
+            if (typeof groupSelectionMode !== 'undefined' && groupSelectionMode) {
+                toggleGroupSelectionMode();
+            }
+            
+            // Update selected count
+            updateSelectedOrdersCount();
+        })
+        .catch(error => {
+            console.error('Error updating order statuses:', error);
+            showNotification('Group created, but some order statuses could not be updated', 'warning');
+            
+            // Continue with normal flow
+            loadOrders();
+            
+            // Uncheck all checkboxes
+            const checkboxes = document.querySelectorAll('.order-select-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Exit group selection mode
+            if (typeof groupSelectionMode !== 'undefined' && groupSelectionMode) {
+                toggleGroupSelectionMode();
+            }
+            
+            // Update selected count
+            updateSelectedOrdersCount();
+        });
+}
+
+/**
+ * Handle error during order group creation
+ * @param {Error} error - The error object
+ */
+function handleGroupCreationError(error) {
+    console.error('Error creating order group:', error);
+    showNotification('Error creating order group', 'error');
+    
+    // Check if it's an auth error
+    if (error.message && error.message.includes('401')) {
+        showNotification('Authentication failed. Please log in again.', 'error');
+    }
+}
+
+/**
+ * Toggles group selection mode on/off
+ */
+function toggleGroupSelectionMode() {
+    groupSelectionMode = !groupSelectionMode;
+    loadOrders();
+    const createGroupBtn = document.getElementById('create-group-btn');
+    const confirmGroupBtn = document.getElementById('confirm-group-btn');
+    const selectAllContainer = document.getElementById('select-all-container');
+    if (groupSelectionMode) {
+        if (createGroupBtn) {
+            createGroupBtn.textContent = 'Cancel Grouping';
+            createGroupBtn.classList.add('active');
+        }
+        if (confirmGroupBtn) confirmGroupBtn.classList.remove('hidden');
+        if (selectAllContainer) selectAllContainer.classList.remove('hidden');
+    } else {
+        if (createGroupBtn) {
+            createGroupBtn.textContent = 'Create Order Group';
+            createGroupBtn.classList.remove('active');
+        }
+        if (confirmGroupBtn) confirmGroupBtn.classList.add('hidden');
+        if (selectAllContainer) selectAllContainer.classList.add('hidden');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize order management
     initializeOrderFilters();
+    console.log('Order Manager initialized with 0 orders');
+    
+    // Add Supply Functions section
+    const supplyFunctions = document.createElement('div');
+    supplyFunctions.className = 'supply-functions-section';
+    supplyFunctions.innerHTML = `
+        <h2>Supply Functions</h2>
+        <div class="supply-functions-container">
+            <button id="create-group-btn" class="btn btn-primary">Create Order Group</button>
+            <button id="confirm-group-btn" class="btn btn-success hidden">Confirm Order Group</button>
+        </div>
+    `;
+    
+    // Find the appropriate containers
+    const recentOrdersSection = document.querySelector('.recent-orders');
+    const pharmacyDashboard = document.querySelector('.pharmacy-dashboard');
+    const mainContainer = document.querySelector('.main-content') || document.querySelector('.container') || document.body;
+    
+    // Insert the supply functions above the incoming orders section
+    if (recentOrdersSection && recentOrdersSection.parentNode) {
+        // Insert before recent orders section (which contains the incoming orders)
+        recentOrdersSection.parentNode.insertBefore(supplyFunctions, recentOrdersSection);
+    } else if (pharmacyDashboard) {
+        // If we can't find recent-orders but can find the dashboard, prepend to dashboard
+        pharmacyDashboard.prepend(supplyFunctions);
+    } else {
+        // Otherwise append to the main container
+        mainContainer.appendChild(supplyFunctions);
+    }
+    
+    // Set up event listeners for the group buttons
+    const createGroupBtn = document.getElementById('create-group-btn');
+    createGroupBtn.addEventListener('click', toggleGroupSelectionMode);
+    
+    // Set up event listener for the Confirm Group button
+    const confirmGroupBtn = document.getElementById('confirm-group-btn');
+    confirmGroupBtn.addEventListener('click', showCreateGroupModal);
+    
     loadWardOptions();
     loadOrders();
     
@@ -79,70 +730,295 @@ function loadWardOptions() {
  * Get current filter values
  * @returns {Object} - Filter values
  */
+/**
+ * Show a notification message to the user
+ * @param {string} message - Message to display
+ * @param {string} type - Type of message (success, error, warning, info)
+ */
+function showNotification(message, type) {
+    console.log(`[Notification - ${type}]: ${message}`);
+    
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.getElementById('notification-container');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notification-container';
+        notificationContainer.className = 'notification-container';
+        document.body.appendChild(notificationContainer);
+        
+        // Add CSS for notifications if not already added
+        if (!document.getElementById('notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                .notification-container {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    width: 300px;
+                }
+                .notification {
+                    margin-bottom: 10px;
+                    padding: 15px;
+                    border-radius: 4px;
+                    color: white;
+                    opacity: 0.9;
+                    transition: opacity 0.3s ease;
+                }
+                .notification-success {
+                    background-color: #28a745;
+                }
+                .notification-error {
+                    background-color: #dc3545;
+                }
+                .notification-warning {
+                    background-color: #ffc107;
+                    color: #212529;
+                }
+                .notification-info {
+                    background-color: #17a2b8;
+                }
+                .notification-hiding {
+                    opacity: 0;
+                }
+                .medications-list-scrollable {
+                    max-height: 300px;
+                    overflow-y: auto;
+                    border: 1px solid #eee;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Add notification to container
+    notificationContainer.appendChild(notification);
+    
+    // Auto-remove notification after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('notification-hiding');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300); // Allow time for fade-out animation
+    }, 5000);
+}
+
 function getFilters() {
-    return {
-        urgency: document.getElementById('filter-urgency')?.value || 'all',
-        type: document.getElementById('filter-type')?.value || 'all',
-        wardId: document.getElementById('filter-ward')?.value || 'all',
-        status: document.getElementById('filter-status')?.value || 'all'
-    };
+    const filters = {};
+    
+    // Get filter values from form inputs
+    const urgencyFilter = document.getElementById('filter-urgency')?.value || 'all';
+    const typeFilter = document.getElementById('filter-type')?.value || 'all';
+    const wardIdFilter = document.getElementById('filter-ward')?.value || 'all';
+    
+    // Only add filters if they are not 'all'
+    if (urgencyFilter !== 'all') filters.urgency = urgencyFilter;
+    if (typeFilter !== 'all') filters.type = typeFilter;
+    if (wardIdFilter !== 'all' && wardIdFilter !== '') {
+        // Convert to number if it's a numeric ID
+        const wardIdNumber = parseInt(wardIdFilter, 10);
+        filters.wardId = !isNaN(wardIdNumber) ? wardIdNumber : wardIdFilter;
+    }
+    
+    return filters;
 }
 
 /**
  * Load orders with current filter parameters
  */
 function loadOrders() {
+    // Get orders list element
     const ordersList = document.getElementById('orders-list');
+    if (!ordersList) {
+        console.error('Orders list element not found');
+        return;
+    }
     
-    if (ordersList) {
-        // Collect ward filter parameter
-        const wardFilter = document.getElementById('filter-ward')?.value || '';
+    // Show loading indicator
+    loading = true;
+    ordersList.innerHTML = '<div class="loading-indicator">Loading orders...</div>';
+    
+    // Get filter parameters
+    const filters = getFilters();
+    console.log('Loading orders with filters:', filters);
+    
+    // We'll fetch both in-progress and pending orders
+    loadBothOrderTypes(ordersList, filters);
+}
+
+/**
+ * Load both in-progress and pending orders
+ * @param {HTMLElement} container - Container to display orders in
+ * @param {Object} filters - Filter parameters
+ */
+function loadBothOrderTypes(container, filters) {
+    // First, check if we can use OrderManager which handles both order types efficiently
+    if (window.OrderManager && typeof window.OrderManager.getOrdersByStatus === 'function') {
+        console.log('Using OrderManager to get orders by status');
         
-        // Build query parameters
-        const queryParams = new URLSearchParams();
-        if (wardFilter && wardFilter !== 'all') queryParams.append('wardId', wardFilter);
+        // Apply ward filter if needed
+        if (wardFilter && wardFilter !== 'all') {
+            try {
+                const wardId = parseInt(wardFilter, 10);
+                if (!isNaN(wardId)) filters.wardId = wardId;
+                console.log('Applied ward filter:', wardId);
+            } catch (e) {
+                console.error('Error parsing ward ID:', e);
+            }
+        }
         
-        // Include pending orders by default
-        queryParams.append('status', 'pending');
-        
-        // Log API call for debugging
-        const apiUrl = `/orders?${queryParams.toString()}`;
-        console.log('Fetching orders with URL:', apiUrl, 'Ward filter:', wardFilter);
-        
-        // Show loading indicator
-        ordersList.innerHTML = '<div class="loading-indicator">Loading orders...</div>';
-        
+        try {
+            // Get both in-progress and pending orders
+            const inProgressOrders = window.OrderManager.getOrdersByStatus('in-progress', filters);
+            const pendingOrders = window.OrderManager.getOrdersByStatus('pending', filters);
+            
+            console.log('In-progress orders count:', inProgressOrders.length);
+            console.log('Pending orders count:', pendingOrders.length);
+            
+            displayOrdersWithSections({
+                inProgress: inProgressOrders, 
+                pending: pendingOrders
+            }, container);
+            return; // Exit early if we got orders from OrderManager
+        } catch (error) {
+            console.error('Error fetching from OrderManager:', error);
+        }
+    }
+    
+    // If OrderManager didn't work, fall back to API
+    // We'll need to make two separate requests
+    Promise.all([
+        fetchOrdersByStatus('in-progress', filters),
+        fetchOrdersByStatus('pending', filters)
+    ])
+    .then(([inProgressOrders, pendingOrders]) => {
+        displayOrdersWithSections({
+            inProgress: inProgressOrders,
+            pending: pendingOrders
+        }, container);
+    })
+    .catch(error => {
+        console.error('Error fetching orders:', error);
+        container.innerHTML = '<p class="empty-state">Error loading orders</p>';
+    });
+}
+
+/**
+ * Fetch orders by status using API
+ * @param {string} status - Order status to fetch ('pending' or 'in-progress')
+ * @param {Object} filters - Filter parameters
+ * @returns {Promise<Array>} - Promise resolving to array of orders
+ */
+function fetchOrdersByStatus(status, filters) {
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    
+    // Get the ward filter value properly
+    const wardFilterValue = document.getElementById('filter-ward')?.value || 'all';
+    if (wardFilterValue && wardFilterValue !== 'all') {
+        queryParams.append('wardId', wardFilterValue);
+    }
+    
+    queryParams.append('status', status);
+    
+    // Log API call for debugging
+    const apiUrl = `/orders?${queryParams.toString()}`;
+    console.log(`Fetching ${status} orders with URL:`, apiUrl);
+    
+    // Check if apiClient is available
+    if (window.apiClient && typeof window.apiClient.get === 'function') {
         // Fetch orders from API using apiClient
-        window.apiClient.get(apiUrl)
+        return window.apiClient.get(apiUrl)
             .then(data => {
-                console.log('API response:', data);
+                console.log(`API response for ${status} orders:`, data);
                 if (data.success && data.orders) {
-                    console.log('Orders count:', data.orders.length);
-                    console.log('First order:', data.orders[0]);
+                    console.log(`${status} orders count:`, data.orders.length);
+                    if (data.orders.length > 0) {
+                        console.log(`First ${status} order:`, data.orders[0]);
+                    }
                     
                     // Filter the orders client-side as well to ensure filtering works
                     let filteredOrders = data.orders;
-                    if (wardFilter && wardFilter !== 'all') {
+                    if (wardFilterValue && wardFilterValue !== 'all') {
                         // Convert wardFilter to number for comparison with numeric wardId
-                        const wardFilterNumber = parseInt(wardFilter, 10);
-                        console.log('Converting ward filter to number:', wardFilter, '->', wardFilterNumber);
+                        const wardFilterNumber = parseInt(wardFilterValue, 10);
                         
                         filteredOrders = data.orders.filter(order => {
-                            console.log('Comparing order wardId:', order.wardId, 'with filter number:', wardFilterNumber);
                             return order.wardId === wardFilterNumber;
                         });
-                        console.log('Filtered orders count:', filteredOrders.length);
                     }
                     
-                    displayOrders(filteredOrders, ordersList);
-                } else {
-                    ordersList.innerHTML = '<p class="empty-state">No orders found</p>';
+                    return filteredOrders;
                 }
+                return [];
             })
             .catch(error => {
-                console.error('Error fetching orders:', error);
-                ordersList.innerHTML = '<p class="empty-state">Error loading orders</p>';
+                console.error(`Error fetching ${status} orders:`, error);
+                return [];
             });
+    } else {
+        console.error('API client not available');
+        return Promise.resolve([]);
+    }
+}
+
+/**
+ * Display orders separated by status sections
+ * @param {Object} ordersByStatus - Object containing in-progress and pending orders
+ * @param {HTMLElement} container - Container element
+ */
+function displayOrdersWithSections(ordersByStatus, container) {
+    // Clear container
+    container.innerHTML = '';
+    
+    const { inProgress, pending } = ordersByStatus;
+    const hasInProgress = inProgress && inProgress.length > 0;
+    const hasPending = pending && pending.length > 0;
+    
+    // If there are no orders of any type, show empty state
+    if (!hasInProgress && !hasPending) {
+        container.innerHTML = '<p class="empty-state">No orders found</p>';
+        return;
+    }
+    
+    // First create the Orders in Progress section if there are any
+    if (hasInProgress) {
+        const inProgressSection = document.createElement('div');
+        inProgressSection.className = 'orders-section in-progress-section';
+        inProgressSection.innerHTML = `<h2>Orders In Progress</h2>`;
+        container.appendChild(inProgressSection);
+        
+        // Create container for in-progress orders
+        const inProgressContainer = document.createElement('div');
+        inProgressContainer.className = 'orders-container';
+        inProgressSection.appendChild(inProgressContainer);
+        
+        // Display in-progress orders
+        displayOrders(inProgress, inProgressContainer, false); // false = don't allow selection of in-progress orders
+    }
+    
+    // Then create the Incoming Orders (pending) section
+    if (hasPending) {
+        const pendingSection = document.createElement('div');
+        pendingSection.className = 'orders-section pending-section';
+        pendingSection.innerHTML = `<h2>Incoming Orders</h2>`;
+        container.appendChild(pendingSection);
+        
+        // Create container for pending orders
+        const pendingContainer = document.createElement('div');
+        pendingContainer.className = 'orders-container';
+        pendingSection.appendChild(pendingContainer);
+        
+        // Display pending orders with selection enabled
+        displayOrders(pending, pendingContainer, true); // true = allow selection of pending orders
     }
 }
 
@@ -150,105 +1026,305 @@ function loadOrders() {
  * Display orders in the table
  * @param {Array} orders - Array of order objects
  * @param {HTMLElement} container - Container element
+ * @param {boolean} allowSelection - Whether to show selection checkboxes
  */
-function displayOrders(orders, container) {
-    // Clear container
-    if (!orders || orders.length === 0) {
+function displayOrders(orders, container, allowSelection = true) {
+    // Sort and group orders
+    // Group orders by their groupId if present
+    const orderGroups = {};
+    const ungroupedOrders = [];
+    
+    if (orders && orders.length > 0) {
+        orders.forEach(order => {
+            if (order.groupId) {
+                if (!orderGroups[order.groupId]) {
+                    orderGroups[order.groupId] = {
+                        id: order.groupId,
+                        name: order.groupName || `Group ${order.groupId}`,
+                        notes: order.groupNotes || '',
+                        orders: []
+                    };
+                }
+                orderGroups[order.groupId].orders.push(order);
+            } else {
+                ungroupedOrders.push(order);
+            }
+        });
+    }
+    
+    // If container was just passed from displayOrdersWithSections, it should already be empty
+    // but just to be safe, clear it
+    container.innerHTML = '';
+    
+    if ((!orders || orders.length === 0) && Object.keys(orderGroups).length === 0) {
         container.innerHTML = '<p class="empty-state">No orders found</p>';
         return;
     }
+    // Already cleared container and checked for empty state above
     
-    // Create orders table structure
-    container.innerHTML = `
-        <table class="orders-table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Patient</th>
-                    <th>Ward</th>
-                    <th>Medication Details</th>
-                    <th>Status</th>
-                    <th>Requester</th>
-                </tr>
-            </thead>
-            <tbody id="orders-table-body"></tbody>
-        </table>
-    `;
+    // Only add selection container if selection is allowed (e.g., for pending orders)
+    if (allowSelection) {
+        const selectionContainer = document.createElement('div');
+        selectionContainer.className = 'selection-status';
+        selectionContainer.innerHTML = `
+            <div id="select-all-container" class="hidden"><span id="selected-count">0 orders selected</span></div>
+        `;
+        container.appendChild(selectionContainer);
+    }
     
-    const tableBody = document.getElementById('orders-table-body');
+    // Note: The Create Group and Confirm Group buttons are now in the Supply Functions section
+    // and not in the orders table area. The event handlers are set up elsewhere.
     
-    // Create rows for each order
-    orders.forEach(order => {
-        // Format date and time
-        const orderDate = new Date(order.timestamp);
-        const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        // Format patient info
-        let patientInfo = '';
-        if (order.type === 'patient' && order.patient) {
-            const patientDetails = [];
-            if (order.patient.name && order.patient.name !== 'undefined') {
-                patientDetails.push(order.patient.name);
+    // Create a table for orders
+    const createOrdersTable = (withSelection = false) => {
+        const tableContainer = document.createElement('div');
+        tableContainer.innerHTML = `
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        ${withSelection ? '<th class="order-select-cell"><input type="checkbox" class="select-all-orders-checkbox" aria-label="Select all orders in group"></th>' : ''}
+                        <th>Order ID</th>
+                        <th>Patient</th>
+                        <th>Ward</th>
+                        <th>Medication Details</th>
+                        <th>Status</th>
+                        <th>Requester</th>
+                    </tr>
+                </thead>
+                <tbody class="orders-table-body"></tbody>
+            </table>
+        `;
+        return tableContainer;
+    };
+
+    // If we have grouped orders, display each group with its own header
+    if (Object.keys(orderGroups).length > 0) {
+        Object.values(orderGroups).forEach(group => {
+            // Create group header
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'order-group-header';
+            groupHeader.innerHTML = `
+                <div class="order-group-info">
+                    <h3>${group.name}</h3>
+                    ${group.notes ? `<p>${group.notes}</p>` : ''}
+                    <span>${group.orders.length} ${group.orders.length === 1 ? 'order' : 'orders'}</span>
+                </div>
+            `;
+            container.appendChild(groupHeader);
+            
+            // Create orders table for this group - enable selection only if allowSelection is true
+            const groupTableContainer = createOrdersTable(allowSelection && groupSelectionMode);
+            container.appendChild(groupTableContainer);
+            
+            // Get the table body for this group
+            const tableBody = groupTableContainer.querySelector('.orders-table-body');
+            
+            // Setup the select-all checkbox handler for this group - only if selection is allowed
+            if (allowSelection) {
+                const groupSelectAllCheckbox = groupTableContainer.querySelector('.select-all-orders-checkbox');
+                if (groupSelectAllCheckbox) {
+                    groupSelectAllCheckbox.addEventListener('change', (event) => {
+                        const isChecked = event.target.checked;
+                        const checkboxes = groupTableContainer.querySelectorAll('.order-select-checkbox');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = isChecked;
+                        });
+                        updateSelectedOrdersCount();
+                    });
+                }
             }
             
-            // Add identifiers if available
-            const identifier = order.patient.hospitalId || order.patient.nhs || '';
-            if (identifier) patientDetails.push(`(${identifier})`);
+            // Create rows for each order in this group
+            group.orders.forEach(order => {
+                createOrderTableRow(order, tableBody, allowSelection);
+            });
+
+            // Select-all checkbox listener in selection mode - only if selection is allowed
+            if (allowSelection && groupSelectionMode) {
+                const headerSelectAll = groupTableContainer.querySelector('.select-all-orders-checkbox');
+                if (headerSelectAll) {
+                    headerSelectAll.addEventListener('change', event => {
+                        const isChecked = event.target.checked;
+                        const checkboxes = groupTableContainer.querySelectorAll('.order-select-checkbox:not([disabled])');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = isChecked;
+                        });
+                        updateSelectedOrdersCount();
+                    });
+                }
+            }
             
-            patientInfo = patientDetails.join(' ');
-        } else {
-            patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
+            // Add select-all event handler for this group's table
+            const selectAllCheckbox = groupTableContainer.querySelector('input[type="checkbox"]');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', toggleSelectAllOrders);
+            }
+        });
+    }
+    
+    // If we have ungrouped orders, show them in a separate section
+    if (ungroupedOrders.length > 0) {
+        // Add header for ungrouped orders (only if we also have grouped orders)
+        if (Object.keys(orderGroups).length > 0) {
+            const ungroupedHeader = document.createElement('div');
+            ungroupedHeader.className = 'order-group-header';
+            ungroupedHeader.innerHTML = `
+                <div class="order-group-info">
+                    <h3>Ungrouped Orders</h3>
+                    <span>${ungroupedOrders.length} ${ungroupedOrders.length === 1 ? 'order' : 'orders'}</span>
+                </div>
+            `;
+            container.appendChild(ungroupedHeader);
         }
         
-        // Format medications list
-        const medicationsList = order.medications ? order.medications.map(med => {
-            const details = [];
-            if (med.name) details.push(med.name);
-            if (med.strength) details.push(med.strength);
-            if (med.form) details.push(med.form);
-            if (med.dose) details.push(med.dose);
-            if (med.quantity) details.push(`× ${med.quantity}`);
-            return details.join(' ');
-        }).join('<br>') : 'No medications';
+        // Create table for ungrouped orders - only enable selection if allowSelection is true
+        const ungroupedTableContainer = createOrdersTable(allowSelection && groupSelectionMode);
+        container.appendChild(ungroupedTableContainer);
         
-        // Format requester info
-        const requesterInfo = order.requesterName || 'Unknown';
+        // Get table body
+        const tableBody = ungroupedTableContainer.querySelector('.orders-table-body');
         
-        // Add status with formatting
-        let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
-        
-        // Create the table row
-        const row = document.createElement('tr');
-        row.className = 'order-row';
-        row.dataset.orderId = order.id;
-        
-        if (order.status === 'cancelled') {
-            row.classList.add('cancelled-order');
+        // Select-all checkbox for ungrouped orders - only if selection is allowed
+        if (allowSelection) {
+            const ungroupedSelectAllCheckbox = ungroupedTableContainer.querySelector('.select-all-orders-checkbox');
+            if (ungroupedSelectAllCheckbox) {
+                ungroupedSelectAllCheckbox.addEventListener('change', (event) => {
+                    const isChecked = event.target.checked;
+                    const checkboxes = ungroupedTableContainer.querySelectorAll('.order-select-checkbox');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                    updateSelectedOrdersCount();
+                });
+            }
         }
         
-        row.innerHTML = `
-            <td class="order-id">
-                <div>${order.id}</div>
-                <div class="order-time">${formattedDate}</div>
-            </td>
-            <td class="patient-info">${patientInfo}</td>
-            <td class="ward-info">${order.wardName || order.wardId}</td>
-            <td class="medications-info">${medicationsList}</td>
-            <td class="status-cell">
-                ${statusContent}
-            </td>
-            <td class="requester-info">${requesterInfo}</td>
-        `;
+        // Create rows for ungrouped orders - pass allowSelection parameter
+        ungroupedOrders.forEach(order => {
+            createOrderTableRow(order, tableBody, allowSelection);
+        });
+    }
+}
+
+/**
+ * Create a table row for an order
+ * @param {Object} order - Order object
+ * @param {HTMLElement} tableBody - Table body element to append row to
+ * @param {boolean} allowSelection - Whether to allow selection of this order
+ */
+function createOrderTableRow(order, tableBody, allowSelection = true) {
+    const row = document.createElement('tr');
+    row.className = 'order-row';
+    row.dataset.orderId = order.id;
+    
+    // Add selection checkbox if in group selection mode and selection is allowed
+    if (groupSelectionMode && allowSelection) {
+        const selectCell = document.createElement('td');
+        selectCell.className = 'order-select-cell';
         
-        // Make the entire row clickable
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', () => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'order-select-checkbox';
+        checkbox.addEventListener('change', updateSelectedOrdersCount);
+        
+        selectCell.appendChild(checkbox);
+        row.appendChild(selectCell);
+    } else if (groupSelectionMode && !allowSelection) {
+        // Add empty cell to maintain table structure when selection is not allowed
+        const placeholderCell = document.createElement('td');
+        placeholderCell.className = 'order-select-cell';
+        row.appendChild(placeholderCell);
+    }
+    
+    // Format date and time
+    const orderDate = new Date(order.timestamp);
+    const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    // Format patient info
+    let patientInfo = '';
+    if (order.type === 'patient' && order.patient) {
+        const patientDetails = [];
+        if (order.patient.name && order.patient.name !== 'undefined') {
+            patientDetails.push(order.patient.name);
+        }
+        
+        // Add identifiers if available
+        const identifier = order.patient.hospitalId || order.patient.nhs || '';
+        if (identifier) patientDetails.push(`(${identifier})`);
+        
+        patientInfo = patientDetails.join(' ');
+    } else {
+        patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
+    }
+    
+    // Format medications list
+    const medicationsList = order.medications ? order.medications.map(med => {
+        const details = [];
+        if (med.name) details.push(med.name);
+        if (med.strength) details.push(med.strength);
+        if (med.form) details.push(med.form);
+        if (med.dose) details.push(med.dose);
+        if (med.quantity) details.push(`× ${med.quantity}`);
+        return details.join(' ');
+    }).join('<br>') : 'No medications';
+    
+    // Format requester info
+    const requesterInfo = order.requesterName || 'Unknown';
+    
+    // Add status with formatting
+    let statusContent = `<span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>`;
+    
+    // Create and add each cell to the row
+    // Order ID cell
+    const orderIdCell = document.createElement('td');
+    orderIdCell.className = 'order-id';
+    orderIdCell.innerHTML = `
+        <div>${order.id}</div>
+        <div class="timestamp">${formattedDate}</div>
+    `;
+    row.appendChild(orderIdCell);
+    
+    // Patient info cell
+    const patientCell = document.createElement('td');
+    patientCell.className = 'patient-info';
+    patientCell.innerHTML = patientInfo;
+    row.appendChild(patientCell);
+    
+    // Ward info cell
+    const wardCell = document.createElement('td');
+    wardCell.className = 'ward-info';
+    wardCell.textContent = order.wardName || order.wardId;
+    row.appendChild(wardCell);
+    
+    // Medications info cell
+    const medsCell = document.createElement('td');
+    medsCell.className = 'medications-info';
+    medsCell.innerHTML = medicationsList;
+    row.appendChild(medsCell);
+    
+    // Status cell
+    const statusCell = document.createElement('td');
+    statusCell.className = 'status-cell';
+    statusCell.innerHTML = statusContent;
+    row.appendChild(statusCell);
+    
+    // Requester info cell
+    const requesterCell = document.createElement('td');
+    requesterCell.className = 'requester-info';
+    requesterCell.textContent = requesterInfo;
+    row.appendChild(requesterCell);
+    
+    // Make the entire row clickable except for the checkbox
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', (event) => {
+        // Only show order details if the click wasn't on the checkbox
+        if (!event.target.closest('.order-select-cell')) {
             // Use the modal instead of the side panel
             showOrderDetails(order);
-        });
-        
-        tableBody.appendChild(row);
+        }
     });
+    
+    tableBody.appendChild(row);
 }
 
 /**
@@ -507,14 +1583,8 @@ function openProcessingPanel(orderId) {
     orderDetails.innerHTML = '<div class="loading-indicator">Loading order details...</div>';
     panel.classList.remove('hidden');
     
-    // Fetch order details from API
-    fetch(`/api/orders/${orderId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch order details');
-            }
-            return response.json();
-        })
+    // Fetch order details from API using apiClient
+    window.apiClient.get(`/orders/${orderId}`)
         .then(data => {
             if (data.success && data.order) {
                 // Update header

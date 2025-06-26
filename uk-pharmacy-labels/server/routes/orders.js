@@ -249,13 +249,68 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
  * Update an order's status, processing information, or medication details
  * Accessible to pharmacy and ordering roles
  */
+// ---------------------------------------------
+// PUT /api/orders/:id/status – update order status only
+// ---------------------------------------------
+router.put('/:id/status', hasRole(['pharmacy', 'ordering']), async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status field is required'
+      });
+    }
+
+    // Validate status value
+    const allowedStatuses = ['pending', 'in-progress', 'processing', 'unfulfilled', 'completed', 'cancelled'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status value. Allowed: ${allowedStatuses.join(', ')}`
+      });
+    }
+
+    // Update order via existing model method
+    const updateResult = await OrderModel.updateOrder(orderId, { status });
+
+    if (!updateResult.success) {
+      return res.status(404).json({
+        success: false,
+        message: updateResult.message || 'Order not found'
+      });
+    }
+
+    // Optionally return updated order data
+    const updatedOrder = await OrderModel.getOrderById(orderId);
+
+    return res.json({
+      success: true,
+      message: 'Order status updated successfully',
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error updating order status',
+      error: error.message
+    });
+  }
+});
+
+// ---------------------------------------------
+// PUT /api/orders/:id – full/partial order update
+// ---------------------------------------------
 router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
   try {
     const orderId = req.params.id;
     const { status, processedBy, checkedBy, processingNotes, medications, notes } = req.body;
 
     // Validate status if provided
-    if (status && !['pending', 'processing', 'completed', 'cancelled'].includes(status)) {
+    if (status && !['pending', 'in-progress', 'processing', 'unfulfilled', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid order status'
