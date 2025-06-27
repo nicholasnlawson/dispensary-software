@@ -131,6 +131,20 @@ class OrderGroupModel {
             );
         });
     }
+    
+    /**
+     * Deletes a group by ID
+     * @param {number|string} groupId
+     * @returns {Promise<boolean>} True if deleted, false if not found
+     */
+    async deleteGroup(groupId) {
+        return new Promise((resolve, reject) => {
+            db.run('DELETE FROM order_groups WHERE id = ?', [groupId], function(err) {
+                if (err) return reject(err);
+                resolve(this.changes > 0);
+            });
+        });
+    }
 }
 
 module.exports = new OrderGroupModel();

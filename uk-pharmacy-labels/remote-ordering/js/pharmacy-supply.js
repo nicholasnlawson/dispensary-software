@@ -13,6 +13,57 @@ let wardFilter = null;
 let currentOrder = null;
 let isOrderInEditMode = false;
 let groupSelectionMode = false;
+let orderGroups = [];
+let selectedOrders = [];
+let orderGroupsHistory = [];
+
+// Flag to prevent modals from automatically opening on page load
+window.isInitialPageLoad = true;
+
+// Load order groups history from session storage at page load
+function initializeOrderGroupsHistory() {
+    try {
+        const storedGroups = JSON.parse(sessionStorage.getItem('orderGroupsHistory') || '[]');
+        if (storedGroups.length > 0) {
+            console.log(`Loaded ${storedGroups.length} groups from session storage at initialization`);
+            orderGroupsHistory = storedGroups;
+        }
+    } catch (e) {
+        console.error('Error loading stored groups from session storage at initialization:', e);
+    }
+}
+
+// Initialize order groups history when this script loads
+initializeOrderGroupsHistory();
+
+// Function to add a newly created group to history
+function addToOrderGroupsHistory(group) {
+    if (!group) {
+        console.error('Cannot add null or undefined group to history');
+        return;
+    }
+    
+    // Don't add duplicates
+    if (!orderGroupsHistory.some(g => g.id === group.id || g.groupNumber === group.groupNumber)) {
+        // Make a copy to avoid reference issues
+        const groupCopy = JSON.parse(JSON.stringify(group));
+        orderGroupsHistory.push(groupCopy);
+        console.log(`Added group ${group.groupNumber} to history cache. Total cached: ${orderGroupsHistory.length}`);
+        
+        // Also store in session storage for persistence across page reloads
+        try {
+            const storedGroups = JSON.parse(sessionStorage.getItem('orderGroupsHistory') || '[]');
+            // Avoid duplicates in storage too
+            if (!storedGroups.some(g => g.id === group.id || g.groupNumber === group.groupNumber)) {
+                storedGroups.push(groupCopy);
+                sessionStorage.setItem('orderGroupsHistory', JSON.stringify(storedGroups));
+                console.log('Updated order groups history in session storage');
+            }
+        } catch (e) {
+            console.error('Error saving order groups to session storage:', e);
+        }
+    }
+}
 
 /**
  * Convert a raw order status into user-friendly text.
@@ -565,6 +616,9 @@ function handleGroupCreationSuccess(result, orderIds, groupNumber) {
     console.log('Group creation success:', result);
     showNotification(`Order group "${groupNumber}" created successfully`, 'success');
     
+    // Add this successful group to our history cache
+    addToOrderGroupsHistory(result);
+    
     // Update all order statuses to 'in-progress'
     const groupReason = `Added to order group: ${groupNumber}`;
     updateGroupOrderStatuses(orderIds, 'in-progress', groupReason)
@@ -651,10 +705,71 @@ function toggleGroupSelectionMode() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+    // Force-hide all modals on page load and apply display:none style
+    const allModals = document.querySelectorAll('.modal');
+    allModals.forEach(modal => {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    });
+    
+    // Initialize order groups button
+    const orderGroupsBtn = document.getElementById('view-order-groups-btn');
+    if (orderGroupsBtn) {
+        orderGroupsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Pass true to indicate this is a user-initiated action
+            displayOrderGroupsModal(false, true);
+        });
+    }
+    
+    // Initialize modal close buttons for order groups modal
+    const orderGroupsModal = document.getElementById('order-groups-modal');
+    if (orderGroupsModal) {
+        // Ensure it's hidden
+        orderGroupsModal.classList.add('hidden');
+        
+        const closeButtons = orderGroupsModal.querySelectorAll('.modal-close, .modal-close-btn');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                orderGroupsModal.classList.add('hidden');
+            });
+        });
+    }
+    
+    // Initialize modal close buttons for change status modal
+    const changeStatusModal = document.getElementById('change-status-modal');
+    if (changeStatusModal) {
+        // Force hide the modal on load
+        changeStatusModal.classList.add('hidden');
+        changeStatusModal.style.display = 'none';
+        
+        const closeButtons = changeStatusModal.querySelectorAll('.modal-close, .modal-close-btn');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                changeStatusModal.classList.add('hidden');
+                changeStatusModal.style.display = 'none';
+            });
+        });
+        
+        // Add escape key handler for this modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && !changeStatusModal.classList.contains('hidden')) {
+                changeStatusModal.classList.add('hidden');
+                changeStatusModal.style.display = 'none';
+            }
+        });
+    }
+    
     // Initialize order management
     initializeOrderFilters();
     console.log('Order Manager initialized with 0 orders');
+
+    // Reset the initial page load flag after a delay
+    setTimeout(() => {
+        window.isInitialPageLoad = false;
+        console.log('Initial page load flag reset - modals can now be shown normally');
+    }, 1500);
     
     // Add Supply Functions section
     const supplyFunctions = document.createElement('div');
@@ -664,6 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="supply-functions-container">
             <button id="create-group-btn" class="btn btn-primary">Create Order Group</button>
             <button id="confirm-group-btn" class="btn btn-success hidden">Confirm Order Group</button>
+            <button id="view-order-groups-btn" class="btn btn-info">View Order Groups</button>
         </div>
     `;
     
@@ -691,6 +807,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up event listener for the Confirm Group button
     const confirmGroupBtn = document.getElementById('confirm-group-btn');
     confirmGroupBtn.addEventListener('click', showCreateGroupModal);
+    
+    // Set up event listener for the View Order Groups button
+    const viewOrderGroupsBtn = document.getElementById('view-order-groups-btn');
+    if (viewOrderGroupsBtn) {
+        viewOrderGroupsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Clear any previous state
+            orderGroupsModalUserRequested = true;
+            // Display the modal with explicit user action flag
+            displayOrderGroupsModal(false, true);
+            console.log('View Order Groups button clicked');
+        });
+    }
     
     loadWardOptions();
     loadOrders();
@@ -3606,6 +3735,761 @@ async function saveOrderChanges() {
         } else {
             alert('Error updating order: ' + error.message);
         }
+    }
+}
+
+/**
+ * Load order groups from the API
+ * @param {boolean} forceRefresh - If true, will bypass cache and fetch fresh data
+ * @returns {Promise<Array>} - Promise resolving to an array of order groups
+ */
+async function loadOrderGroups(forceRefresh = false) {
+    console.log('Loading order groups...');
+    
+    // Return cached groups if available and not forcing refresh
+    if (!forceRefresh && orderGroups && orderGroups.length > 0) {
+        return orderGroups;
+    }
+    
+    // Load any groups from session storage that might have been saved previously
+    try {
+        const storedGroups = JSON.parse(sessionStorage.getItem('orderGroupsHistory') || '[]');
+        if (storedGroups.length > 0) {
+            console.log(`Loaded ${storedGroups.length} groups from session storage`);
+            orderGroupsHistory = storedGroups;
+        }
+    } catch (e) {
+        console.error('Error loading stored groups from session storage:', e);
+    }
+    
+    try {   // Check for API client availability
+        if (window.apiClient) {
+            let response;
+            
+            console.log('Attempting to load order groups via API');
+            
+            // Try the dedicated method first
+            if (typeof window.apiClient.getOrderGroups === 'function') {
+                console.log('Using dedicated getOrderGroups method');
+                response = await window.apiClient.getOrderGroups();
+            } 
+            // Fall back to general GET (try different endpoint formats)
+            else if (typeof window.apiClient.get === 'function') {
+                // Try multiple potential endpoints - correct one depends on API implementation
+                try {
+                    // Try the same endpoint pattern used for creation first (without /api prefix)
+                    console.log('Trying /order-groups endpoint (matches creation endpoint)');
+                    response = await window.apiClient.get('/order-groups');
+                    
+                    if (!response || (response.success === false) || 
+                        (Array.isArray(response) && response.length === 0) || 
+                        (response.data && Array.isArray(response.data) && response.data.length === 0) ||
+                        (response.groups && Array.isArray(response.groups) && response.groups.length === 0)) {
+                        
+                        console.log('No results from /api/order-groups, trying /api/order_groups');
+                        response = await window.apiClient.get('/api/order_groups');
+                    }
+                    
+                    // If still no results, try order groups endpoint
+                    if (!response || (response.success === false) || 
+                        (Array.isArray(response) && response.length === 0) || 
+                        (response.data && Array.isArray(response.data) && response.data.length === 0) ||
+                        (response.groups && Array.isArray(response.groups) && response.groups.length === 0)) {
+                        // Try multiple possible API endpoints
+                        const endpointsToTry = [
+                            '/api/order-groups',
+                            '/api/orders/groups',
+                            '/api/ordergroups',
+                            '/order-groups',
+                            '/order_groups',
+                            '/orders/groups'
+                        ];
+                        
+                        let lastError = null;
+                        for (const endpoint of endpointsToTry) {
+                            try {
+                                console.log(`Trying endpoint: ${endpoint}`);
+                                response = await window.apiClient.get(endpoint);
+                                console.log(`Success with endpoint: ${endpoint}`);
+                                break; // Exit loop if successful
+                            } catch (error) {
+                                console.error(`API Error (${endpoint}):`, error);
+                                lastError = error;
+                            }
+                        }
+                        
+                        // If we've tried all endpoints and still have no response
+                        if (!response && lastError) {
+                            console.error('Error fetching from all endpoints, last error:', lastError);
+                            throw new Error('Failed to fetch order groups from any endpoint');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching from primary endpoint:', error);
+                    console.log('Trying fallback endpoint');
+                    try {
+                        response = await window.apiClient.get('/api/orders/groups');
+                    } catch (fallbackError) {
+                        console.error('Error fetching from fallback endpoint:', fallbackError);
+                    }
+                }
+            } 
+            // Last resort: direct fetch
+            else {
+                const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+                
+                const response = await fetch('/api/order-groups', {
+                    headers: {
+                        'Authorization': authToken ? `Bearer ${authToken}` : '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch order groups: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            }
+            
+            // Enhanced logging to see what's in the response
+            console.log('Order groups API response:', response);
+            
+            if (response && (response.success !== false)) {
+                // Normalize response structure depending on how API returns data
+                let groups = [];
+                
+                if (Array.isArray(response)) {
+                    console.log('Response is an array - directly using as groups');
+                    groups = response;
+                } else if (response.data && Array.isArray(response.data)) {
+                    console.log('Using data array from response');
+                    groups = response.data;
+                } else if (response.groups && Array.isArray(response.groups)) {
+                    console.log('Using groups array from response');
+                    groups = response.groups;
+                } else if (response.orderGroups && Array.isArray(response.orderGroups)) {
+                    console.log('Using orderGroups array from response');
+                    groups = response.orderGroups;
+                } else {
+                    // Try to find any property that might contain groups
+                    const possibleGroupArrays = Object.keys(response).filter(key => 
+                        Array.isArray(response[key]) && 
+                        response[key].some(item => item.orderIds || item.orders || item.groupNumber));
+                    
+                    if (possibleGroupArrays.length > 0) {
+                        console.log('Found potential group arrays in properties:', possibleGroupArrays);
+                        groups = response[possibleGroupArrays[0]];
+                    } else {
+                        console.log('Could not identify groups in response structure');
+                    }
+                }
+                
+                console.log('Extracted', groups.length, 'order groups');
+                
+                if (groups.length === 0 && response.id && (response.orderIds || response.groupNumber)) {
+                    // The response itself might be a single group
+                    console.log('Response appears to be a single group, using it directly');
+                    groups = [response];
+                }
+                
+                // For each group, fetch the associated orders
+                const groupsWithDetails = await Promise.all(groups.map(async group => {
+                    console.log('Processing group:', group);
+                    // If group doesn't have orders already loaded
+                    if (!group.orders) {
+                        console.log('Fetching orders for group', group.id || group.groupNumber || group.group_number);
+                        // Map group_number to groupNumber if it hasn't been done yet
+                        if (group.group_number && !group.groupNumber) {
+                            group.groupNumber = group.group_number;
+                        }
+                        // Fetch orders belonging to this group
+                        const ordersResponse = await fetchOrdersByGroup(group.id);
+                        group.orders = ordersResponse || [];
+                        console.log('Fetched', group.orders.length, 'orders for group');
+                    }
+                    return group;
+                }));
+                
+                console.log('Final processed groups:', groupsWithDetails);
+                
+                // If API returned no groups but we have groups in our history cache, use those
+                if ((!groupsWithDetails || groupsWithDetails.length === 0) && orderGroupsHistory.length > 0) {
+                    console.log(`API returned no groups. Using ${orderGroupsHistory.length} groups from history cache as fallback`);
+                    orderGroups = [...orderGroupsHistory];
+                } else {
+                    orderGroups = groupsWithDetails;
+                }
+                
+                return orderGroups;
+            }
+            
+            throw new Error('Invalid API response structure');
+        }
+        
+        throw new Error('API client not available');
+    } catch (error) {
+        console.error('Error loading order groups:', error);
+        showNotification('Failed to load order groups: ' + error.message, 'error');
+        
+        // If API call failed but we have groups in history cache, use those as fallback
+        if (orderGroupsHistory.length > 0) {
+            console.log(`API error occurred. Using ${orderGroupsHistory.length} groups from history cache as fallback`);
+            return [...orderGroupsHistory];
+        }
+        
+        return [];
+    } finally {
+        loading = false;
+    }
+}
+
+/**
+ * Fetch orders belonging to a specific group
+ * @param {number} groupId - Group ID
+ * @returns {Promise<Array>} - Promise resolving to array of orders
+ */
+async function fetchOrdersByGroup(groupId) {
+    // Load full order objects (including medications) for a given group ID
+    // Strategy:
+    // 1. Fetch the order group via /api/order-groups/:id to retrieve the orderIds array
+    // 2. For each orderId, fetch the full order details via /api/orders/:orderId
+    // 3. Return an array of fully-hydrated order objects
+
+    try {
+        // Check for API client availability
+        if (window.apiClient) {
+            let response;
+
+            // First attempt dedicated client method (kept for backward compatibility)
+            if (typeof window.apiClient.getOrdersByGroup === 'function') {
+                try {
+                    response = await window.apiClient.getOrdersByGroup(groupId);
+                    if (response && response.length) return response;
+                } catch (err) {
+                    console.warn('getOrdersByGroup failed, falling back to manual fetch:', err);
+                }
+            }
+
+            // Manual fallback:
+            // Step 1: Fetch group to get orderIds
+            if (typeof window.apiClient.get === 'function') {
+                let groupResp;
+                try {
+                    groupResp = await window.apiClient.get(`/order-groups/${groupId}`);
+                } catch (err) {
+                    console.error(`Error fetching order group ${groupId}:`, err);
+                }
+
+                const orderIds = Array.isArray(groupResp?.orderIds) ? groupResp.orderIds : [];
+                if (orderIds.length === 0) {
+                    console.warn(`No orderIds found for group ${groupId}`);
+                    return [];
+                }
+
+                // Step 2: Fetch each order in parallel
+                const orderPromises = orderIds.map(async (oid) => {
+                    try {
+                        const orderResp = await window.apiClient.get(`/orders/${oid}`);
+                        // Different APIs may wrap the order differently
+                        if (orderResp?.order) return orderResp.order;
+                        if (orderResp?.data) return orderResp.data;
+                        return orderResp;
+                    } catch (err) {
+                        console.error(`Error fetching order ${oid}:`, err);
+                        return null;
+                    }
+                });
+
+                const orders = (await Promise.all(orderPromises)).filter(o => o != null);
+                return orders;
+            }
+
+            // If we reach here, no API client get method
+            return [];
+        }
+
+        return [];
+    } catch (error) {
+        console.error(`Error fetching orders for group ${groupId}:`, error);
+        return [];
+    }
+}
+
+// Flag to track if displayOrderGroupsModal was explicitly called by user action
+let orderGroupsModalUserRequested = false;
+
+/**
+ * Display order groups in the modal
+ * @param {boolean} forceRefresh - If true, will refresh data even if called after a status update
+ * @param {boolean} isUserAction - Whether this was triggered by a direct user action
+ */
+async function displayOrderGroupsModal(forceRefresh = false, isUserAction = false) {
+    // Get the modal element
+    const modal = document.getElementById('order-groups-modal');
+    const container = document.getElementById('order-groups-container');
+    
+    if (!modal || !container) {
+        console.error('Order groups modal elements not found');
+        return;
+    }
+    
+    // Set the user request flag if this is explicitly requested by user
+    if (isUserAction) {
+        orderGroupsModalUserRequested = true;
+    }
+    
+    // Skip display if this is an automatic call during page load
+    if (!forceRefresh && !orderGroupsModalUserRequested && window.isInitialPageLoad) {
+        console.log('Preventing automatic order groups modal display during page load');
+        return;
+    }
+    
+    // Show loading message
+    container.innerHTML = '<p class="loading-message">Loading order groups...</p>';
+    
+    // Only display modal if explicitly requested
+    if (orderGroupsModalUserRequested) {
+        modal.classList.remove('hidden');
+        modal.style.display = '';
+        
+        // Make sure we attach the close button event listeners
+        const closeButtons = modal.querySelectorAll('.modal-close, .modal-close-btn');
+        closeButtons.forEach(button => {
+            // Clone button to remove any existing event listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            // Add event listener to the new button
+            newButton.addEventListener('click', function() {
+                console.log('Order groups modal close button clicked');
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                // Reset the user request flag when closed
+                orderGroupsModalUserRequested = false;
+            });
+        });
+        
+        // Add keyboard event listener for Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                console.log('Escape key pressed, closing Order Groups modal');
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                orderGroupsModalUserRequested = false;
+            }
+        });
+        
+    } else {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+    
+    try {
+        // Fetch order groups
+        console.log('Attempting to fetch and display order groups...');
+        
+        // Try API first, then fall back directly to orderGroupsHistory if needed
+        // Always force refresh from backend when opening the modal, unless explicitly overridden
+        let groups;
+        try {
+            groups = await loadOrderGroups(true); // forceRefresh = true
+        } catch (e) {
+            console.error('Error loading order groups from backend, will use cache if available:', e);
+            groups = [];
+        }
+        
+        console.log('Display function received groups:', groups);
+        
+        // If API returned no groups, but we have groups in history, use those directly
+        if ((!groups || groups.length === 0) && orderGroupsHistory.length > 0) {
+            console.log(`DIRECT FALLBACK: Using ${orderGroupsHistory.length} groups from history cache`);
+            groups = [...orderGroupsHistory];
+        }
+        
+        if (!groups || groups.length === 0) {
+            console.log('No groups available to display in modal');
+            container.innerHTML = '<p class="empty-state">No order groups found</p>';
+            return;
+        }
+        
+        // Log what we found to help with debugging
+        console.log('Found', groups.length, 'order groups to display');
+        groups.forEach((group, index) => {
+            console.log(`Group ${index+1}:`, { 
+                id: group.id,
+                groupNumber: group.groupNumber,
+                orderIds: group.orderIds,
+                orderCount: group.orders ? group.orders.length : 0
+            });
+        });
+        
+        // Create HTML content
+        let html = '<div class="order-groups-list">';
+        
+        // For each group
+        groups.forEach(group => {
+            // Ensure groupNumber is set by using group_number as fallback
+            const groupNumber = group.groupNumber || group.group_number || group.id;
+            html += `
+                <div class="order-group-card" data-group-id="${group.id}">
+                    <div class="order-group-header">
+                        <h4>Group: ${groupNumber}</h4>
+                        <span class="group-timestamp">${formatTimestamp(group.timestamp)}</span>
+                        <button class="btn btn-sm btn-danger cancel-group-btn" data-group-id="${group.id}">Cancel Group</button>
+                    </div>
+                    ${group.notes ? `<p class="group-notes">${group.notes}</p>` : ''}
+                    <div class="order-group-orders">
+                        <h5>Orders in this group:</h5>
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Patient</th>
+                                    <th>Hospital #</th>
+                                    <th>Medication Details</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // For each order in the group
+            const orders = group.orders || [];
+            if (orders.length === 0) {
+                html += `<tr><td colspan="6" class="empty-state">No orders in this group</td></tr>`;
+            } else {
+                orders.forEach(order => {
+                    // Format patient name
+                    const patientName = (() => {
+                        if (!order.patient) return 'N/A';
+                        // Prefer explicit name field if present
+                        if (order.patient.name) return order.patient.name;
+                        // Otherwise build from first/last
+                        const first = order.patient.firstName || order.patient.first_name || '';
+                        const last = order.patient.lastName || order.patient.last_name || '';
+                        const built = `${first} ${last}`.trim();
+                        return built || 'N/A';
+                    })();
+                    
+                    // Build hospital number
+                    const hospitalNumber = order.patient ? 
+                        (order.patient.hospitalNumber || order.patient.hospital_number || order.patient.hospitalId || order.patient.hospital_id || 'N/A') : 
+                        'N/A';
+                    
+                    // Build medication details string for each medication
+                    const medicationsSummary = order.medications && order.medications.length > 0 ?
+                        order.medications.map(med => {
+                            const parts = [];
+                            if (med.name) parts.push(med.name);
+                            if (med.strength) parts.push(med.strength);
+                            if (med.form) parts.push(med.form);
+                            // combine dose and quantity nicely if present
+                            const doseQty = [];
+                            if (med.dose) doseQty.push(med.dose);
+                            if (med.quantity) doseQty.push(`qty ${med.quantity}`);
+                            if (doseQty.length) parts.push(`(${doseQty.join(', ')})`);
+                            return parts.join(' ');
+                        }).join('; ') :
+                        'No medications';
+                    
+                    // Format status
+                    const statusDisplay = formatStatusDisplay(order.status);
+                    
+                    html += `
+                        <tr data-order-id="${order.id}">
+                            <td>${order.orderNumber || order.id}</td>
+                            <td>${patientName}</td>
+                            <td>${order.patient ? (order.patient.hospitalNumber || order.patient.hospital_number || order.patient.hospitalId || order.patient.hospital_id || 'N/A') : 'N/A'}</td>
+                            <td>${medicationsSummary}</td>
+                            <td>${statusDisplay}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-info view-order-btn" data-order-id="${order.id}">View Details</button>
+                                <button class="btn btn-sm btn-success mark-complete-btn" data-order-id="${order.id}"
+                                    ${order.status === 'completed' ? 'disabled' : ''}>Mark Complete</button>
+                                <button class="btn btn-sm btn-primary change-status-btn" data-order-id="${order.id}">Change Status</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+
+    // Attach Cancel Group button listeners
+// Import at top of file for browser compatibility
+if (!window.showCancelGroupModal) {
+    import('./cancel-group-modal.js').then(mod => {
+        window.showCancelGroupModal = mod.showCancelGroupModal;
+    });
+}
+const cancelBtns = container.querySelectorAll('.cancel-group-btn');
+cancelBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const groupId = btn.getAttribute('data-group-id');
+        // Find group in groups array
+        const group = groups.find(g => String(g.id) === String(groupId));
+        if (!group) return alert('Group not found');
+        showCancelGroupModal(group, async () => {
+    try {
+        if (group.orders && group.orders.length > 0) {
+            for (const order of group.orders) {
+                await window.apiClient.put(`/orders/${order.id}`, { status: 'pending', group_id: null });
+            }
+        }
+        // Always use group.id for API endpoint
+        await window.apiClient.delete(`/order-groups/${group.id}`);
+
+        // Remove from in-memory orderGroupsHistory
+        const idx = orderGroupsHistory.findIndex(g => String(g.id) === String(group.id));
+        if (idx !== -1) {
+            orderGroupsHistory.splice(idx, 1);
+        }
+        // Remove from sessionStorage
+        try {
+            const storedGroups = JSON.parse(sessionStorage.getItem('orderGroupsHistory') || '[]');
+            const newGroups = storedGroups.filter(g => String(g.id) !== String(group.id));
+            sessionStorage.setItem('orderGroupsHistory', JSON.stringify(newGroups));
+        } catch (e) {
+            console.error('Error updating sessionStorage after group deletion:', e);
+        }
+
+        // Show notification instead of alert
+        if (typeof showNotification === 'function') {
+            showNotification('Order group cancelled and removed.', 'success');
+        }
+        // Refresh modal UI
+        displayOrderGroupsModal(true, true);
+        // Also refresh main order lists to reflect reverted statuses immediately
+        if (typeof loadOrders === 'function') {
+            loadOrders();
+        }
+    } catch (err) {
+        if (typeof showNotification === 'function') {
+            showNotification('Failed to cancel group: ' + (err?.message || err), 'error');
+        } else {
+            alert('Failed to cancel group: ' + (err?.message || err));
+        }
+    }
+}, () => {/* do nothing on cancel */});
+    });
+});
+
+        // Add event listeners to buttons
+        attachOrderGroupActionListeners(container);
+        
+    } catch (error) {
+        console.error('Error displaying order groups:', error);
+        container.innerHTML = `<p class="error-message">Error loading order groups: ${error.message}</p>`;
+    }
+}
+
+/**
+ * Format timestamp for display
+ * @param {string} timestamp - Timestamp string
+ * @returns {string} - Formatted date string
+ */
+function formatTimestamp(timestamp) {
+    if (!timestamp) return 'Unknown';
+    
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleString();
+    } catch (e) {
+        return timestamp;
+    }
+}
+
+/**
+ * Attach event listeners to order group action buttons
+ * @param {HTMLElement} container - Container element with order group elements
+ */
+function attachOrderGroupActionListeners(container) {
+    // View order details buttons
+    const viewButtons = container.querySelectorAll('.view-order-btn');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const orderId = button.getAttribute('data-order-id');
+            if (orderId) {
+                // Hide the order groups modal
+                document.getElementById('order-groups-modal').classList.add('hidden');
+                // Show order details
+                openOrderDetailsPanel(orderId);
+            }
+        });
+    });
+    
+    // Mark complete buttons
+    const completeButtons = container.querySelectorAll('.mark-complete-btn');
+    completeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const orderId = button.getAttribute('data-order-id');
+            if (orderId) {
+                markOrderComplete(orderId, button);
+            }
+        });
+    });
+    
+    // Change status buttons
+    const statusButtons = container.querySelectorAll('.change-status-btn');
+    statusButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const orderId = button.getAttribute('data-order-id');
+            if (orderId) {
+                openChangeStatusModal(orderId);
+            }
+        });
+    });
+}
+
+/**
+ * Mark an order as complete
+ * @param {string} orderId - Order ID
+ * @param {HTMLElement} button - Button element that triggered the action
+ */
+async function markOrderComplete(orderId, button) {
+    try {
+        // Disable button to prevent multiple clicks
+        button.disabled = true;
+        button.textContent = 'Processing...';
+        
+        // Update order status to completed
+        await updateGroupOrderStatuses([orderId], 'completed', 'Marked complete from order groups view');
+        
+        // Show success notification
+        showNotification('Order marked as complete successfully', 'success');
+        
+        // Update button state
+        button.textContent = 'Completed';
+        
+        // Update order in the UI
+        const row = button.closest('tr');
+        if (row) {
+            const statusCell = row.querySelector('td:nth-child(4)');
+            if (statusCell) {
+                statusCell.textContent = formatStatusDisplay('completed');
+            }
+        }
+    } catch (error) {
+        console.error('Error marking order as complete:', error);
+        showNotification('Failed to mark order as complete: ' + error.message, 'error');
+        
+        // Reset button
+        button.disabled = false;
+        button.textContent = 'Mark Complete';
+    }
+}
+
+/**
+ * Open change status modal for an order
+ * @param {string} orderId - Order ID
+ */
+function openChangeStatusModal(orderId) {
+    // Don't open modal if no orderId is provided (prevents accidental opening)
+    if (!orderId) {
+        console.error('Cannot open status modal: No order ID provided');
+        return;
+    }
+    
+    // Get the modal element
+    const modal = document.getElementById('change-status-modal');
+    const orderIdInput = document.getElementById('status-order-id');
+    const statusSelect = document.getElementById('order-status');
+    const reasonTextarea = document.getElementById('status-change-reason');
+    
+    if (!modal || !orderIdInput || !statusSelect) {
+        console.error('Change status modal elements not found');
+        return;
+    }
+    
+    // Set order ID in hidden input
+    orderIdInput.value = orderId;
+    
+    // Reset form
+    statusSelect.value = 'in-progress'; // Default value
+    if (reasonTextarea) reasonTextarea.value = '';
+    
+    // Show the modal
+    modal.classList.remove('hidden');
+    
+    // Focus on the select
+    statusSelect.focus();
+    
+    // Attach event listener to confirm button
+    const confirmBtn = document.getElementById('confirm-status-change-btn');
+    if (confirmBtn) {
+        // Remove existing listeners
+        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+        
+        // Add new listener
+        document.getElementById('confirm-status-change-btn').addEventListener('click', () => {
+            confirmStatusChange();
+        });
+    }
+}
+
+/**
+ * Confirm status change for an order
+ */
+async function confirmStatusChange() {
+    const modal = document.getElementById('change-status-modal');
+    const orderIdInput = document.getElementById('status-order-id');
+    const statusSelect = document.getElementById('order-status');
+    const reasonTextarea = document.getElementById('status-change-reason');
+    const confirmBtn = document.getElementById('confirm-status-change-btn');
+    
+    if (!orderIdInput || !statusSelect || !confirmBtn) {
+        console.error('Change status form elements not found');
+        return;
+    }
+    
+    const orderId = orderIdInput.value;
+    const newStatus = statusSelect.value;
+    const reason = reasonTextarea ? reasonTextarea.value : '';
+    
+    if (!orderId || !newStatus) {
+        showNotification('Order ID and status are required', 'error');
+        return;
+    }
+    
+    try {
+        // Disable button to prevent multiple clicks
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Updating...';
+        
+        // Update order status
+        await updateGroupOrderStatuses([orderId], newStatus, reason);
+        
+        // Show success notification
+        showNotification(`Order status updated to ${formatStatusDisplay(newStatus)}`, 'success');
+        
+        // Close modal
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        
+        // Only refresh order groups if order groups modal is currently visible
+        const orderGroupsModal = document.getElementById('order-groups-modal');
+        if (orderGroupsModal && !orderGroupsModal.classList.contains('hidden') && orderGroupsModalUserRequested) {
+            // This is a refresh of already-visible order groups, so use forceRefresh=true
+            displayOrderGroupsModal(true, false);
+        }
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        showNotification('Failed to update order status: ' + error.message, 'error');
+    } finally {
+        // Reset button
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Update Status';
     }
 }
 

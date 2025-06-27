@@ -2818,8 +2818,8 @@ async function submitWardStockOrder() {
             console.error('Error checking recent ward stock orders:', error);
         }
         
-        // No recent orders found or check failed, proceed with submission
-        submitWardStockOrderFinal(orderData);
+        // We no longer need this call - submission is handled inside the API callback
+        // Removed to fix duplicate order submission
     } catch (error) {
         console.error('Error submitting ward stock order:', error);
         alert(`Error: ${error.message || 'Unknown error submitting order'}`);

@@ -46,7 +46,10 @@ class ApiClient {
 
     try {
       const response = await fetch(url, options);
-      const data = await response.json();
+      let data = null;
+      if (response.status !== 204) {
+        data = await response.json();
+      }
 
       // Handle 401 Unauthorized errors
       if (response.status === 401) {

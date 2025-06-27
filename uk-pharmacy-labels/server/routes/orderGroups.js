@@ -69,4 +69,20 @@ router.get('/:id', authMiddleware.verifyToken, async (req, res) => {
     }
 });
 
+// Delete an order group by ID
+router.delete('/:id', authMiddleware.verifyToken, async (req, res) => {
+    try {
+        const groupId = req.params.id;
+        const deleted = await orderGroupModel.deleteGroup(groupId);
+        if (deleted) {
+            return res.status(204).send();
+        } else {
+            return res.status(404).json({ error: 'Order group not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting order group:', error);
+        res.status(500).json({ error: 'Failed to delete order group' });
+    }
+});
+
 module.exports = router;

@@ -99,6 +99,7 @@
           <h2>Utilities</h2>
           <div class="utility-links">
             <a href="../js/label-generator.js" class="utility-link" id="label-generator-link">Label Generator</a>
+            <a href="#" class="utility-link" id="view-order-groups-btn">View Order Groups</a>
           </div>
         </div>
       </div>
@@ -121,6 +122,58 @@
             <button type="button" class="btn btn-cancel" id="cancel-order-btn">Cancel Order</button>
             <button type="button" class="btn btn-primary" id="process-order-modal-btn">Process</button>
             <button type="button" class="btn btn-warning" id="reject-order-modal-btn">Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Groups Modal (Hidden by default) -->
+      <div id="order-groups-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Order Groups</h3>
+            <span class="modal-close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div id="order-groups-container">
+              <p class="loading-message">Loading order groups...</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Status Modal (Hidden by default) -->
+      <div id="change-status-modal" class="modal hidden">
+        <div class="modal-content modal-sm">
+          <div class="modal-header">
+            <h3 class="modal-title">Change Order Status</h3>
+            <span class="modal-close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <form id="change-status-form">
+              <input type="hidden" id="status-order-id">
+              <div class="form-group">
+                <label for="order-status">New Status:</label>
+                <select id="order-status" class="form-control" required>
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="processing">Processing</option>
+                  <option value="unfulfilled">Unfulfilled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="status-change-reason">Reason for change (optional):</label>
+                <textarea id="status-change-reason" class="form-control" rows="3"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirm-status-change-btn">Update Status</button>
           </div>
         </div>
       </div>
