@@ -342,29 +342,48 @@
       <div class="recent-orders">
         <div class="section-header-with-actions">
           <h2>Recent Orders</h2>
-          <div class="filters-container">
-            <div class="filter-group">
-                <label for="filter-ward">Ward:</label>
-                <select id="filter-ward">
-                    <option value="all">All Wards</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="filter-status">Status:</label>
-                <select id="filter-status">
-                    <option value="all">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-            </div>
+          <div class="button-group">
+            <button id="filter-orders-btn" class="secondary-btn small-btn">Filter</button>
+            <button id="search-orders-btn" class="secondary-btn small-btn">Search Orders</button>
           </div>
-          <button id="search-orders-btn" class="secondary-btn small-btn">Search Orders</button>
         </div>
         <div id="recent-orders-list">
           <p class="empty-state">No recent orders to display</p>
           <!-- Orders will be populated here -->
+        </div>
+      </div>
+
+      <!-- Filter Orders Modal (Hidden by default) -->
+      <div id="filter-orders-modal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Filter Orders</h3>
+            <span class="close-modal">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div class="filters-container">
+              <div class="filter-group">
+                <label for="filter-ward">Ward:</label>
+                <select id="filter-ward">
+                  <option value="all">All Wards</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="filter-status">Status:</label>
+                <select id="filter-status">
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="apply-filters-btn" class="primary-btn">Apply Filters</button>
+            <button id="reset-filters-btn" class="secondary-btn">Reset</button>
+          </div>
         </div>
       </div>
 

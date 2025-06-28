@@ -1538,18 +1538,82 @@ async function populateWardFilter() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    populateWardFilter();
+/**
+ * Create the filter orders modal
+ */
+function createFilterOrdersModal() {
+    // Modal already exists in HTML, just need to set up event listeners
+    const modal = document.getElementById('filter-orders-modal');
+    if (!modal) return;
 
-    const wardFilter = document.getElementById('filter-ward');
-    const statusFilter = document.getElementById('filter-status');
-
-    if (wardFilter) {
-        wardFilter.addEventListener('change', () => loadRecentOrders());
+    // Add event listeners to close buttons
+    const closeButton = modal.querySelector('.close-modal');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeFilterOrdersModal);
     }
 
-    if (statusFilter) {
-        statusFilter.addEventListener('change', () => loadRecentOrders());
+    // Close when clicking outside modal content
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeFilterOrdersModal();
+        }
+    });
+
+    // Apply filters button
+    const applyButton = document.getElementById('apply-filters-btn');
+    if (applyButton) {
+        applyButton.addEventListener('click', () => {
+            closeFilterOrdersModal();
+            loadRecentOrders();
+        });
+    }
+
+    // Reset filters button
+    const resetButton = document.getElementById('reset-filters-btn');
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            const wardFilter = document.getElementById('filter-ward');
+            const statusFilter = document.getElementById('filter-status');
+            
+            if (wardFilter) wardFilter.value = 'all';
+            if (statusFilter) statusFilter.value = 'all';
+        });
+    }
+}
+
+/**
+ * Open the filter orders modal
+ */
+function openFilterOrdersModal() {
+    const modal = document.getElementById('filter-orders-modal');
+    if (!modal) return;
+
+    modal.style.display = 'block';
+    modal.classList.remove('hidden');
+    console.log('[MODAL] Filter orders modal opened');
+}
+
+/**
+ * Close the filter orders modal
+ */
+function closeFilterOrdersModal() {
+    const modal = document.getElementById('filter-orders-modal');
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    console.log('[MODAL] Filter orders modal closed');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize modals
+    createFilterOrdersModal();
+    populateWardFilter();
+
+    // Set up filter button event listener
+    const filterButton = document.getElementById('filter-orders-btn');
+    if (filterButton) {
+        filterButton.addEventListener('click', openFilterOrdersModal);
     }
 
     // Create toast container for notifications
