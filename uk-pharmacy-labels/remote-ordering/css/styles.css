@@ -253,6 +253,31 @@ button[type="reset"]:hover,
 }
 
 /* Recent Orders */
+
+/* Order Group Modal cards */
+.order-group-card {
+  border: 1px solid #b0b4b5; /* subtle border */
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #ffffff;
+}
+.order-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.order-group-orders {
+  margin-top: 0.5rem;
+}
+
+
+/* Orders container: show ~10 items then scroll */
+.orders-container {
+  max-height: 600px; /* roughly ten rows depending on row height */
+  overflow-y: auto;
+}
 .recent-orders {
   background-color: white;
   padding: 1.5rem;

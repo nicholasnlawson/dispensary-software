@@ -1049,16 +1049,18 @@ function loadBothOrderTypes(container, filters) {
     
     // If OrderManager didn't work, fall back to API
     // We'll need to make two separate requests
-    Promise.all([
-        fetchOrdersByStatus('in-progress', filters),
-        fetchOrdersByStatus('pending', filters)
-    ])
-    .then(([inProgressOrders, pendingOrders]) => {
-        displayOrdersWithSections({
-            inProgress: inProgressOrders,
-            pending: pendingOrders
-        }, container);
-    })
+    const statuses = ['in-progress', 'pending', 'unfulfilled', 'completed', 'cancelled'];
+    const fetchPromises = statuses.map(st => fetchOrdersByStatus(st, filters));
+    Promise.all(fetchPromises)
+        .then(([inProgressOrders, pendingOrders, unfulfilledOrders, completedOrders, cancelledOrders]) => {
+            displayOrdersWithSections({
+                inProgress: inProgressOrders,
+                pending: pendingOrders,
+                unfulfilled: unfulfilledOrders,
+                completed: completedOrders,
+                cancelled: cancelledOrders
+            }, container);
+        })
     .catch(error => {
         console.error('Error fetching orders:', error);
         container.innerHTML = '<p class="empty-state">Error loading orders</p>';
@@ -1133,12 +1135,15 @@ function displayOrdersWithSections(ordersByStatus, container) {
     // Clear container
     container.innerHTML = '';
     
-    const { inProgress, pending } = ordersByStatus;
-    const hasInProgress = inProgress && inProgress.length > 0;
-    const hasPending = pending && pending.length > 0;
+    const { inProgress=[], pending=[], unfulfilled=[], completed=[], cancelled=[] } = ordersByStatus;
+    const hasInProgress = inProgress.length > 0;
+    const hasPending = pending.length > 0;
+    const hasUnfulfilled = unfulfilled.length > 0;
+    const hasCompleted = completed.length > 0;
+    const hasCancelled = cancelled.length > 0;
     
     // If there are no orders of any type, show empty state
-    if (!hasInProgress && !hasPending) {
+    if (!hasInProgress && !hasPending && !hasUnfulfilled && !hasCompleted && !hasCancelled) {
         container.innerHTML = '<p class="empty-state">No orders found</p>';
         return;
     }
@@ -1174,6 +1179,26 @@ function displayOrdersWithSections(ordersByStatus, container) {
         // Display pending orders with selection enabled
         displayOrders(pending, pendingContainer, true); // true = allow selection of pending orders
     }
+
+    // Additional sections: Unfulfilled, Completed, Cancelled
+    const extraSections = [
+        { data: unfulfilled, title: 'Unfulfilled Orders', selectable: false },
+        { data: completed, title: 'Completed Orders', selectable: false },
+        { data: cancelled, title: 'Cancelled Orders', selectable: false }
+    ];
+
+    extraSections.forEach(sec => {
+        if (sec.data && sec.data.length > 0) {
+            const section = document.createElement('div');
+            section.className = 'orders-section';
+            section.innerHTML = `<h2>${sec.title}</h2>`;
+            container.appendChild(section);
+            const inner = document.createElement('div');
+            inner.className = 'orders-container';
+            section.appendChild(inner);
+            displayOrders(sec.data, inner, sec.selectable);
+        }
+    });
 }
 
 /**
@@ -4127,8 +4152,18 @@ async function displayOrderGroupsModal(forceRefresh = false, isUserAction = fals
         // Create HTML content
         let html = '<div class="order-groups-list">';
         
+        // Filter out groups where all orders are completed/cancelled/unfulfilled
+        const activeGroups = groups.filter(group => {
+            if (!group.orders || group.orders.length === 0) return false;
+            // Only include groups with at least one order that is not completed/cancelled/unfulfilled
+            return group.orders.some(order => {
+                const status = order.status && order.status.toLowerCase();
+                return status !== 'completed' && status !== 'cancelled' && status !== 'unfulfilled';
+            });
+        });
+
         // For each group
-        groups.forEach(group => {
+        activeGroups.forEach(group => {
             // Ensure groupNumber is set by using group_number as fallback
             const groupNumber = group.groupNumber || group.group_number || group.id;
             html += `
