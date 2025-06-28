@@ -1262,7 +1262,7 @@ function displayOrders(orders, container, allowSelection = true) {
                 <thead>
                     <tr>
                         ${withSelection ? '<th class="order-select-cell"><input type="checkbox" class="select-all-orders-checkbox" aria-label="Select all orders in group"></th>' : ''}
-                        <th>Order ID</th>
+                        
                         <th>Patient</th>
                         <th>Ward</th>
                         <th>Medication Details</th>
@@ -1452,17 +1452,7 @@ function createOrderTableRow(order, tableBody, allowSelection = true) {
     
     // Add status with formatting
     let statusContent = `<span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span>`;
-    
-    // Create and add each cell to the row
-    // Order ID cell
-    const orderIdCell = document.createElement('td');
-    orderIdCell.className = 'order-id';
-    orderIdCell.innerHTML = `
-        <div>${order.id}</div>
-        <div class="timestamp">${formattedDate}</div>
-    `;
-    row.appendChild(orderIdCell);
-    
+
     // Patient info cell
     const patientCell = document.createElement('td');
     patientCell.className = 'patient-info';
@@ -1481,16 +1471,22 @@ function createOrderTableRow(order, tableBody, allowSelection = true) {
     medsCell.innerHTML = medicationsList;
     row.appendChild(medsCell);
     
-    // Status cell
+    // Status cell with timestamp
     const statusCell = document.createElement('td');
     statusCell.className = 'status-cell';
-    statusCell.innerHTML = statusContent;
+    statusCell.innerHTML = `
+        <div><span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span></div>
+        <div class="timestamp">${getStatusChangeTimestamp(order)}</div>
+    `;
     row.appendChild(statusCell);
     
     // Requester info cell
     const requesterCell = document.createElement('td');
     requesterCell.className = 'requester-info';
-    requesterCell.textContent = requesterInfo;
+    requesterCell.innerHTML = `
+        <div>${requesterInfo}</div>
+        <div class="timestamp">${formattedDate}</div>
+    `;
     row.appendChild(requesterCell);
     
     // Make the entire row clickable except for the checkbox
@@ -1958,8 +1954,6 @@ async function cancelOrder(orderId) {
             console.log('[CANCEL] Using API client to cancel order', orderIdToCancel);
             if (typeof showToastNotification === 'function') {
                 showToastNotification('Cancelling order...', 'info');
-            } else {
-                alert('Cancelling order...');
             }
             
             // Call API to cancel order with reason
@@ -1970,8 +1964,6 @@ async function cancelOrder(orderId) {
                 console.log('[CANCEL] Order cancelled successfully');
                 if (typeof showToastNotification === 'function') {
                     showToastNotification('Order cancelled successfully', 'success');
-                } else {
-                    alert('Order cancelled successfully');
                 }
                 
                 // Close modal and refresh orders list
@@ -1988,8 +1980,6 @@ async function cancelOrder(orderId) {
                 console.error('[CANCEL] API returned error:', response);
                 if (typeof showToastNotification === 'function') {
                     showToastNotification(`Error cancelling order: ${response?.message || 'Unknown error'}`, 'error');
-                } else {
-                    alert(`Error cancelling order: ${response?.message || 'Unknown error'}`);
                 }
             }
         }
@@ -1999,8 +1989,6 @@ async function cancelOrder(orderId) {
             if (typeof showToastNotification === 'function') {
                 showToastNotification('Order marked as cancelled locally. Sync required.', 'warning');
                 showToastNotification('Order cancelled successfully', 'success');
-            } else {
-                alert('Order cancelled successfully');
             }
             
             const orderModal = document.getElementById('order-detail-modal');
@@ -2016,8 +2004,6 @@ async function cancelOrder(orderId) {
         console.error('[CANCEL] Error cancelling order:', error);
         if (typeof showToastNotification === 'function') {
             showToastNotification(`Error cancelling order: ${error.message || 'Unknown error'}`, 'error');
-        } else {
-            alert(`Error cancelling order: ${error.message || 'Unknown error'}`);
         }
     }
 }
@@ -4179,11 +4165,12 @@ async function displayOrderGroupsModal(forceRefresh = false, isUserAction = fals
                         <table class="orders-table">
                             <thead>
                                 <tr>
-                                    <th>Order ID</th>
+                                    
                                     <th>Patient</th>
                                     <th>Hospital #</th>
                                     <th>Medication Details</th>
                                     <th>Status</th>
+                                    <th>Requester</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -4234,11 +4221,14 @@ async function displayOrderGroupsModal(forceRefresh = false, isUserAction = fals
                     
                     html += `
                         <tr data-order-id="${order.id}">
-                            <td>${order.orderNumber || order.id}</td>
                             <td>${patientName}</td>
-                            <td>${order.patient ? (order.patient.hospitalNumber || order.patient.hospital_number || order.patient.hospitalId || order.patient.hospital_id || 'N/A') : 'N/A'}</td>
+                            <td>${hospitalNumber}</td>
                             <td>${medicationsSummary}</td>
-                            <td>${statusDisplay}</td>
+                            <td class="status-cell"><div>${statusDisplay}</div><div class="timestamp">${getStatusChangeTimestamp(order)}</div></td>
+                            <td class="requester-info">
+                                <div>${order.requesterName || ''}</div>
+                                <div class="timestamp">${new Date(order.timestamp).toLocaleString()}</div>
+                            </td>
                             <td class="action-buttons">
                                 <button class="btn btn-sm btn-info view-order-btn" data-order-id="${order.id}">View Details</button>
                                 <button class="btn btn-sm btn-success mark-complete-btn" data-order-id="${order.id}"
@@ -4336,13 +4326,43 @@ cancelBtns.forEach(btn => {
  */
 function formatTimestamp(timestamp) {
     if (!timestamp) return 'Unknown';
-    
     try {
         const date = new Date(timestamp);
-        return date.toLocaleString();
+        // Format as DD/MM/YYYY HH:MM using UK locale, 24-hour clock, no seconds
+        const formattedDate = date.toLocaleDateString('en-GB');
+        const formattedTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        return `${formattedDate} ${formattedTime}`;
     } catch (e) {
         return timestamp;
     }
+}
+
+/**
+ * Get display timestamp for the last status change.
+ * Falls back to order.timestamp if specific fields missing.
+ * @param {Object} order - Order object
+ * @returns {string} - Formatted date string or empty string
+ */
+function getStatusChangeTimestamp(order) {
+    if (!order) return '';
+
+    // Do not show timestamp for orders that have not yet changed status meaningfully
+    const status = (order.status || '').toLowerCase();
+    if (status === 'pending' || status === 'in-progress' || status === 'processing') {
+        return '';
+    }
+
+    // Prioritise the relevant status-change timestamps
+    const ts =
+        order.statusUpdatedAt ||
+        order.completedAt ||
+        order.cancelledAt ||
+        order.processedAt ||
+        order.updatedAt ||
+        order.lastUpdated ||
+        order.timestamp;
+
+    return ts ? formatTimestamp(ts) : '';
 }
 
 /**
@@ -4410,9 +4430,9 @@ async function markOrderComplete(orderId, button) {
         // Update order in the UI
         const row = button.closest('tr');
         if (row) {
-            const statusCell = row.querySelector('td:nth-child(4)');
+            const statusCell = row.querySelector('.status-cell');
             if (statusCell) {
-                statusCell.textContent = formatStatusDisplay('completed');
+                statusCell.innerHTML = `<div><span class="order-status status-completed">${formatStatusDisplay('completed')}</span></div><div class="timestamp">${formatTimestamp(new Date().toISOString())}</div>`;
             }
         }
     } catch (error) {

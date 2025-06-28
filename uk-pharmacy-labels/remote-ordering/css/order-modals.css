@@ -362,6 +362,17 @@
 }
 
 /* Recent Orders table styling */
+
+/*
+ * Ensure that any element with both .modal and .hidden classes remains fully hidden
+ * This prevents the brief flash of modals on initial page load because
+ * .modal sets display:flex later in the cascade. By using the combined
+ * selector with higher specificity and !important, we guarantee the hidden
+ * state until the JavaScript explicitly removes the .hidden class.
+ */
+.modal.hidden {
+  display: none !important;
+}
 .orders-table {
   width: 100%;
   border-collapse: separate;
