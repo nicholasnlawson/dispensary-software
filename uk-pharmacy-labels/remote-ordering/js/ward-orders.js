@@ -1518,7 +1518,40 @@ async function searchOrdersByMedication(searchTerm, locationId) {
     }
 }
 
+async function populateWardFilter() {
+    const wardFilter = document.getElementById('filter-ward');
+    if (!wardFilter) return;
+
+    try {
+        const response = await window.apiClient.get('/wards');
+        const wards = response.wards;
+        if (wards) {
+            wards.forEach(ward => {
+                const option = document.createElement('option');
+                option.value = ward.id;
+                option.textContent = ward.name;
+                wardFilter.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error populating ward filter:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    populateWardFilter();
+
+    const wardFilter = document.getElementById('filter-ward');
+    const statusFilter = document.getElementById('filter-status');
+
+    if (wardFilter) {
+        wardFilter.addEventListener('change', () => loadRecentOrders());
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', () => loadRecentOrders());
+    }
+
     // Create toast container for notifications
     createToastContainer();
     // Create search orders modal
@@ -2861,9 +2894,80 @@ function saveOrderAsDraft(type) {
 }
 
 /**
+ * Format timestamp for display
+ * @param {string} timestamp - Timestamp string
+ * @returns {string} - Formatted date string
+ */
+function formatTimestamp(timestamp) {
+    if (!timestamp) return 'Unknown';
+    try {
+        const date = new Date(timestamp);
+        // Format as DD/MM/YYYY HH:MM using UK locale, 24-hour clock, no seconds
+        const formattedDate = date.toLocaleDateString('en-GB');
+        const formattedTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        return `${formattedDate} ${formattedTime}`;
+    } catch (e) {
+        return timestamp;
+    }
+}
+
+/**
+ * Get display timestamp for the last status change.
+ * @param {Object} order - Order object
+ * @returns {string} - Formatted date string or empty string
+ */
+function getStatusChangeTimestamp(order) {
+    if (!order) return '';
+
+    // Do not show timestamp for orders that have not yet changed status meaningfully
+    const status = (order.status || '').toLowerCase();
+    if (status === 'pending' || status === 'in-progress' || status === 'processing') {
+        return '';
+    }
+
+    // Prioritise the relevant status-change timestamps
+    const ts =
+        order.statusUpdatedAt ||
+        order.completedAt ||
+        order.cancelledAt ||
+        order.processedAt ||
+        order.updatedAt ||
+        order.lastUpdated ||
+        order.timestamp;
+
+    return ts ? formatTimestamp(ts) : '';
+}
+
+/**
+ * Convert a raw order status into user-friendly text.
+ * @param {string} status
+ * @returns {string}
+ */
+function formatStatusDisplay(status) {
+    if (!status) return 'Not Set';
+    const map = {
+        'pending': 'Pending',
+        'in-progress': 'In Progress',
+        'processing': 'Processing',
+        'unfulfilled': 'Unfulfilled',
+        'completed': 'Completed',
+        'cancelled': 'Cancelled'
+    };
+    return map[status] || status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
  * Load and display recent orders from database
  */
 async function loadRecentOrders() {
+    const wardFilter = document.getElementById('filter-ward');
+    const statusFilter = document.getElementById('filter-status');
+
+    const filters = {
+        limit: 10,
+        wardId: wardFilter ? wardFilter.value : 'all',
+        status: statusFilter ? statusFilter.value : 'all'
+    };
     const recentOrdersList = document.getElementById('recent-orders-list');
     if (!recentOrdersList) return;
     
@@ -2879,7 +2983,7 @@ async function loadRecentOrders() {
         }
         
         // Fetch recent orders from server (last 10)
-        const response = await window.apiClient.getRecentOrders({ limit: 10 });
+        const response = await window.apiClient.getRecentOrders(filters);
         console.log('Recent orders response:', response);
         
         const orders = response.orders || [];
@@ -2890,7 +2994,6 @@ async function loadRecentOrders() {
                 <table class="orders-table">
                     <thead>
                         <tr>
-                            <th>Order ID</th>
                             <th>Patient</th>
                             <th>Ward</th>
                             <th>Medication Details</th>
@@ -2908,17 +3011,15 @@ async function loadRecentOrders() {
                 const row = document.createElement('tr');
                 row.className = 'order-row';
                 
-                // Format timestamp and order ID
+                // Format timestamp for requester column
                 const orderDate = new Date(order.timestamp);
-                const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const formattedDate = orderDate.toLocaleDateString('en-GB') + ' ' + orderDate.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
                 
                 // Format patient info (if patient order)
                 let patientInfo = '';
                 if (order.type === 'patient' && order.patient) {
-                    // Patient name may be encrypted, use identifiers as default display
                     const patientDetails = [];
                     if (order.patient.name && order.patient.name !== 'undefined') {
-                        // Try to decrypt if encrypted
                         let patientName = order.patient.name;
                         try {
                             if (window.apiClient && typeof window.apiClient.decryptData === 'function' && 
@@ -2932,7 +3033,6 @@ async function loadRecentOrders() {
                         patientDetails.push(patientName);
                     }
                     
-                    // Add identifiers if available
                     const identifier = order.patient.hospitalId || order.patient.nhs || '';
                     if (identifier) patientDetails.push(`(${identifier})`);
                     
@@ -2941,7 +3041,7 @@ async function loadRecentOrders() {
                     patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
                 }
                 
-                // Format medications - concatenate all medications into a single string
+                // Format medications
                 const medicationsList = order.medications.map(med => {
                     const details = [];
                     if (med.name) details.push(med.name);
@@ -2955,34 +3055,30 @@ async function loadRecentOrders() {
                 // Format requester info
                 const requesterInfo = extractRequesterName(order) || 'Unknown';
                 
-                // Add cancellation info if order is cancelled
-                let statusContent = `<span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span>`;
-                if (order.status === 'cancelled') {
-                    const cancelledBy = order.cancelledBy || 'Unknown';
-                    const reason = order.cancellationReason || order.cancelReason || 'No reason provided';
-                    statusContent += `
-                        <div class="cancellation-info">
-                            <span class="cancelled-by">By: ${cancelledBy}</span>
-                            <span class="cancellation-reason" title="${reason}">${reason.length > 20 ? reason.substring(0, 20) + '...' : reason}</span>
-                        </div>
-                    `;
-                    row.classList.add('cancelled-order');
+                // Format status with timestamp
+                const statusTimestamp = getStatusChangeTimestamp(order);
+                let statusContent = `<div><span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span></div>`;
+                if (statusTimestamp) {
+                    statusContent += `<div class="timestamp">${statusTimestamp}</div>`;
                 }
+
+
                 
                 row.innerHTML = `
-                    <td class="order-id">
-                        <div>${order.id}</div>
-                        <div class="order-time">${formattedDate}</div>
+                    <td>${patientInfo}</td>
+                    <td>${order.wardName || 'N/A'}</td>
+                    <td>${medicationsList}</td>
+                    <td>${statusContent}</td>
+                    <td>
+                        <div>${requesterInfo}</div>
+                        <div class="timestamp">${formattedDate}</div>
                     </td>
-                    <td class="patient-info">${patientInfo}</td>
-                    <td class="ward-info">${getWardName(order.wardId)}</td>
-                    <td class="medications-info">${medicationsList}</td>
-                    <td class="status-cell">
-                        ${statusContent}
-                    </td>
-                    <td class="requester-info">${requesterInfo}</td>
                 `;
                 
+                // Add click handler to show details
+                row.addEventListener('click', () => {
+                    showOrderDetails(order);
+                });
                 // Make row clickable to show details
                 row.style.cursor = 'pointer';
                 row.dataset.orderId = order.id;
