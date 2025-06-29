@@ -72,13 +72,25 @@ function closeRecentMedicationAlertModal() {
  * @param {Array} recentOrders - Recent medication orders
  * @param {Function} confirmCallback - Function to call if user confirms
  */
-function showRecentMedicationAlert(recentOrders, confirmCallback) {
+function showRecentMedicationAlert(recentOrders, messageOrCallback, maybeCallback) {
+    // Support older two-arg calls (recentOrders, confirmCallback) and new three-arg (recentOrders, warningMessage, confirmCallback)
+    let warningMessage = '';
+    let confirmCallback;
+    if (typeof messageOrCallback === 'function') {
+        confirmCallback = messageOrCallback;
+    } else {
+        warningMessage = messageOrCallback || '';
+        confirmCallback = maybeCallback;
+    }
     // Create modal if it doesn't exist
     createRecentMedicationAlertModal();
     
     const modal = document.getElementById('recent-medication-alert-modal');
     const listContainer = document.getElementById('recent-medications-list');
     const headerElement = document.getElementById('recent-medications-header');
+    if (headerElement && warningMessage) {
+        headerElement.textContent = warningMessage;
+    }
     
     if (!modal || !listContainer) return;
     
@@ -164,6 +176,7 @@ function showRecentMedicationAlert(recentOrders, confirmCallback) {
         };
         
         proceedButton.onclick = () => {
+            console.log('[MODAL] Proceed Anyway clicked');
             closeRecentMedicationAlertModal();
             if (typeof confirmCallback === 'function') {
                 confirmCallback();
@@ -3934,7 +3947,7 @@ function showHistoryModal(orderId, historyData) {
                             <td>${reason}</td>
                             <td>
                                 ${previousData || newData ? 
-                                    `<button class="btn btn-sm btn-outline-info toggle-details-btn" data-entry-id="${entryId}">Show Details</button>` 
+                                    `<button class="secondary-btn small-btn toggle-details-btn" data-entry-id="${entryId}">Show Details</button>` 
                                 : 'No details available'}
                             </td>
                         </tr>

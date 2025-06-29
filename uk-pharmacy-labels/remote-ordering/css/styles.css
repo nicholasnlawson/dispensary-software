@@ -224,12 +224,125 @@ button[type="submit"]:hover,
 }
 
 .secondary-btn {
-  background-color: var(--secondary-color);
-  color: white;
+  background-color: var(--secondary-color) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* Ensure details toggle buttons are always blue */
+.toggle-details-btn.secondary-btn, .toggle-details-btn.small-btn {
+  background-color: var(--secondary-color) !important;
+  color: #fff !important;
+  border: none !important;
 }
 
 .secondary-btn:hover {
   background-color: #2e9fcc;
+}
+
+/* Map legacy .btn classes to new button styles for consistency */
+.btn.btn-primary {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: var(--transition);
+}
+.btn.btn-primary:hover {
+  background-color: #003d78;
+}
+
+.btn.btn-secondary {
+  background-color: var(--secondary-color);
+  color: #ffffff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: var(--transition);
+}
+.btn.btn-secondary:hover {
+  background-color: #2e9fcc;
+}
+
+.btn.btn-info {
+  background-color: var(--secondary-color);
+  color: #ffffff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: var(--transition);
+}
+.btn.btn-info:hover {
+  background-color: #2e9fcc;
+}
+
+.btn.btn-success {
+  background-color: var(--success-color);
+  color: #ffffff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: var(--transition);
+}
+.btn.btn-success:hover {
+  background-color: #007f3b;
+}
+
+.btn.btn-danger {
+  background-color: var(--danger-color);
+  color: #ffffff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: var(--transition);
+}
+.btn.btn-danger:hover {
+  background-color: #b91e12;
+}
+
+.btn.btn-warning {
+  background-color: var(--warning-color);
+  color: #ffffff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: var(--transition);
+}
+.btn.btn-warning:hover {
+  background-color: #d97e00;
+}
+
+.btn.btn-sm,
+.small-btn {
+  padding: 4px 10px;
+  font-size: 0.8em;
+}
+
+.btn + .btn,
+.primary-btn + .primary-btn,
+.secondary-btn + .secondary-btn,
+.primary-btn + .secondary-btn,
+.secondary-btn + .primary-btn,
+.modal-footer .btn + .btn,
+.modal-footer button + button,
+.modal-footer .primary-btn + .primary-btn,
+.modal-footer .secondary-btn + .secondary-btn,
+.modal-footer .primary-btn + .secondary-btn,
+.modal-footer .secondary-btn + .primary-btn {
+  margin-left: 10px;
 }
 
 button[type="reset"],

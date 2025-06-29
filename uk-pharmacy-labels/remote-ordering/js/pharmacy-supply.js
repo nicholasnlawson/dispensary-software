@@ -791,10 +791,10 @@ document.addEventListener('DOMContentLoaded', function() {
     supplyFunctions.className = 'supply-functions-section';
     supplyFunctions.innerHTML = `
         <h2>Supply Functions</h2>
-        <div class="supply-functions-container">
-            <button id="create-group-btn" class="btn btn-primary">Create Order Group</button>
-            <button id="confirm-group-btn" class="btn btn-success hidden">Confirm Order Group</button>
-            <button id="view-order-groups-btn" class="btn btn-info">View Order Groups</button>
+        <div class="button-group">
+            <button id="create-group-btn" class="secondary-btn small-btn">Create Order Group</button>
+            <button id="confirm-group-btn" class="primary-btn small-btn hidden">Confirm Order Group</button>
+            <button id="view-order-groups-btn" class="secondary-btn small-btn">View Order Groups</button>
         </div>
     `;
     
@@ -2601,7 +2601,7 @@ function showHistoryModal(orderId, historyData) {
                             <td>${reason}</td>
                             <td>
                                 ${previousData || newData ? 
-                                    `<button class="btn btn-sm btn-outline-info toggle-details-btn" data-entry-id="${entryId}">Show Details</button>` 
+                                    `<button class="secondary-btn small-btn toggle-details-btn" data-entry-id="${entryId}">Show Details</button>` 
                                 : 'No details available'}
                             </td>
                         </tr>
@@ -3144,6 +3144,7 @@ function setupModalButtons(order) {
     const saveBtn = document.getElementById('save-order-btn');
     const cancelBtn = document.getElementById('cancel-order-btn');
     const viewOrderGroupBtn = document.getElementById('view-order-group-btn');
+    const changeStatusBtn = document.getElementById('change-status-btn');
     
     // Set current order globally for reference in other functions
     currentOrder = order;
@@ -3168,6 +3169,26 @@ function setupModalButtons(order) {
         historyBtn.style.display = hasHistoryAccess ? 'inline-block' : 'none';
     }
     
+    // Change Status button for completed / cancelled / unfulfilled orders
+    if (changeStatusBtn) {
+        // Remove previous listeners to avoid duplicates
+        const newChangeBtn = changeStatusBtn.cloneNode(true);
+        changeStatusBtn.parentNode.replaceChild(newChangeBtn, changeStatusBtn);
+
+        // Hide by default
+        newChangeBtn.classList.add('hidden');
+
+        const allowedStatuses = ['completed', 'cancelled', 'unfulfilled'];
+        if (order && allowedStatuses.includes((order.status || '').toLowerCase())) {
+            console.log('[MODAL] Showing change status button for order:', order.id);
+            newChangeBtn.classList.remove('hidden');
+            newChangeBtn.onclick = () => {
+                console.log('[MODAL] Change status button clicked for order:', order.id);
+                openChangeStatusModal(order.id);
+            };
+        }
+    }
+
     // Cancel Order button
     if (cancelBtn) {
         if (order && order.status === 'pending') {
@@ -4299,9 +4320,38 @@ async function displayOrderGroupsModal(filterGroupId = false, isUserAction = tru
                 modal.style.display = 'none';
                 // Reset the user request flag when closed
                 orderGroupsModalUserRequested = false;
+
+                // Refresh the main order lists so the user immediately sees the updated data
+                if (typeof loadOrders === 'function') {
+                    loadOrders();
+                } else if (typeof fetchAllOrders === 'function') {
+                    // Fallback for ward orders or other contexts
+                    fetchAllOrders();
+                }
             });
+
+
         });
-        
+
+        // Close when clicking on the overlay (outside modal content)
+        if (!modal.dataset.outsideListenerAdded) {
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    console.log('Overlay click detected; closing Order Groups modal');
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none';
+                    orderGroupsModalUserRequested = false;
+
+                    if (typeof loadOrders === 'function') {
+                        loadOrders();
+                    } else if (typeof fetchAllOrders === 'function') {
+                        fetchAllOrders();
+                    }
+                }
+            });
+            modal.dataset.outsideListenerAdded = 'true';
+        }
+
         // Add keyboard event listener for Escape key
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
@@ -4309,6 +4359,13 @@ async function displayOrderGroupsModal(filterGroupId = false, isUserAction = tru
                 modal.classList.add('hidden');
                 modal.style.display = 'none';
                 orderGroupsModalUserRequested = false;
+
+                // Refresh the main order lists on modal close via Escape key
+                if (typeof loadOrders === 'function') {
+                    loadOrders();
+                } else if (typeof fetchAllOrders === 'function') {
+                    fetchAllOrders();
+                }
             }
         });
         
@@ -5011,7 +5068,12 @@ async function confirmStatusChange() {
 
         // Refresh the main order lists to reflect the status change
         console.log('Refreshing all orders');
-        fetchAllOrders();
+        if (typeof loadOrders === 'function') {
+            loadOrders();
+        } else if (typeof fetchAllOrders === 'function') {
+            // Fallback for contexts (e.g., ward-orders.js) where fetchAllOrders exists
+            fetchAllOrders();
+        }
     } catch (error) {
         console.error('Error updating order status:', error);
         showNotification('Failed to update order status: ' + error.message, 'error');
