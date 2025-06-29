@@ -15,19 +15,35 @@
     <link rel="stylesheet" href="../css/cross-browser-fixes.css" />
     <link rel="stylesheet" href="../css/audit-trail.css" />
     <link rel="icon" type="image/x-icon" href="../../favicon_io/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="../../favicon_io/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="../../favicon_io/favicon-16x16.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../../favicon_io/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="../../favicon_io/favicon-16x16.png"
+    />
     <link rel="apple-touch-icon" href="../../favicon_io/apple-touch-icon.png" />
     <link rel="preload" href="../../images/nhs_trust_logo.png" as="image" />
   </head>
   <body>
     <nav class="main-nav">
-      <img src="../../images/nhs_trust_logo.png" alt="NHS Trust Logo" class="nhs-logo" />
+      <img
+        src="../../images/nhs_trust_logo.png"
+        alt="NHS Trust Logo"
+        class="nhs-logo"
+      />
       <ul>
         <a href="../../home.html" class="nav-link">Home</a>
         <a href="../ward/index.html" class="nav-link">Ward Orders</a>
         <a href="index.html" class="nav-link active">Pharmacy Supply</a>
-        <a href="../../admin/index.html" class="nav-link" id="admin-nav-link">Admin</a>
+        <a href="../../admin/index.html" class="nav-link" id="admin-nav-link"
+          >Admin</a
+        >
         <a href="../../profile.html" class="nav-link">My Profile</a>
         <a href="#" class="nav-link logout-link" id="logout-link">Logout</a>
       </ul>
@@ -41,18 +57,17 @@
     </header>
 
     <main class="container">
-        <div class="pharmacy-dashboard">
-          <div class="recent-orders">
-  
-            <div class="filter-controls">
-              <div class="filter-group">
-                <label for="filter-ward">Filter by Ward:</label>
-                <select id="filter-ward">
-                  <option value="all">All Wards</option>
-                  <!-- Wards will be loaded dynamically -->
-                </select>
-              </div>
+      <div class="pharmacy-dashboard">
+        <div class="recent-orders">
+          <div class="filter-controls">
+            <div class="filter-group">
+              <label for="filter-ward">Filter by Ward:</label>
+              <select id="filter-ward">
+                <option value="all">All Wards</option>
+                <!-- Wards will be loaded dynamically -->
+              </select>
             </div>
+          </div>
 
           <div id="orders-list">
             <p class="empty-state">No orders to display</p>
@@ -69,16 +84,22 @@
               <!-- Order details will be loaded here -->
             </div>
             <div class="panel-actions">
-              <button id="process-order-btn" class="primary-btn">Process Order</button>
-              <button id="generate-labels-btn" class="secondary-btn">Generate Labels</button>
+              <button id="process-order-btn" class="primary-btn">
+                Process Order
+              </button>
+              <button id="generate-labels-btn" class="secondary-btn">
+                Generate Labels
+              </button>
             </div>
           </div>
-          
+
           <!-- Processing Panel -->
           <div id="processing-panel" class="panel hidden">
             <div class="panel-header">
               <h2>Process Order</h2>
-              <button id="close-processing-btn" class="close-btn">&times;</button>
+              <button id="close-processing-btn" class="close-btn">
+                &times;
+              </button>
             </div>
             <div id="processing-content" class="panel-content">
               <div class="processing-form">
@@ -86,23 +107,33 @@
               </div>
             </div>
             <div class="panel-actions">
-              <button id="complete-order-btn" class="primary-btn">Complete Order</button>
-              <button id="save-progress-btn" class="secondary-btn">Save Progress</button>
-              <button id="cancel-process-btn" class="secondary-btn">Cancel</button>
+              <button id="complete-order-btn" class="primary-btn">
+                Complete Order
+              </button>
+              <button id="save-progress-btn" class="secondary-btn">
+                Save Progress
+              </button>
+              <button id="cancel-process-btn" class="secondary-btn">
+                Cancel
+              </button>
             </div>
           </div>
         </div>
-        
+
         <!-- Utilities Section -->
         <div class="utilities-section">
           <h2>Utilities</h2>
           <div class="utility-links">
-            <a href="../../index.html" class="utility-link" id="label-generator-link">Label Generator</a>
-            <a href="#" class="utility-link" id="view-order-groups-btn">View Order Groups</a>
+            <a
+              href="../../index.html"
+              class="utility-link"
+              id="label-generator-link"
+              >Label Generator</a
+            >
           </div>
         </div>
       </div>
-      
+
       <!-- Order Detail Modal (Hidden by default) -->
       <div id="order-detail-modal" class="modal hidden">
         <div class="modal-content">
@@ -114,12 +145,39 @@
             <div id="modal-order-content"></div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
-            <button type="button" class="btn btn-audit" id="view-history-btn">View Audit Trail</button>
-            <button type="button" class="btn btn-edit" id="edit-order-btn">Edit Order</button>
-            <button type="button" class="btn btn-save hidden" id="save-order-btn">Save Changes</button>
-            <button type="button" class="btn btn-cancel" id="cancel-order-btn">Cancel Order</button>
-            <button type="button" class="btn btn-primary" id="process-order-modal-btn">Process</button>
+            <button type="button" class="btn btn-secondary modal-close-btn">
+              Close
+            </button>
+            <button type="button" class="btn btn-audit" id="view-history-btn">
+              View Audit Trail
+            </button>
+            <button type="button" class="btn btn-edit" id="edit-order-btn">
+              Edit Order
+            </button>
+            <button
+              type="button"
+              class="btn btn-save hidden"
+              id="save-order-btn"
+            >
+              Save Changes
+            </button>
+            <button type="button" class="btn btn-cancel" id="cancel-order-btn">
+              Cancel Order
+            </button>
+            <button
+              type="button"
+              class="btn btn-info hidden"
+              id="view-order-group-btn"
+            >
+              View Order Group
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="process-order-modal-btn"
+            >
+              Process
+            </button>
           </div>
         </div>
       </div>
@@ -137,7 +195,9 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+            <button type="button" class="btn btn-secondary modal-close-btn">
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -151,27 +211,58 @@
           </div>
           <div class="modal-body">
             <form id="change-status-form">
-              <input type="hidden" id="status-order-id">
+              <input type="hidden" id="status-order-id" />
               <div class="form-group">
                 <label for="order-status">New Status:</label>
                 <select id="order-status" class="form-control" required>
                   <option value="pending">Pending</option>
                   <option value="in-progress">In Progress</option>
-                  <option value="processing">Processing</option>
                   <option value="unfulfilled">Unfulfilled</option>
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label for="status-change-reason">Reason for change (optional):</label>
-                <textarea id="status-change-reason" class="form-control" rows="3"></textarea>
+              <div class="form-group" id="status-notes-group">
+                <label for="status-notes">Notes (for audit trail):</label>
+                <textarea
+                  id="status-notes"
+                  class="form-control"
+                  rows="3"
+                  placeholder="e.g., Reason for cancellation, confirmation of completion, etc."
+                ></textarea>
               </div>
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
-            <button type="button" class="btn btn-primary" id="confirm-status-change-btn">Update Status</button>
+            <button type="button" class="btn btn-secondary modal-close-btn">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="confirm-status-change-btn"
+            >
+              Update Status
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Notes Modal (Hidden by default) -->
+      <div id="view-notes-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Order Notes</h3>
+            <span class="modal-close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <p>Order ID: <span id="notes-order-id"></span></p>
+            <div id="order-notes-content" class="notes-content"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-close-btn">
+              Close
+            </button>
           </div>
         </div>
       </div>

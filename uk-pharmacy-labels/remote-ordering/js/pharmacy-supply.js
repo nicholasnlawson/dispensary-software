@@ -11,6 +11,7 @@ let loading = false;
 let selectedOrderId = null;
 let wardFilter = null;
 let currentOrder = null;
+let currentOrderDetails = [];
 let isOrderInEditMode = false;
 let groupSelectionMode = false;
 let orderGroups = [];
@@ -1162,23 +1163,7 @@ function displayOrdersWithSections(ordersByStatus, container) {
         return;
     }
     
-    // First create the Orders in Progress section if there are any
-    if (hasInProgress) {
-        const inProgressSection = document.createElement('div');
-        inProgressSection.className = 'orders-section in-progress-section';
-        inProgressSection.innerHTML = `<h2>Orders In Progress</h2>`;
-        container.appendChild(inProgressSection);
-        
-        // Create container for in-progress orders
-        const inProgressContainer = document.createElement('div');
-        inProgressContainer.className = 'orders-container';
-        inProgressSection.appendChild(inProgressContainer);
-        
-        // Display in-progress orders
-        displayOrders(inProgress, inProgressContainer, false); // false = don't allow selection of in-progress orders
-    }
-    
-    // Then create the Incoming Orders (pending) section
+    // First create the Incoming Orders (pending) section
     if (hasPending) {
         const pendingSection = document.createElement('div');
         pendingSection.className = 'orders-section pending-section';
@@ -1192,6 +1177,22 @@ function displayOrdersWithSections(ordersByStatus, container) {
         
         // Display pending orders with selection enabled
         displayOrders(pending, pendingContainer, true); // true = allow selection of pending orders
+    }
+    
+    // Then create the Orders in Progress section if there are any
+    if (hasInProgress) {
+        const inProgressSection = document.createElement('div');
+        inProgressSection.className = 'orders-section in-progress-section';
+        inProgressSection.innerHTML = `<h2>Orders In Progress</h2>`;
+        container.appendChild(inProgressSection);
+        
+        // Create container for in-progress orders
+        const inProgressContainer = document.createElement('div');
+        inProgressContainer.className = 'orders-container';
+        inProgressSection.appendChild(inProgressContainer);
+        
+        // Display in-progress orders
+        displayOrders(inProgress, inProgressContainer, false); // false = don't allow selection of in-progress orders
     }
 
     // Additional sections: Unfulfilled, Completed, Cancelled
@@ -3142,6 +3143,7 @@ function setupModalButtons(order) {
     const editBtn = document.getElementById('edit-order-btn');
     const saveBtn = document.getElementById('save-order-btn');
     const cancelBtn = document.getElementById('cancel-order-btn');
+    const viewOrderGroupBtn = document.getElementById('view-order-group-btn');
     
     // Set current order globally for reference in other functions
     currentOrder = order;
@@ -3232,6 +3234,41 @@ function setupModalButtons(order) {
             // Call the existing showCreateGroupModal to preview and confirm
             showCreateGroupModal([order.id]);
         };
+    }
+    
+    // View Order Group button - show for orders with a groupId OR with in-progress status (since in-progress orders must be in a group)
+    if (viewOrderGroupBtn && order) {
+        const hasGroupId = order.groupId && order.groupId.trim().length > 0;
+        const isInProgress = order.status === 'in-progress';
+        const hasGroup = hasGroupId || isInProgress;
+        console.log(`[MODAL] Order ${order.id} has group:`, hasGroup, 
+                    `(groupId: ${order.groupId || 'not set'}, status: ${order.status})`);
+        
+        // Show button for orders with a group ID or in-progress status
+        if (hasGroup) {
+            viewOrderGroupBtn.classList.remove('hidden');
+            viewOrderGroupBtn.onclick = function() {
+                console.log('[MODAL] View Order Group button clicked for order:', order.id);
+                console.log('[MODAL] Full order object:', order);
+                // Hide the order detail modal
+                document.getElementById('order-detail-modal').classList.add('hidden');
+                
+                // If we have a groupId, filter by it directly
+                if (order.groupId && order.groupId.trim().length > 0) {
+                    console.log('[MODAL] Using explicit groupId to filter:', order.groupId);
+                    displayOrderGroupsModal(order.groupId);
+                }
+                // Otherwise, we need to find the group containing this order
+                else if (order.id) {
+                    console.log('[MODAL] Finding group containing order ID:', order.id);
+                    // Call a function to find and display the group by order ID
+                    // Pass the full order object for more detailed matching
+                    findAndDisplayGroupByOrderId(order.id, order);
+                }
+            };
+        } else {
+            viewOrderGroupBtn.classList.add('hidden');
+        }
     }
     
     // Reject button
@@ -4059,11 +4096,167 @@ async function fetchOrdersByGroup(groupId) {
 let orderGroupsModalUserRequested = false;
 
 /**
- * Display order groups in the modal
- * @param {boolean} forceRefresh - If true, will refresh data even if called after a status update
- * @param {boolean} isUserAction - Whether this was triggered by a direct user action
+ * Find an order group containing the specified order and display it in the modal
+ * @param {string} orderId Order ID to find in groups
+ * @param {Object} orderObject Full order object with details to match
  */
-async function displayOrderGroupsModal(forceRefresh = false, isUserAction = false) {
+async function findAndDisplayGroupByOrderId(orderId, orderObject = null) {
+    if (!orderId) {
+        console.error('[MODAL] Cannot find group: No order ID provided');
+        return;
+    }
+    
+    console.log(`[MODAL] Finding order group containing order: ${orderId}`);
+    
+    // First, try to load order groups from the API
+    let groups;
+    try {
+        groups = await loadOrderGroups(true); // forceRefresh = true to ensure we get latest data
+    } catch (e) {
+        console.error('Error loading order groups from API:', e);
+        // Fall back to using the cached groups
+        groups = [...orderGroupsHistory];
+    }
+    
+    if (!groups || groups.length === 0) {
+        console.log('No order groups available to search');
+        showNotification('No order groups available to search', 'error');
+        return;
+    }
+    
+    // Look through all groups to find the one containing this order
+    console.log(`Searching through ${groups.length} order groups for order ID: ${orderId}`);
+    
+    let foundGroup = null;
+    let groupIdentifier = null;
+    
+    // Define helper function for deep comparison of orders
+    function ordersMatchDetails(order1, order2) {
+        if (!order1 || !order2) return false;
+        
+        // Match by ID if both have IDs and they match
+        if (order1.id && order2.id && order1.id === order2.id) {
+            console.log(`Matched by ID: ${order1.id}`);
+            return true;
+        }
+        
+        // Match by multiple fields for deeper comparison
+        // Patient match
+        const patientMatch = order1.patient && order2.patient && 
+            ((order1.patient.name === order2.patient.name && order1.patient.dob === order2.patient.dob) ||
+             (order1.patient.hospitalId && order2.patient.hospitalId && 
+              order1.patient.hospitalId === order2.patient.hospitalId));
+        
+        if (patientMatch) {
+            console.log(`Patient details match between orders: ${order1.id || 'unknown'} and ${order2.id || 'unknown'}`);
+            
+            // If medications match as well, we have a high confidence match
+            const hasMedications = order1.medications && Array.isArray(order1.medications) && 
+                                  order2.medications && Array.isArray(order2.medications);
+            
+            if (hasMedications) {
+                // Compare medication names as a basic match
+                const med1Names = order1.medications.map(m => m.name).sort().join(',');
+                const med2Names = order2.medications.map(m => m.name).sort().join(',');
+                
+                if (med1Names === med2Names) {
+                    console.log(`Medication names match: ${med1Names}`);
+                    return true;
+                }
+            } else {
+                // If we don't have medications to compare but patient details match,
+                // use other fields like timestamp, ward, etc. for additional confidence
+                if (order1.wardId === order2.wardId || 
+                    order1.wardName === order2.wardName || 
+                    order1.requesterName === order2.requesterName) {
+                    console.log(`Additional details match between orders`);
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    groups.forEach((group, index) => {
+        console.log(`Examining group ${index+1}/${groups.length}:`, group);
+        
+        // Check if this group contains the order ID in its orderIds array
+        if (group.orderIds && Array.isArray(group.orderIds) && 
+            group.orderIds.some(id => id.toString() === orderId.toString())) {
+            console.log(`Found order ID ${orderId} in orderIds array of group ${group.id || index}`);
+            foundGroup = group;
+            groupIdentifier = group.id || group.groupId || group.groupNumber;
+            return;
+        }
+        
+        // Check if the order exists in the orders array by ID or details
+        if (group.orders && Array.isArray(group.orders)) {
+            console.log(`Group ${index+1} checking ${group.orders.length} orders in orders array`);
+            console.log('Order IDs in group ' + (index+1) + ':', group.orders.map(o => o.id));
+            
+            // Try to match by order details if we have the full order object
+            if (orderObject) {
+                for (let i = 0; i < group.orders.length; i++) {
+                    if (ordersMatchDetails(group.orders[i], orderObject)) {
+                        console.log(`FOUND MATCH by details in group ${index+1}!`);
+                        foundGroup = group;
+                        groupIdentifier = group.id || group.groupId || group.groupNumber;
+                        return;
+                    }
+                }
+            }
+            
+            // Fall back to simple ID matching if details matching didn't work
+            if (!foundGroup && group.orders.some(order => order.id && order.id.toString() === orderId.toString())) {
+                console.log(`FOUND MATCH by ID in orders array of group ${index+1}!`);
+                foundGroup = group;
+                groupIdentifier = group.id || group.groupId || group.groupNumber;
+            }
+        }
+    });
+    
+    if (foundGroup) {
+        console.log(`[MODAL] Found group for order ${orderId}:`, foundGroup);
+        
+        // Close the order detail modal
+        const orderDetailModal = document.getElementById('order-detail-modal');
+        if (orderDetailModal) {
+            orderDetailModal.classList.add('hidden');
+            orderDetailModal.style.display = 'none';
+        }
+        
+        // Always use the group ID for filtering the display
+        if (groupIdentifier) {
+            // Save the found group to a global variable for direct access
+            window.currentFilteredGroup = foundGroup;
+            
+            // Display the order groups modal filtered to this specific group
+            console.log(`[MODAL] Filtering order groups modal to show only group: ${groupIdentifier}`);
+            displayOrderGroupsModal(groupIdentifier, true, foundGroup);
+        } else {
+            console.log(`[MODAL] Found group but no identifier available for filtering`);
+            // If no identifier is available, still show the modal but with a message
+            displayOrderGroupsModal();
+            showNotification(`Group found but cannot filter display`, 'warning');
+        }
+    } else {
+        console.log(`[MODAL] No group found containing order: ${orderId}`);
+        // Still show the modal but with a message
+        displayOrderGroupsModal();
+        showNotification(`No group found containing order: ${orderId}`, 'warning');
+    }
+}
+
+/**
+ * Display order groups in the modal
+ * @param {string|boolean} filterGroupId - If provided, only show this specific group. If true, will refresh data
+ * @param {boolean} isUserAction - Whether this was triggered by a direct user action
+ * @param {Object} specificGroup - If provided, this exact group object will be displayed
+ */
+async function displayOrderGroupsModal(filterGroupId = false, isUserAction = true, specificGroup = null) {
+    // Convert the parameter - if it's not a string, treat it as forceRefresh (for backward compatibility)
+    const forceRefresh = typeof filterGroupId !== 'string' ? !!filterGroupId : true;
     // Get the modal element
     const modal = document.getElementById('order-groups-modal');
     const container = document.getElementById('order-groups-container');
@@ -4125,25 +4318,32 @@ async function displayOrderGroupsModal(forceRefresh = false, isUserAction = fals
     }
     
     try {
-        // Fetch order groups
-        console.log('Attempting to fetch and display order groups...');
-        
-        // Try API first, then fall back directly to orderGroupsHistory if needed
-        // Always force refresh from backend when opening the modal, unless explicitly overridden
+        // Use the specific group directly if provided
         let groups;
-        try {
-            groups = await loadOrderGroups(true); // forceRefresh = true
-        } catch (e) {
-            console.error('Error loading order groups from backend, will use cache if available:', e);
-            groups = [];
-        }
         
-        console.log('Display function received groups:', groups);
-        
-        // If API returned no groups, but we have groups in history, use those directly
-        if ((!groups || groups.length === 0) && orderGroupsHistory.length > 0) {
-            console.log(`DIRECT FALLBACK: Using ${orderGroupsHistory.length} groups from history cache`);
-            groups = [...orderGroupsHistory];
+        if (specificGroup) {
+            console.log('Using provided specific group:', specificGroup);
+            groups = [specificGroup]; // Only show this one group
+        } else {
+            // Otherwise fetch order groups as normal
+            console.log('Attempting to fetch and display order groups...');
+            
+            // Try API first, then fall back directly to orderGroupsHistory if needed
+            // Always force refresh from backend when opening the modal, unless explicitly overridden
+            try {
+                groups = await loadOrderGroups(true); // forceRefresh = true
+            } catch (e) {
+                console.error('Error loading order groups from backend, will use cache if available:', e);
+                groups = [];
+            }
+            
+            console.log('Display function received groups:', groups);
+            
+            // If API returned no groups, but we have groups in history, use those directly
+            if ((!groups || groups.length === 0) && orderGroupsHistory.length > 0) {
+                console.log(`DIRECT FALLBACK: Using ${orderGroupsHistory.length} groups from history cache`);
+                groups = [...orderGroupsHistory];
+            }
         }
         
         if (!groups || groups.length === 0) {
@@ -4165,6 +4365,68 @@ async function displayOrderGroupsModal(forceRefresh = false, isUserAction = fals
         
         // Create HTML content
         let html = '<div class="order-groups-list">';
+        
+        // If filterGroupId is provided, only show that specific group
+        if (typeof filterGroupId === 'string' && filterGroupId.trim().length > 0) {
+            console.log(`Filtering order groups to show only group: ${filterGroupId}`);
+            
+            // First try to find an exact match on any common identifier field
+            let filteredGroups = groups.filter(group => {
+                const match = 
+                    (group.id && group.id.toString() === filterGroupId.toString()) || 
+                    (group.groupId && group.groupId.toString() === filterGroupId.toString()) || 
+                    (group.groupNumber && group.groupNumber.toString() === filterGroupId.toString());
+                
+                if (match) {
+                    console.log(`Found exact match for group with identifier: ${filterGroupId}`, {
+                        id: group.id,
+                        groupId: group.groupId,
+                        groupNumber: group.groupNumber
+                    });
+                }
+                return match;
+            });
+            
+            // If no groups match by ID, look for a group containing the order ID (filterGroupId might be an order ID)
+            if (filteredGroups.length === 0) {
+                console.log(`No direct group ID match, checking if ${filterGroupId} is an order ID...`);
+                
+                filteredGroups = groups.filter(group => {
+                    // Check orderIds array
+                    if (group.orderIds && Array.isArray(group.orderIds)) {
+                        for (let i = 0; i < group.orderIds.length; i++) {
+                            if (group.orderIds[i].toString() === filterGroupId.toString()) {
+                                console.log(`Group ${group.id} contains order ID ${filterGroupId} in orderIds array`);
+                                return true;
+                            }
+                        }
+                    }
+                    
+                    // Check orders array
+                    if (group.orders && Array.isArray(group.orders)) {
+                        for (let i = 0; i < group.orders.length; i++) {
+                            if (group.orders[i].id && group.orders[i].id.toString() === filterGroupId.toString()) {
+                                console.log(`Group ${group.id} contains order ID ${filterGroupId} in orders array`);
+                                return true;
+                            }
+                        }
+                    }
+                    
+                    return false;
+                });
+            }
+            
+            // Update groups with filtered results
+            if (filteredGroups.length > 0) {
+                console.log(`Found ${filteredGroups.length} matching groups for identifier: ${filterGroupId}`);
+                groups = filteredGroups;
+                console.log('Filtered groups:', groups.map(g => g.id));
+            } else {
+                console.log(`No matching group found for ID: ${filterGroupId}`);
+                container.innerHTML = `<p class="empty-state">No order group found for: ${filterGroupId}</p>`;
+                return;
+            }
+        }
         
         // Filter out groups where all orders are completed/cancelled/unfulfilled
         const activeGroups = groups.filter(group => {
@@ -4258,7 +4520,7 @@ async function displayOrderGroupsModal(forceRefresh = false, isUserAction = fals
                                 <div class="timestamp">${new Date(order.timestamp).toLocaleString()}</div>
                             </td>
                             <td class="action-buttons">
-                                <button class="btn btn-sm btn-info view-order-btn" data-order-id="${order.id}">View Details</button>
+                                <button class="btn btn-sm btn-info view-notes-btn" data-order-id="${order.id}">View Notes</button>
                                 <button class="btn btn-sm btn-success mark-complete-btn" data-order-id="${order.id}"
                                     ${order.status === 'completed' ? 'disabled' : ''}>Mark Complete</button>
                                 <button class="btn btn-sm btn-primary change-status-btn" data-order-id="${order.id}">Change Status</button>
@@ -4375,8 +4637,9 @@ function getStatusChangeTimestamp(order) {
     if (!order) return '';
 
     // Do not show timestamp for orders that have not yet changed status meaningfully
+    // Only completed and cancelled orders should show a timestamp
     const status = (order.status || '').toLowerCase();
-    if (status === 'pending' || status === 'in-progress' || status === 'processing') {
+    if (status === 'pending' || status === 'in-progress' || status === 'processing' || status === 'unfulfilled') {
         return '';
     }
 
@@ -4398,16 +4661,14 @@ function getStatusChangeTimestamp(order) {
  * @param {HTMLElement} container - Container element with order group elements
  */
 function attachOrderGroupActionListeners(container) {
-    // View order details buttons
-    const viewButtons = container.querySelectorAll('.view-order-btn');
-    viewButtons.forEach(button => {
+    // View notes buttons
+    const viewNotesButtons = container.querySelectorAll('.view-notes-btn');
+    viewNotesButtons.forEach(button => {
         button.addEventListener('click', () => {
             const orderId = button.getAttribute('data-order-id');
             if (orderId) {
-                // Hide the order groups modal
-                document.getElementById('order-groups-modal').classList.add('hidden');
-                // Show order details
-                openOrderDetailsPanel(orderId);
+                // Show order notes
+                showOrderNotesModal(orderId);
             }
         });
     });
@@ -4425,14 +4686,102 @@ function attachOrderGroupActionListeners(container) {
     
     // Change status buttons
     const statusButtons = container.querySelectorAll('.change-status-btn');
-    statusButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const orderId = button.getAttribute('data-order-id');
+    console.log('Found change status buttons:', statusButtons.length);
+    
+    statusButtons.forEach((button, index) => {
+        console.log(`Setting up listener for change status button ${index + 1}:`, button);
+        // Remove any existing listeners to prevent duplicates
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', () => {
+            console.log('Change status button clicked!');
+            const orderId = newButton.getAttribute('data-order-id');
+            console.log('Order ID from button:', orderId);
             if (orderId) {
                 openChangeStatusModal(orderId);
             }
         });
     });
+}
+
+/**
+ * Displays a modal with the notes for a specific order.
+ * @param {string} orderId - The ID of the order whose notes are to be displayed.
+ */
+async function showOrderNotesModal(orderId) {
+    const modal = document.getElementById('view-notes-modal');
+    const orderIdSpan = document.getElementById('notes-order-id');
+    const notesContentDiv = document.getElementById('order-notes-content');
+
+    if (!modal || !orderIdSpan || !notesContentDiv) {
+        console.error('Notes modal elements not found.');
+        return;
+    }
+
+    // Find the order in the current order details cache or fetch it if necessary
+    let order = currentOrderDetails.find(o => o.id === orderId);
+    if (!order) {
+        // Fallback: try to load from backend if not in cache
+        try {
+            const response = await window.apiClient.getOrder(orderId);
+            order = response.order;
+        } catch (error) {
+            console.error('Failed to fetch order details for notes modal:', error);
+            showNotification('Failed to load order notes.', 'error');
+            return;
+        }
+    }
+
+    if (!order) {
+        notesContentDiv.innerHTML = '<p>Order not found.</p>';
+        orderIdSpan.textContent = orderId;
+        modal.classList.remove('hidden');
+        modal.style.display = '';
+        return;
+    }
+
+    orderIdSpan.textContent = orderId;
+    let notesHtml = '';
+
+    // Check for overall order notes
+    if (order.notes && order.notes.trim().length > 0) {
+        notesHtml += `<h4>Order Notes:</h4><p>${order.notes}</p>`;
+    } else {
+        notesHtml += `<p>No overall order notes.</p>`;
+    }
+
+    // Check for medication-specific notes
+    if (order.medications && order.medications.length > 0) {
+        order.medications.forEach(med => {
+            if (med.notes && med.notes.trim().length > 0) {
+                notesHtml += `<h4>${med.name || 'Medication'} Notes:</h4><p>${med.notes}</p>`;
+            }
+        });
+    }
+
+    if (notesHtml === '<p>No overall order notes.</p>') { // If only the default message is present
+        notesHtml = '<p>No notes found for this order or its medications.</p>';
+    }
+
+    notesContentDiv.innerHTML = notesHtml;
+    modal.classList.remove('hidden');
+    modal.style.display = '';
+
+    // Add event listener for closing the modal
+    const closeButtons = modal.querySelectorAll('.modal-close, .modal-close-btn');
+    closeButtons.forEach(button => {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        newButton.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        });
+    });
+
+    // Close other modals if open
+    document.getElementById('order-detail-modal').classList.add('hidden');
+    document.getElementById('order-detail-modal').style.display = 'none';
 }
 
 /**
@@ -4478,6 +4827,8 @@ async function markOrderComplete(orderId, button) {
  * @param {string} orderId - Order ID
  */
 function openChangeStatusModal(orderId) {
+    console.log('openChangeStatusModal called with ID:', orderId);
+    
     // Don't open modal if no orderId is provided (prevents accidental opening)
     if (!orderId) {
         console.error('Cannot open status modal: No order ID provided');
@@ -4486,62 +4837,151 @@ function openChangeStatusModal(orderId) {
     
     // Get the modal element
     const modal = document.getElementById('change-status-modal');
+    console.log('Modal element found:', modal);
+    
     const orderIdInput = document.getElementById('status-order-id');
     const statusSelect = document.getElementById('order-status');
-    const reasonTextarea = document.getElementById('status-change-reason');
+    const notesTextarea = document.getElementById('status-notes');
     
-    if (!modal || !orderIdInput || !statusSelect) {
+    console.log('Modal elements found:', {
+        modal: !!modal,
+        orderIdInput: !!orderIdInput,
+        statusSelect: !!statusSelect,
+        notesTextarea: !!notesTextarea
+    });
+    
+    if (!modal || !orderIdInput || !statusSelect || !notesTextarea) {
         console.error('Change status modal elements not found');
         return;
     }
     
-    // Set order ID in hidden input
+    // Set values on the form
     orderIdInput.value = orderId;
+    console.log('Set order ID input value:', orderIdInput.value);
     
-    // Reset form
-    statusSelect.value = 'in-progress'; // Default value
-    if (reasonTextarea) reasonTextarea.value = '';
+    // Clear the notes field
+    notesTextarea.value = '';
+    
+    // Reset the status dropdown to show current status if we can find it
+    try {
+        const order = OrderManager.getOrderById(orderId);
+        console.log('Current order found for status setting:', order);
+        if (order && order.status) {
+            statusSelect.value = order.status;
+            console.log('Set status select to:', statusSelect.value);
+        } else {
+            statusSelect.value = 'pending';
+            console.log('Set status select to default: pending');
+        }
+    } catch (err) {
+        console.error('Error getting order status:', err);
+        statusSelect.value = 'pending';
+    }
     
     // Show the modal
+    console.log('About to show modal - current classes:', modal.className);
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    console.log('Modal classes after showing:', modal.className);
+    console.log('Modal display style:', modal.style.display);
     
-    // Focus on the select
-    statusSelect.focus();
+    // Force repaint to ensure modal appears (fix for some browser issues)
+    void modal.offsetWidth;
     
-    // Attach event listener to confirm button
+    // Add event listeners for confirming and cancelling
+    // Remove old listeners first to prevent duplicates
     const confirmBtn = document.getElementById('confirm-status-change-btn');
+    const closeButtons = modal.querySelectorAll('.modal-close, .modal-close-btn');
+    
+    console.log('Found confirm button:', confirmBtn);
+    console.log('Found close buttons:', closeButtons.length);
+    
     if (confirmBtn) {
-        // Remove existing listeners
-        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+        // Clone and replace to remove old listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         
         // Add new listener
-        document.getElementById('confirm-status-change-btn').addEventListener('click', () => {
+        const refreshedBtn = document.getElementById('confirm-status-change-btn');
+        console.log('Set up new confirm button:', refreshedBtn);
+        refreshedBtn.addEventListener('click', () => {
+            console.log('Confirm status change button clicked');
             confirmStatusChange();
         });
+        
+        // Make the button more visible and add a highlight effect
+        refreshedBtn.style.boxShadow = '0 0 10px rgba(0, 123, 255, 0.5)';
+        setTimeout(() => {
+            refreshedBtn.style.boxShadow = 'none';
+        }, 1000);
     }
+    
+    // Also add click listeners to close buttons
+    closeButtons.forEach(button => {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        newButton.addEventListener('click', () => {
+            console.log('Close button clicked');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        });
+    });
+    
+    // Ensure modal is shown by checking z-index and bringing it to the top
+    modal.style.zIndex = '1050';
+    
+    console.log('Modal setup complete');
+    
+    // Check if modal is visible after a slight delay
+    setTimeout(() => {
+        const isVisible = modal.style.display === 'flex' && !modal.classList.contains('hidden');
+        console.log('Is modal visible after timeout:', isVisible);
+        console.log('Modal current styles:', {
+            display: modal.style.display,
+            classes: modal.className,
+            zIndex: modal.style.zIndex,
+            opacity: getComputedStyle(modal).opacity
+        });
+    }, 100);
 }
 
 /**
  * Confirm status change for an order
  */
 async function confirmStatusChange() {
+    console.log('confirmStatusChange function called');
     const modal = document.getElementById('change-status-modal');
     const orderIdInput = document.getElementById('status-order-id');
     const statusSelect = document.getElementById('order-status');
-    const reasonTextarea = document.getElementById('status-change-reason');
+    const notesTextarea = document.getElementById('status-notes');
     const confirmBtn = document.getElementById('confirm-status-change-btn');
     
-    if (!orderIdInput || !statusSelect || !confirmBtn) {
+    console.log('Form elements found:', {
+        orderIdInput: !!orderIdInput,
+        statusSelect: !!statusSelect,
+        notesTextarea: !!notesTextarea,
+        confirmBtn: !!confirmBtn
+    });
+    
+    if (!orderIdInput || !statusSelect || !notesTextarea || !confirmBtn) {
         console.error('Change status form elements not found');
         return;
     }
     
     const orderId = orderIdInput.value;
     const newStatus = statusSelect.value;
-    const reason = reasonTextarea ? reasonTextarea.value : '';
+    const notes = notesTextarea.value;
+    
+    console.log('Status change details:', { orderId, newStatus, notes });
     
     if (!orderId || !newStatus) {
         showNotification('Order ID and status are required', 'error');
+        return;
+    }
+
+    // Require notes for cancellation
+    if (newStatus === 'cancelled' && !notes.trim()) {
+        showNotification('Notes are required when cancelling an order.', 'error');
         return;
     }
     
@@ -4551,7 +4991,8 @@ async function confirmStatusChange() {
         confirmBtn.textContent = 'Updating...';
         
         // Update order status
-        await updateGroupOrderStatuses([orderId], newStatus, reason);
+        console.log('Calling updateGroupOrderStatuses with:', [orderId], newStatus, notes);
+        await updateGroupOrderStatuses([orderId], newStatus, notes);
         
         // Show success notification
         showNotification(`Order status updated to ${formatStatusDisplay(newStatus)}`, 'success');
@@ -4563,9 +5004,14 @@ async function confirmStatusChange() {
         // Only refresh order groups if order groups modal is currently visible
         const orderGroupsModal = document.getElementById('order-groups-modal');
         if (orderGroupsModal && !orderGroupsModal.classList.contains('hidden') && orderGroupsModalUserRequested) {
+            console.log('Refreshing order groups modal');
             // This is a refresh of already-visible order groups, so use forceRefresh=true
             displayOrderGroupsModal(true, false);
         }
+
+        // Refresh the main order lists to reflect the status change
+        console.log('Refreshing all orders');
+        fetchAllOrders();
     } catch (error) {
         console.error('Error updating order status:', error);
         showNotification('Failed to update order status: ' + error.message, 'error');

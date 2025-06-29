@@ -610,6 +610,29 @@ class ApiClient {
   }
   
   /**
+   * Get a single order by its ID
+   * @param {string} orderId - The ID of the order to retrieve
+   * @returns {Promise<Object>} - A promise that resolves to the order object
+   */
+  async getOrder(orderId) {
+    try {
+      if (!orderId) {
+        throw new Error('Order ID is required');
+      }
+      console.log(`[API] Making GET request to /orders/${orderId}`);
+      const response = await this.request(`/orders/${orderId}`, 'GET');
+      console.log('[API] getOrder response:', response);
+      return response;
+    } catch (error) {
+      console.error('[API] Error fetching order:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to fetch order' 
+      };
+    }
+  }
+
+  /**
    * Cancel an order
    * @param {string} orderId - ID of the order to cancel
    * @param {string} reason - Reason for cancellation

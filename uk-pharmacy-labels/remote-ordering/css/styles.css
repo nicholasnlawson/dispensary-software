@@ -351,6 +351,13 @@ button[type="reset"]:hover,
   border: 1px solid #b9a6ff; /* lilac border */
 }
 
+/* Unfulfilled status */
+.status-unfulfilled {
+  background-color: #cce5ff; /* light blue */
+  color: #0056b3;            /* deep blue text */
+  border: 1px solid #b8daff; /* blue border */
+}
+
 /* Pharmacy Dashboard */
 .pharmacy-dashboard {
   display: grid;

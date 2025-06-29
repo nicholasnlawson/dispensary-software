@@ -56,6 +56,7 @@
   max-width: 900px;
   max-height: 80vh;
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling of the entire modal */
   border-radius: 8px;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
   position: relative;
@@ -261,6 +262,82 @@
   font-family: inherit;
   margin-left: 10px;
   font-size: 14px;
+}
+
+/* Responsive styling for order groups modal tables */
+#order-groups-modal .orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Fixed layout for better control */
+  font-size: 14px; /* Slightly smaller font for narrow screens */
+}
+
+#order-groups-modal .orders-table th,
+#order-groups-modal .orders-table td {
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  word-wrap: break-word; /* Allow words to break */
+  overflow-wrap: break-word;
+}
+
+/* Column widths for responsiveness */
+#order-groups-modal .orders-table th:nth-child(1), /* Patient */
+#order-groups-modal .orders-table td:nth-child(1) {
+  width: 15%;
+}
+
+#order-groups-modal .orders-table th:nth-child(2), /* Hospital # */
+#order-groups-modal .orders-table td:nth-child(2) {
+  width: 10%;
+}
+
+#order-groups-modal .orders-table th:nth-child(3), /* Medication Details */
+#order-groups-modal .orders-table td:nth-child(3) {
+  width: 30%;
+}
+
+#order-groups-modal .orders-table th:nth-child(4), /* Status */
+#order-groups-modal .orders-table td:nth-child(4) {
+  width: 12%;
+}
+
+#order-groups-modal .orders-table th:nth-child(5), /* Requester */
+#order-groups-modal .orders-table td:nth-child(5) {
+  width: 15%;
+}
+
+#order-groups-modal .orders-table th:nth-child(6), /* Actions */
+#order-groups-modal .orders-table td:nth-child(6) {
+  width: 18%;
+}
+
+/* Ensure the notes modal appears on top of the order groups modal */
+#view-notes-modal {
+  z-index: 1060;
+}
+
+#view-notes-modal .modal-content {
+  z-index: 1061;
+}
+
+/* Responsive adjustments for narrow screens */
+@media (max-width: 768px) {
+  #order-groups-modal .orders-table {
+    font-size: 12px;
+  }
+  
+  #order-groups-modal .orders-table th,
+  #order-groups-modal .orders-table td {
+    padding: 6px 4px;
+  }
+  
+  /* Adjust button sizes in tables for smaller screens */
+  #order-groups-modal .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    margin: 2px;
+  }
 }
 
 /* Secondary/close button */

@@ -2730,13 +2730,15 @@ function collectWardStockMedicationsData() {
         const strengthInput = item.querySelector('.med-strength');
         const quantityInput = item.querySelector('.med-quantity');
         const doseInput = item.querySelector('.med-dose');
-        
+        const notesInput = item.querySelector('.med-notes');
+
         console.log(`[DEBUG] Item ${index} inputs:`, {
             nameInput: nameInput ? { found: true, value: nameInput.value } : 'not found',
             formInput: formInput ? { found: true, value: formInput.value } : 'not found',
             strengthInput: strengthInput ? { found: true, value: strengthInput.value } : 'not found',
             quantityInput: quantityInput ? { found: true, value: quantityInput.value } : 'not found',
-            doseInput: doseInput ? { found: true, value: doseInput.value } : 'not found'
+            doseInput: doseInput ? { found: true, value: doseInput.value } : 'not found',
+            notesInput: notesInput ? { found: true, value: notesInput.value } : 'not found'
         });
         
         // Only add if we have at least a name and quantity
@@ -2746,7 +2748,8 @@ function collectWardStockMedicationsData() {
                 form: formInput ? formInput.value : '',
                 strength: strengthInput ? strengthInput.value : '',
                 quantity: quantityInput.value,
-                dose: doseInput ? doseInput.value : ''
+                dose: doseInput ? doseInput.value : '',
+                notes: notesInput ? notesInput.value : ''
             };
             
             medications.push(medication);
@@ -2868,22 +2871,62 @@ async function submitPatientOrder() {
  */
 async function submitPatientOrderFinal(orderData) {
     try {
-        // Submit order using apiClient
-        const order = await apiClient.createOrder(orderData);
+        // Extract all medications from the order data
+        const medications = orderData.medications;
+        delete orderData.medications;
         
-        // Display toast notification instead of alert
-        showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
-        document.getElementById('patient-med-form').reset();
+        const orderIds = [];
+        let failureCount = 0;
         
-        // Reload recent orders
-        loadRecentOrders();
+        // Create individual orders for each medication
+        for (const medication of medications) {
+            try {
+                // Create a new order object with just this single medication
+                const singleMedOrderData = {
+                    ...orderData,
+                    medications: [medication]
+                };
+                
+                // Submit individual order
+                const order = await apiClient.createOrder(singleMedOrderData);
+                orderIds.push(order.id);
+                
+                console.log(`Created individual order ${order.id} for medication: ${medication.name}`);
+            } catch (error) {
+                console.error(`Failed to create order for medication ${medication.name}:`, error);
+                failureCount++;
+            }
+        }
         
-        // Re-populate autocomplete fields for first medication
-        setupMedicationAutocomplete(document.getElementById('med-name-1'));
-        setupFormulationAutocomplete(document.getElementById('med-form-1'));
+        // Show success or partial success message
+        if (orderIds.length > 0) {
+            if (failureCount > 0) {
+                showToastNotification(
+                    `Created ${orderIds.length} orders successfully with ${failureCount} failures. Order IDs: ${orderIds.join(', ')}`, 
+                    'warning'
+                );
+            } else {
+                showToastNotification(
+                    `Successfully created ${orderIds.length} individual orders. Order IDs: ${orderIds.join(', ')}`, 
+                    'success'
+                );
+            }
+            
+            // Reset the form
+            document.getElementById('patient-med-form').reset();
+            
+            // Reload recent orders
+            loadRecentOrders();
+            
+            // Re-populate autocomplete fields for first medication
+            setupMedicationAutocomplete(document.getElementById('med-name-1'));
+            setupFormulationAutocomplete(document.getElementById('med-form-1'));
+        } else {
+            showToastNotification('Failed to create any orders', 'error');
+        }
     } catch (error) {
-        console.error('Error submitting order:', error);
-        showToastNotification(`Error submitting order: ${error.message}`, 'error');
+        console.error('Error submitting orders:', error);
+        showToastNotification(`Error submitting orders: ${error.message}`, 'error');
     }
 }
 
@@ -2896,7 +2939,6 @@ async function submitWardStockOrder() {
         const wardId = document.getElementById('ws-ward-name').value;
         const requesterName = document.getElementById('ws-requester-name').value;
         const requesterRole = document.getElementById('ws-requester-role').value;
-        const orderNotes = document.getElementById('ws-order-notes').value;
         
         // Validate required fields
         if (!wardId) {
@@ -2927,7 +2969,7 @@ async function submitWardStockOrder() {
                 name: requesterName,
                 role: requesterRole
             },
-            notes: orderNotes || ''
+            notes: '' // Overall order notes are no longer used
         };
         
         // For ward stock, we still want to check if these medications have been ordered recently
@@ -2979,22 +3021,62 @@ async function submitWardStockOrder() {
  */
 async function submitWardStockOrderFinal(orderData) {
     try {
-        // Submit order using apiClient
-        const order = await apiClient.createOrder(orderData);
+        // Extract all medications from the order data
+        const medications = orderData.medications;
+        delete orderData.medications;
         
-        // Display toast notification instead of alert
-        showToastNotification(`Order ${order.id} submitted successfully!`, 'success');
-        document.getElementById('ward-stock-med-form').reset();
+        const orderIds = [];
+        let failureCount = 0;
         
-        // Reload recent orders
-        loadRecentOrders();
+        // Create individual orders for each medication
+        for (const medication of medications) {
+            try {
+                // Create a new order object with just this single medication
+                const singleMedOrderData = {
+                    ...orderData,
+                    medications: [medication]
+                };
+                
+                // Submit individual order
+                const order = await apiClient.createOrder(singleMedOrderData);
+                orderIds.push(order.id);
+                
+                console.log(`Created individual order ${order.id} for ward stock medication: ${medication.name}`);
+            } catch (error) {
+                console.error(`Failed to create order for ward stock medication ${medication.name}:`, error);
+                failureCount++;
+            }
+        }
         
-        // Re-populate autocomplete fields for first medication
-        setupMedicationAutocomplete(document.getElementById('ws-med-name-1'));
-        setupFormulationAutocomplete(document.getElementById('ws-med-form-1'));
+        // Show success or partial success message
+        if (orderIds.length > 0) {
+            if (failureCount > 0) {
+                showToastNotification(
+                    `Created ${orderIds.length} ward stock orders successfully with ${failureCount} failures. Order IDs: ${orderIds.join(', ')}`, 
+                    'warning'
+                );
+            } else {
+                showToastNotification(
+                    `Successfully created ${orderIds.length} individual ward stock orders. Order IDs: ${orderIds.join(', ')}`, 
+                    'success'
+                );
+            }
+            
+            // Reset the form
+            document.getElementById('ward-stock-med-form').reset();
+            
+            // Reload recent orders
+            loadRecentOrders();
+            
+            // Re-populate autocomplete fields for first medication
+            setupMedicationAutocomplete(document.getElementById('ws-med-name-1'));
+            setupFormulationAutocomplete(document.getElementById('ws-med-form-1'));
+        } else {
+            showToastNotification('Failed to create any ward stock orders', 'error');
+        }
     } catch (error) {
-        console.error('Error submitting order:', error);
-        showToastNotification(`Error submitting order: ${error.message}`, 'error');
+        console.error('Error submitting ward stock orders:', error);
+        showToastNotification(`Error submitting ward stock orders: ${error.message}`, 'error');
     }
 }
 
@@ -3034,8 +3116,9 @@ function getStatusChangeTimestamp(order) {
     if (!order) return '';
 
     // Do not show timestamp for orders that have not yet changed status meaningfully
+    // Only completed and cancelled orders should show a timestamp
     const status = (order.status || '').toLowerCase();
-    if (status === 'pending' || status === 'in-progress' || status === 'processing') {
+    if (status === 'pending' || status === 'in-progress' || status === 'processing' || status === 'unfulfilled') {
         return '';
     }
 
