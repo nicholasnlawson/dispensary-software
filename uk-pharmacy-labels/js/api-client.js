@@ -522,6 +522,7 @@ class ApiClient {
     if (options.limit) queryParams.append('limit', options.limit);
     if (options.offset) queryParams.append('offset', options.offset);
     if (options.status) queryParams.append('status', options.status);
+    if (options.wardId && options.wardId !== 'all') queryParams.append('ward_id', options.wardId);
     
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.request(`/orders${queryString}`);

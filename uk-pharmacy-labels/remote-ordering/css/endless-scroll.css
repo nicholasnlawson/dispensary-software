@@ -1,0 +1,6 @@
+#recent-orders-list {
+    height: 600px; /* Adjust as needed to show ~10 rows */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}

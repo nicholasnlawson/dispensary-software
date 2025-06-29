@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="stylesheet" href="../../css/autocomplete.css" />
     <link rel="stylesheet" href="../css/order-modals.css" />
+    <link rel="stylesheet" href="../css/endless-scroll.css" />
     <link rel="stylesheet" href="../css/cross-browser-fixes.css" />
     <link rel="stylesheet" href="../css/audit-trail.css" />
     <link rel="icon" type="image/x-icon" href="../../favicon_io/favicon.ico" />
@@ -344,17 +345,18 @@
           <h2>Recent Orders</h2>
           <div class="button-group">
             <button id="filter-orders-btn" class="secondary-btn small-btn">Filter</button>
+            <button id="reset-orders-btn" class="secondary-btn small-btn">Reset</button>
             <button id="search-orders-btn" class="secondary-btn small-btn">Search Orders</button>
           </div>
         </div>
         <div id="recent-orders-list">
-          <p class="empty-state">No recent orders to display</p>
-          <!-- Orders will be populated here -->
+          <!-- Orders will be populated here by JavaScript -->
         </div>
+
       </div>
 
       <!-- Filter Orders Modal (Hidden by default) -->
-      <div id="filter-orders-modal" class="modal">
+      <div id="filter-orders-modal" class="modal hidden" style="display:none;">
         <div class="modal-content">
           <div class="modal-header">
             <h3>Filter Orders</h3>

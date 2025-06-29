@@ -192,11 +192,22 @@ function updateGroupOrderStatuses(orderIds, status, reason = null) {
  * Shows the create order group modal
  * Collects selected order IDs and displays a form to create a group
  */
-function showCreateGroupModal() {
-    // Get all selected order checkboxes
-    const selectedCheckboxes = document.querySelectorAll('.order-select-checkbox:checked');
-    
-    if (selectedCheckboxes.length === 0) {
+function showCreateGroupModal(orderIdsToGroup = []) {
+    let selectedOrderIds = [];
+
+    if (orderIdsToGroup.length > 0) {
+        selectedOrderIds = orderIdsToGroup;
+    } else {
+        // Get all selected order checkboxes if no specific orderIds are provided
+        const selectedCheckboxes = document.querySelectorAll('.order-select-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showNotification('Please select at least one order to group', 'warning');
+            return;
+        }
+        selectedCheckboxes.forEach(checkbox => selectedOrderIds.push(checkbox.closest('tr').dataset.orderId));
+    }
+
+    if (selectedOrderIds.length === 0) {
         showNotification('Please select at least one order to group', 'warning');
         return;
     }
@@ -204,7 +215,6 @@ function showCreateGroupModal() {
     console.log('[showCreateGroupModal] Starting to create modal');
     
     // Get all the selected orders data (not just IDs)
-    const selectedOrderIds = [];
     const selectedOrders = [];
     const patients = new Set();
     const wards = new Set();
@@ -215,43 +225,40 @@ function showCreateGroupModal() {
         console.error('[showCreateGroupModal] OrderManager not available - full data may not be accessible');
     }
     
-    selectedCheckboxes.forEach(checkbox => {
-        const row = checkbox.closest('tr');
-        const orderId = row.dataset.orderId;
+    selectedOrderIds.forEach(orderId => {
+        // IMPORTANT: Always get orders from OrderManager which has the COMPLETE data
+        let order;
         
-        if (orderId) {
-            selectedOrderIds.push(orderId);
-            
-            // IMPORTANT: Always get orders from OrderManager which has the COMPLETE data
-            let order;
-            
-            if (hasOrderManager) {
-                // Get complete order data from OrderManager
-                order = window.OrderManager.getOrderById(orderId);
-                console.log(`[OrderManager] Complete order data for ${orderId}:`, order);
-            } 
-            
-            // Only fallback to DOM extraction if OrderManager is completely unavailable
-            if (!order) {
-                console.warn(`[Warning] Falling back to DOM extraction for order ${orderId} - data may be incomplete`);
+        if (hasOrderManager) {
+            // Get complete order data from OrderManager
+            order = window.OrderManager.getOrderById(orderId);
+            console.log(`[OrderManager] Complete order data for ${orderId}:`, order);
+        } 
+        
+        // Only fallback to DOM extraction if OrderManager is completely unavailable
+        if (!order) {
+            console.warn(`[Warning] Falling back to DOM extraction for order ${orderId} - data may be incomplete`);
+            // Attempt to get from DOM if OrderManager fails, though this is less reliable
+            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+            if (row) {
                 order = getOrderFromRow(row);
             }
+        }
+        
+        if (order) {
+            console.log(`[Debug] Order ${orderId} for modal:`, JSON.stringify(order, null, 2));
             
-            if (order) {
-                console.log(`[Debug] Order ${orderId} for modal:`, JSON.stringify(order, null, 2));
-                
-                selectedOrders.push(order);
-                
-                // Collect patient names and wards for grouping info
-                if (order.patient?.name) {
-                    patients.add(order.patient.name);
-                }
-                
-                if (order.wardName) {
-                    wards.add(order.wardName);
-                } else if (order.wardId) {
-                    wards.add(`Ward ${order.wardId}`);
-                }
+            selectedOrders.push(order);
+            
+            // Collect patient names and wards for grouping info
+            if (order.patient?.name) {
+                patients.add(order.patient.name);
+            }
+            
+            if (order.wardName) {
+                wards.add(order.wardName);
+            } else if (order.wardId) {
+                wards.add(`Ward ${order.wardId}`);
             }
         }
     });
@@ -728,12 +735,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (orderGroupsModal) {
         // Ensure it's hidden
         orderGroupsModal.classList.add('hidden');
-        
+
         const closeButtons = orderGroupsModal.querySelectorAll('.modal-close, .modal-close-btn');
         closeButtons.forEach(button => {
             button.addEventListener('click', function() {
                 orderGroupsModal.classList.add('hidden');
             });
+        });
+
+        // Allow clicking outside modal-content to close
+        orderGroupsModal.addEventListener('click', function(event) {
+            if (event.target === orderGroupsModal) {
+                orderGroupsModal.classList.add('hidden');
+            }
         });
     }
     
@@ -3200,9 +3214,23 @@ function setupModalButtons(order) {
         
         // Setup click handler
         processBtn.onclick = function() {
-            console.log('[MODAL] Process button clicked');
-            document.getElementById('order-detail-modal').style.display = 'none';
-            openProcessingPanel(order.id);
+            console.log('[MODAL] Process button clicked for order:', order.id);
+            
+            // Temporarily store the single order to be grouped
+            // This mimics the selection of a single checkbox for grouping
+            // We need to ensure showCreateGroupModal can access this 'selection'
+            // The showCreateGroupModal function expects selected checkboxes.
+            // We'll simulate this by temporarily adding a 'checked' class or similar
+            // to the row of the current order, or by passing the order directly if possible.
+            
+            // For now, let's assume showCreateGroupModal can be adapted to take an order object.
+            // If not, we'll need to simulate the checkbox selection in the DOM.
+            
+            // Hide the current order detail modal
+            document.getElementById('order-detail-modal').classList.add('hidden');
+
+            // Call the existing showCreateGroupModal to preview and confirm
+            showCreateGroupModal([order.id]);
         };
     }
     

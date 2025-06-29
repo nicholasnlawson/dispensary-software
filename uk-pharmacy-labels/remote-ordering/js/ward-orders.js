@@ -1563,8 +1563,8 @@ function createFilterOrdersModal() {
     const applyButton = document.getElementById('apply-filters-btn');
     if (applyButton) {
         applyButton.addEventListener('click', () => {
+            loadRecentOrders(); // Reload with new filters
             closeFilterOrdersModal();
-            loadRecentOrders();
         });
     }
 
@@ -1607,6 +1607,7 @@ function closeFilterOrdersModal() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize modals
+    // Only set up the filter modal event listeners, do not show it on load
     createFilterOrdersModal();
     populateWardFilter();
 
@@ -1614,6 +1615,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterButton = document.getElementById('filter-orders-btn');
     if (filterButton) {
         filterButton.addEventListener('click', openFilterOrdersModal);
+    }
+    // Ensure modal is hidden on load
+    const filterOrdersModal = document.getElementById('filter-orders-modal');
+    if (filterOrdersModal) {
+        filterOrdersModal.style.display = 'none';
+        filterOrdersModal.classList.add('hidden');
     }
 
     // Create toast container for notifications
@@ -1642,8 +1649,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Form functionality
     initializePatientOrderForm();
+
+    // Populate ward options for filter dropdown
+    loadWardOptions();
     initializeWardStockForm();
     
+    /**
+ * Load ward options into the ward filter dropdown
+ */
+function loadWardOptions() {
+    const wardSelect = document.getElementById('filter-ward');
+    if (!wardSelect || !window.apiClient || typeof window.apiClient.get !== 'function') return;
+
+    // Preserve the first option ("All")
+    const allOption = wardSelect.options[0];
+    wardSelect.innerHTML = '';
+    wardSelect.appendChild(allOption);
+
+    window.apiClient.get('/wards')
+        .then(data => {
+            if (data && data.success && Array.isArray(data.wards)) {
+                data.wards.forEach(ward => {
+                    const option = document.createElement('option');
+                    option.value = ward.id;
+                    option.textContent = ward.name;
+                    wardSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error loading ward options:', err);
+        });
+}
+
+// Attach reset orders button
+    const resetOrdersBtn = document.getElementById('reset-orders-btn');
+    if (resetOrdersBtn) {
+        resetOrdersBtn.addEventListener('click', () => {
+            const wardFilter = document.getElementById('filter-ward');
+            const statusFilter = document.getElementById('filter-status');
+            if (wardFilter) wardFilter.value = 'all';
+            if (statusFilter) statusFilter.value = 'all';
+            loadRecentOrders();
+        });
+    }
+
     // Load recent orders
     loadRecentOrders();
 });
@@ -3021,39 +3071,33 @@ function formatStatusDisplay(status) {
 }
 
 /**
- * Load and display recent orders from database
+ * Load and display recent orders from the database.
+ * Fetches up to 100 of the most recent orders based on filters.
  */
 async function loadRecentOrders() {
     const wardFilter = document.getElementById('filter-ward');
     const statusFilter = document.getElementById('filter-status');
 
     const filters = {
-        limit: 10,
+        limit: 100, // Fetch up to 100 orders
         wardId: wardFilter ? wardFilter.value : 'all',
         status: statusFilter ? statusFilter.value : 'all'
     };
+
     const recentOrdersList = document.getElementById('recent-orders-list');
     if (!recentOrdersList) return;
-    
+
     try {
-        // Show loading indicator
         recentOrdersList.innerHTML = '<div class="loading-orders">Loading recent orders...</div>';
-        
-        // Check if API client is available
+
         if (!window.apiClient) {
-            console.error('API client not available for fetching orders');
-            recentOrdersList.innerHTML = '<div class="error-message">Error: Unable to fetch orders. API client not available.</div>';
-            return;
+            throw new Error('API client not available');
         }
-        
-        // Fetch recent orders from server (last 10)
+
         const response = await window.apiClient.getRecentOrders(filters);
-        console.log('Recent orders response:', response);
-        
         const orders = response.orders || [];
-        
+
         if (orders.length > 0) {
-            // Add table header
             recentOrdersList.innerHTML = `
                 <table class="orders-table">
                     <thead>
@@ -3068,25 +3112,24 @@ async function loadRecentOrders() {
                     <tbody id="orders-table-body"></tbody>
                 </table>
             `;
-            
+
             const tableBody = document.getElementById('orders-table-body');
-            
             orders.forEach(order => {
                 const row = document.createElement('tr');
                 row.className = 'order-row';
-                
-                // Format timestamp for requester column
+                row.style.cursor = 'pointer';
+                row.dataset.orderId = order.id;
+
                 const orderDate = new Date(order.timestamp);
-                const formattedDate = orderDate.toLocaleDateString('en-GB') + ' ' + orderDate.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
-                
-                // Format patient info (if patient order)
-                let patientInfo = '';
+                const formattedDate = orderDate.toLocaleDateString('en-GB') + ' ' + orderDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+                let patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
                 if (order.type === 'patient' && order.patient) {
                     const patientDetails = [];
                     if (order.patient.name && order.patient.name !== 'undefined') {
                         let patientName = order.patient.name;
                         try {
-                            if (window.apiClient && typeof window.apiClient.decryptData === 'function' && 
+                            if (window.apiClient && typeof window.apiClient.decryptData === 'function' &&
                                 patientName.startsWith('U2FsdGVk')) {
                                 const decrypted = window.apiClient.decryptData(patientName);
                                 if (decrypted) patientName = decrypted;
@@ -3096,16 +3139,13 @@ async function loadRecentOrders() {
                         }
                         patientDetails.push(patientName);
                     }
-                    
+
                     const identifier = order.patient.hospitalId || order.patient.nhs || '';
                     if (identifier) patientDetails.push(`(${identifier})`);
-                    
+
                     patientInfo = patientDetails.join(' ');
-                } else {
-                    patientInfo = '<span class="ward-stock-label">Ward Stock</span>';
                 }
-                
-                // Format medications
+
                 const medicationsList = order.medications.map(med => {
                     const details = [];
                     if (med.name) details.push(med.name);
@@ -3115,19 +3155,15 @@ async function loadRecentOrders() {
                     if (med.quantity) details.push(`× ${med.quantity}`);
                     return details.join(' ');
                 }).join('<br>');
-                
-                // Format requester info
+
                 const requesterInfo = extractRequesterName(order) || 'Unknown';
-                
-                // Format status with timestamp
+
                 const statusTimestamp = getStatusChangeTimestamp(order);
                 let statusContent = `<div><span class="order-status status-${order.status}">${formatStatusDisplay(order.status)}</span></div>`;
                 if (statusTimestamp) {
                     statusContent += `<div class="timestamp">${statusTimestamp}</div>`;
                 }
 
-
-                
                 row.innerHTML = `
                     <td>${patientInfo}</td>
                     <td>${order.wardName || 'N/A'}</td>
@@ -3138,40 +3174,16 @@ async function loadRecentOrders() {
                         <div class="timestamp">${formattedDate}</div>
                     </td>
                 `;
-                
-                // Add click handler to show details
+
                 row.addEventListener('click', () => {
                     showOrderDetails(order);
                 });
-                // Make row clickable to show details
-                row.style.cursor = 'pointer';
-                row.dataset.orderId = order.id;
-                row.addEventListener('click', () => showOrderDetails(order));
-                
+
                 tableBody.appendChild(row);
             });
         } else {
-            recentOrdersList.innerHTML = '<div class="no-orders">No recent orders found in database. Create a new order to see it here.</div>';
-            
-            // Add some styling
-            if (!document.getElementById('no-orders-styles')) {
-                const style = document.createElement('style');
-                style.id = 'no-orders-styles';
-                style.textContent = `
-                    .no-orders {
-                        padding: 30px;
-                        text-align: center;
-                        color: #666;
-                        background-color: #f5f5f5;
-                        border-radius: 8px;
-                        margin: 20px 0;
-                        font-size: 1.1em;
-                        border: 1px dashed #ddd;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-        }  
+            recentOrdersList.innerHTML = '<div class="no-orders">No recent orders found.</div>';
+        }
     } catch (error) {
         console.error('Error loading recent orders:', error);
         recentOrdersList.innerHTML = `<div class="error-message">Error loading orders: ${error.message}</div>`;
