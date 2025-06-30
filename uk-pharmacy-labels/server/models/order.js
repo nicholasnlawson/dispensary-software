@@ -39,7 +39,7 @@ const OrderModel = {
   // Create a new order
   createOrder(orderData) {
     const { 
-      id: providedId, type, wardId, requester, notes,
+      id: providedId, type, wardId, requester, notes, is_duplicate,
       // Also check for flattened requester properties
       requesterName: flatRequesterName,
       requesterRole: flatRequesterRole
@@ -89,11 +89,11 @@ const OrderModel = {
       db.run(
         `INSERT INTO orders (
           id, type, ward_id, timestamp, status, 
-          requester_name, requester_role, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          requester_name, requester_role, notes, is_duplicate
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, type, wardId, timestamp, status,
-          requesterName, requesterRole, encryptedNotes || null
+          requesterName, requesterRole, encryptedNotes || null, is_duplicate || false
         ],
         function(err) { // IMPORTANT: Use function() instead of arrow to access this.lastID
           if (err) {
@@ -536,7 +536,7 @@ const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
     return new Promise((resolve, reject) => {
       let query = `
         SELECT o.id, o.type, o.ward_id, o.timestamp, o.status, o.requester_name, o.requester_role, 
-        o.notes, o.processed_by, o.processed_at, o.checked_by, o.processing_notes,
+        o.notes, o.is_duplicate, o.processed_by, o.processed_at, o.checked_by, o.processing_notes,
         o.cancelled_by, o.cancellation_reason, o.cancelled_at,
         w.name as ward_name, h.name as hospital_name
         FROM orders o

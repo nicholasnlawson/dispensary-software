@@ -162,7 +162,7 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
   console.log('POST /api/orders called with body:', JSON.stringify(req.body, null, 2));
   console.log('Request headers:', JSON.stringify(req.headers, null, 2));
   try {
-    const { id, type, wardId, patient, medications, requester, notes } = req.body;
+    const { id, type, wardId, patient, medications, requester, notes, is_duplicate } = req.body;
     
     // Validate required fields
     if (!type || !wardId || !medications || !requester) {
@@ -221,7 +221,8 @@ router.post('/', hasRole(['ordering']), async (req, res) => {
       medications,
       requesterName: requester.name,
       requesterRole: requester.role,
-      notes
+      notes,
+      is_duplicate: is_duplicate || false // Default to false if not provided
     };
 
     const result = await OrderModel.createOrder(orderData);

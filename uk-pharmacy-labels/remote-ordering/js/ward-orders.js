@@ -2861,6 +2861,7 @@ async function submitPatientOrder() {
             if (result.warning || (result.recentOrders && result.recentOrders.length > 0)) {
                 showRecentMedicationAlert(result.recentOrders, () => {
                     // User clicked 'Proceed Anyway'
+                    orderData.is_duplicate = true;
                     submitPatientOrderFinal(orderData);
                 });
                 return; // Exit here, submitPatientOrderFinal will be called by callback if user confirms
@@ -3007,6 +3008,7 @@ async function submitWardStockOrder() {
                   console.log('[DEBUG] Recent orders to display:', JSON.stringify(recentOrders, null, 2));
                   showRecentMedicationAlert(recentOrders, warningMessage, () => {
                     // User clicked 'Proceed Anyway'
+                    orderData.is_duplicate = true; // Mark order as duplicate
                     submitWardStockOrderFinal(orderData);
                   });
                   return; // Exit here, submitWardStockOrderFinal will be called by callback if user confirms

@@ -74,6 +74,8 @@
         <div id="patient-order-form" class="order-form active">
           <h2>Patient Medication Order</h2>
           <form id="patient-med-form">
+            <input type="hidden" id="requester-name" />
+            <input type="hidden" id="requester-role" />
             <div class="form-group">
               <h3>Ward Details</h3>
               <div class="form-row">
@@ -211,6 +213,13 @@
               >
                 + Add Another Medication
               </button>
+            </div>
+
+            <div class="button-group">
+              <button type="submit" id="patient-submit-order-btn">
+                Submit Order
+              </button>
+              <button type="reset" id="patient-clear-form-btn">Clear Form</button>
             </div>
           </form>
         </div>

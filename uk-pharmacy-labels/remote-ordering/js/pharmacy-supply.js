@@ -1484,6 +1484,14 @@ function createOrderTableRow(order, tableBody, allowSelection = true) {
     const medsCell = document.createElement('td');
     medsCell.className = 'medications-info';
     medsCell.innerHTML = medicationsList;
+
+    if (order.isDuplicate) {
+        const duplicateTag = document.createElement('span');
+        duplicateTag.className = 'duplicate-order-tag';
+        duplicateTag.textContent = 'DUPLICATE ORDER - PLEASE CHECK IF STILL REQUIRED';
+        medsCell.appendChild(document.createElement('br'));
+        medsCell.appendChild(duplicateTag);
+    }
     row.appendChild(medsCell);
     
     // Status cell with timestamp
