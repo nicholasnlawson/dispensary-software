@@ -8,6 +8,7 @@
 // Global variables
 let orders = [];
 let loading = false;
+let ordersByStatusCache = {}; // Cache for storing fetched orders
 let selectedOrderId = null;
 let wardFilter = null;
 let currentOrder = null;
@@ -713,7 +714,13 @@ function toggleGroupSelectionMode() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+    // Add the animation class to the container on load
+    const ordersList = document.getElementById('orders-list');
+    if (ordersList) {
+        ordersList.classList.add('orders-container-fade');
+    }
+
     // Force-hide all modals on page load and apply display:none style
     const allModals = document.querySelectorAll('.modal');
     allModals.forEach(modal => {
@@ -844,6 +851,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
+ * Applies current filters to the cached order data and re-renders the list.
+ */
+function applyFiltersAndRender() {
+    const ordersList = document.getElementById('orders-list');
+    if (!ordersList) {
+        console.error('Orders list element not found');
+        return;
+    }
+
+    // Fade out the list before updating
+    ordersList.classList.add('fade-out');
+
+    // Use a short timeout to allow the fade-out transition to start
+    setTimeout(() => {
+        // The actual filtering happens inside displayOrdersWithSections, which is called by this.
+        displayOrdersWithSections(ordersByStatusCache, ordersList);
+
+        // Fade the list back in
+        ordersList.classList.remove('fade-out');
+    }, 300); // This should match the transition duration in the CSS
+}
+
+/**
  * Initialize order filter controls
  */
 function initializeOrderFilters() {
@@ -853,14 +883,36 @@ function initializeOrderFilters() {
         wardFilter = wardFilterSelect;
         wardFilter.addEventListener('change', () => {
             console.log('Ward filter changed:', wardFilter.value);
-            loadOrders();
+            applyFiltersAndRender();
         });
+    }
+    
+    // Initialize search functionality
+    const searchInput = document.getElementById('search-orders');
+    if (searchInput) {
+        let debounceTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                applyFiltersAndRender();
+            }, 300); // Debounce to prevent too many requests
+        });
+        
+        // Clear search button
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                applyFiltersAndRender();
+            });
+        }
     }
     
     // Initialize refresh button if present
     const refreshBtn = document.getElementById('refresh-orders-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
+            // Refresh button re-fetches data from the server
             loadOrders();
         });
     }
@@ -987,14 +1039,18 @@ function getFilters() {
     const urgencyFilter = document.getElementById('filter-urgency')?.value || 'all';
     const typeFilter = document.getElementById('filter-type')?.value || 'all';
     const wardIdFilter = document.getElementById('filter-ward')?.value || 'all';
+    const searchText = document.getElementById('search-orders')?.value || '';
     
-    // Only add filters if they are not 'all'
+    // Only add filters if they are not 'all' or empty
     if (urgencyFilter !== 'all') filters.urgency = urgencyFilter;
     if (typeFilter !== 'all') filters.type = typeFilter;
     if (wardIdFilter !== 'all' && wardIdFilter !== '') {
         // Convert to number if it's a numeric ID
         const wardIdNumber = parseInt(wardIdFilter, 10);
         filters.wardId = !isNaN(wardIdNumber) ? wardIdNumber : wardIdFilter;
+    }
+    if (searchText.trim() !== '') {
+        filters.searchText = searchText.trim();
     }
     
     return filters;
@@ -1021,6 +1077,47 @@ function loadOrders() {
     
     // We'll fetch both in-progress and pending orders
     loadBothOrderTypes(ordersList, filters);
+}
+
+/**
+ * Filter orders by search text
+ * @param {Array} orders - List of orders to filter
+ * @param {string} searchText - Text to search for
+ * @returns {Array} - Filtered orders
+ */
+function applySearchFilter(orders, searchText) {
+    if (!searchText || searchText.trim() === '') {
+        return orders; // Return all orders if no search text
+    }
+    
+    // Split search into terms and filter out empty strings
+    const searchTerms = searchText.toLowerCase().split(' ').filter(term => term.length > 0);
+    
+    if (searchTerms.length === 0) {
+        return orders;
+    }
+    
+    return orders.filter(order => {
+        // Create a single string of all searchable content for the order
+        let searchableContent = '';
+        if (order.type === 'patient' && order.patient) {
+            searchableContent += `${order.patient.name || ''} ${order.patient.hospitalId || ''} ${order.patient.nhs || ''}`;
+        }
+        searchableContent += ` ${order.wardName || ''}`;
+        searchableContent += ` ${order.requesterName || ''}`;
+        if (order.medications && order.medications.length > 0) {
+            order.medications.forEach(med => {
+                searchableContent += ` ${med.name || ''} ${med.form || ''} ${med.strength || ''} ${med.dose || ''} ${med.notes || ''}`;
+            });
+        }
+        searchableContent += ` ${order.id || ''}`;
+        searchableContent += ` ${order.notes || ''}`;
+
+        searchableContent = searchableContent.toLowerCase();
+
+        // Check if ALL search terms are present in the searchable content
+        return searchTerms.every(term => searchableContent.includes(term));
+    });
 }
 
 /**
@@ -1068,13 +1165,17 @@ function loadBothOrderTypes(container, filters) {
     const fetchPromises = statuses.map(st => fetchOrdersByStatus(st, filters));
     Promise.all(fetchPromises)
         .then(([inProgressOrders, pendingOrders, unfulfilledOrders, completedOrders, cancelledOrders]) => {
-            displayOrdersWithSections({
+            // Store the fetched orders in the cache
+            ordersByStatusCache = {
                 inProgress: inProgressOrders,
                 pending: pendingOrders,
                 unfulfilled: unfulfilledOrders,
                 completed: completedOrders,
                 cancelled: cancelledOrders
-            }, container);
+            };
+
+            // Render the initial view from the cache
+            applyFiltersAndRender();
         })
     .catch(error => {
         console.error('Error fetching orders:', error);
@@ -1150,7 +1251,22 @@ function displayOrdersWithSections(ordersByStatus, container) {
     // Clear container
     container.innerHTML = '';
     
-    const { inProgress=[], pending=[], unfulfilled=[], completed=[], cancelled=[] } = ordersByStatus;
+    // Get filters including search text if any
+    const filters = getFilters();
+    const searchText = filters.searchText || '';
+    
+    // Get orders by status and apply search filter if needed
+    let { inProgress=[], pending=[], unfulfilled=[], completed=[], cancelled=[] } = ordersByStatus;
+    
+    // Only apply search filter if there's search text
+    if (searchText) {
+        inProgress = applySearchFilter(inProgress, searchText);
+        pending = applySearchFilter(pending, searchText);
+        unfulfilled = applySearchFilter(unfulfilled, searchText);
+        completed = applySearchFilter(completed, searchText);
+        cancelled = applySearchFilter(cancelled, searchText);
+    }
+    
     const hasInProgress = inProgress.length > 0;
     const hasPending = pending.length > 0;
     const hasUnfulfilled = unfulfilled.length > 0;
@@ -1485,10 +1601,10 @@ function createOrderTableRow(order, tableBody, allowSelection = true) {
     medsCell.className = 'medications-info';
     medsCell.innerHTML = medicationsList;
 
-    if (order.isDuplicate) {
+    if (order.isDuplicate && order.status === 'pending') {
         const duplicateTag = document.createElement('span');
         duplicateTag.className = 'duplicate-order-tag';
-        duplicateTag.textContent = 'DUPLICATE ORDER - PLEASE CHECK IF STILL REQUIRED';
+        duplicateTag.textContent = 'RECENT DUPLICATE - PLEASE CHECK IF STILL REQUIRED';
         medsCell.appendChild(document.createElement('br'));
         medsCell.appendChild(duplicateTag);
     }
