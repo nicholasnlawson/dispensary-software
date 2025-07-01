@@ -2926,8 +2926,14 @@ async function submitPatientOrderFinal(orderData) {
                 );
             }
             
+            // Preserve the selected ward
+            const wardId = document.getElementById('ward-name').value;
+            
             // Reset the form
             document.getElementById('patient-med-form').reset();
+            
+            // Restore the selected ward
+            document.getElementById('ward-name').value = wardId;
             
             // Reload recent orders
             loadRecentOrders();
@@ -3077,8 +3083,14 @@ async function submitWardStockOrderFinal(orderData) {
                 );
             }
             
+            // Preserve the selected ward
+            const wardId = document.getElementById('ws-ward-name').value;
+
             // Reset the form
             document.getElementById('ward-stock-med-form').reset();
+
+            // Restore the selected ward
+            document.getElementById('ws-ward-name').value = wardId;
             
             // Reload recent orders
             loadRecentOrders();

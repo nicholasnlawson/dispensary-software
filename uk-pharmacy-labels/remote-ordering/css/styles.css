@@ -507,7 +507,15 @@ button[type="reset"]:hover,
 .filter-group {
   display: flex;
   flex-direction: column;
-  min-width: 150px;
+  min-width: 250px; /* Set a common width for the filter groups */
+}
+
+.filter-group select,
+.filter-group input[type="text"] {
+    width: 100%; /* Make the input and select fill the container */
+    padding: 8px 10px;
+    font-size: 16px;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
 /* Search Box Styles */

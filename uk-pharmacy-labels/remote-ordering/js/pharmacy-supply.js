@@ -843,8 +843,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    loadWardOptions();
-    loadOrders();
+    async function initializePage() {
+        const wardFilter = document.getElementById('filter-ward');
+        const searchInput = document.getElementById('search-orders');
+        const refreshBtn = document.getElementById('refresh-orders-btn');
+
+        // Disable controls until data is loaded
+        if (wardFilter) wardFilter.disabled = true;
+        if (searchInput) searchInput.disabled = true;
+        if (refreshBtn) refreshBtn.disabled = true;
+
+        // Show a loading indicator
+        const ordersList = document.getElementById('orders-list');
+        if (ordersList) {
+            ordersList.innerHTML = '<p class="loading-message">Loading all orders and groups...</p>';
+        }
+
+        await loadWardOptions();
+        // Load all data in parallel and wait for it to complete
+        await Promise.all([
+            loadOrders(), 
+            loadOrderGroups()
+        ]);
+
+        // Enable controls now that data is loaded
+        if (wardFilter) wardFilter.disabled = false;
+        if (searchInput) searchInput.disabled = false;
+        if (refreshBtn) refreshBtn.disabled = false;
+
+        // Initial render of orders
+        applyFiltersAndRender();
+    }
+
+    initializePage();
     
     // Initialize panel functionality
     initializePanels();
@@ -853,7 +884,40 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Applies current filters to the cached order data and re-renders the list.
  */
-function applyFiltersAndRender() {
+/**
+ * Applies current filters to the cached order data and re-renders the list.
+ * Also handles direct search for order group IDs.
+ */
+async function applyFiltersAndRender() {
+    const searchInput = document.getElementById('search-orders');
+    const searchText = searchInput ? searchInput.value.trim().toUpperCase() : '';
+
+    console.log(`[Search Debug] Applying filter with search text: "${searchText}"`);
+
+    // Check if the search text matches an order group ID
+    if (searchText.length > 0) {
+        console.log(`[Search Debug] Checking against ${orderGroupsHistory.length} cached order groups.`);
+        const matchedGroup = orderGroupsHistory.find(group => group.group_number === searchText);
+        
+        if (matchedGroup) {
+            console.log('[Search Debug] Found matching group:', matchedGroup);
+            // Display the modal
+            await displayOrderGroupsModal(false, true, matchedGroup);
+            
+            // Clear the search input to prevent re-opening the modal
+            if (searchInput) {
+                searchInput.value = '';
+            }
+
+            // Re-apply filters to reset the underlying list while the modal is open
+            applyFiltersAndRender();
+
+            return; // Stop further execution for this call
+        } else {
+            console.log('[Search Debug] No matching group found for the search term.');
+        }
+    }
+
     const ordersList = document.getElementById('orders-list');
     if (!ordersList) {
         console.error('Orders list element not found');
@@ -4134,12 +4198,26 @@ async function loadOrderGroups(forceRefresh = false) {
                 
                 console.log('Final processed groups:', groupsWithDetails);
                 
-                // If API returned no groups but we have groups in our history cache, use those
-                if ((!groupsWithDetails || groupsWithDetails.length === 0) && orderGroupsHistory.length > 0) {
-                    console.log(`API returned no groups. Using ${orderGroupsHistory.length} groups from history cache as fallback`);
+                // Update the global caches with the newly fetched groups
+                if (groupsWithDetails && groupsWithDetails.length > 0) {
+                    console.log(`Populating caches with ${groupsWithDetails.length} detailed groups.`);
+                    orderGroups = [...groupsWithDetails];
+                    orderGroupsHistory = [...groupsWithDetails]; // CRITICAL: Update history for search
+                    
+                    // Persist to session storage
+                    try {
+                        sessionStorage.setItem('orderGroupsHistory', JSON.stringify(orderGroupsHistory));
+                        console.log('Updated order groups history in session storage.');
+                    } catch (e) {
+                        console.error('Error saving order groups to session storage:', e);
+                    }
+                } else if (orderGroupsHistory.length > 0) {
+                    // Fallback to history if API returns nothing
+                    console.log(`API returned no groups. Using ${orderGroupsHistory.length} groups from history cache.`);
                     orderGroups = [...orderGroupsHistory];
                 } else {
-                    orderGroups = groupsWithDetails;
+                    orderGroups = [];
+                    orderGroupsHistory = [];
                 }
                 
                 return orderGroups;
