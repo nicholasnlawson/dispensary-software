@@ -18,6 +18,7 @@ let groupSelectionMode = false;
 let orderGroups = [];
 let selectedOrders = [];
 let orderGroupsHistory = [];
+let selectedDispensaryId = null;
 
 // Flag to prevent modals from automatically opening on page load
 window.isInitialPageLoad = true;
@@ -714,13 +715,88 @@ function toggleGroupSelectionMode() {
     }
 }
 
+/**
+ * Loads dispensary options and initializes the dispensary selector
+ */
+async function initializeDispensarySelector() {
+  const dispensarySelector = document.getElementById('dispensary-selector');
+  if (!dispensarySelector) {
+    console.error('Dispensary selector not found');
+    return;
+  }
+
+  // First, restore any previously selected dispensary from local storage
+  selectedDispensaryId = localStorage.getItem('selectedDispensaryId');
+  
+  try {
+    // Fetch all dispensaries from API
+    console.log('Loading dispensaries...');
+    const response = await window.apiClient.getAllDispensaries();
+    
+    if (response && response.dispensaries && Array.isArray(response.dispensaries)) {
+      // Clear existing options except the first placeholder
+      while (dispensarySelector.options.length > 1) {
+        dispensarySelector.remove(1);
+      }
+      
+      // Add dispensary options
+      response.dispensaries.forEach(dispensary => {
+        const option = document.createElement('option');
+        option.value = dispensary.id;
+        option.textContent = dispensary.name;
+        dispensarySelector.appendChild(option);
+        
+        // If this is the first load and we have no selected dispensary,
+        // use the first one as default
+        if (!selectedDispensaryId && dispensary === response.dispensaries[0]) {
+          selectedDispensaryId = dispensary.id;
+          localStorage.setItem('selectedDispensaryId', selectedDispensaryId);
+        }
+      });
+      
+      // Set the selected dispensary if we have one
+      if (selectedDispensaryId) {
+        dispensarySelector.value = selectedDispensaryId;
+      }
+      
+      // Add event listener for dispensary changes
+      dispensarySelector.addEventListener('change', handleDispensaryChange);
+      
+      console.log(`Loaded ${response.dispensaries.length} dispensaries`); 
+    } else {
+      console.error('Invalid dispensaries response:', response);
+    }
+  } catch (error) {
+    console.error('Error loading dispensaries:', error);
+  }
+}
+
+/**
+ * Handle change of selected dispensary
+ */
+function handleDispensaryChange(event) {
+  const newDispensaryId = event.target.value;
+  console.log(`Dispensary changed to: ${newDispensaryId}`);
+  
+  // Save the selected dispensary ID
+  selectedDispensaryId = newDispensaryId;
+  localStorage.setItem('selectedDispensaryId', selectedDispensaryId);
+  
+  // You can add additional logic here, such as refreshing the orders list
+  // or updating other UI elements based on the selected dispensary
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Add the animation class to the container on load
     const ordersList = document.getElementById('orders-list');
-    if (ordersList) {
-        ordersList.classList.add('orders-container-fade');
-    }
-
+    if (ordersList) ordersList.classList.add('fade-transition');
+    
+    // Initialize filter controls
+    initializeOrderFilters();
+    
+    // Initialize dispensary selector
+    initializeDispensarySelector();
+    
     // Force-hide all modals on page load and apply display:none style
     const allModals = document.querySelectorAll('.modal');
     allModals.forEach(modal => {
