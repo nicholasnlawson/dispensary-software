@@ -79,13 +79,34 @@
               <button id="add-ward-btn" class="btn btn-primary">
                 Add Ward
               </button>
+              <button id="add-dispensary-btn" class="btn btn-primary">
+                Add Dispensary
+              </button>
             </div>
           </div>
 
           <div class="alert" id="ward-alert-box"></div>
 
-          <div class="wards-table-container">
-            <table class="wards-table">
+          <h3>Hospitals</h3>
+          <div class="hospitals-table-container table-container">
+            <table class="hospitals-table wards-table admin-table">
+              <thead>
+                <tr>
+                  <th>Hospital Name</th>
+                  <th>Address</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="hospitals-table-body">
+                <!-- Hospital rows will be added here via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <hr class="section-divider">
+          <h3>Wards</h3>
+          <div class="wards-table-container table-container">
+            <table class="wards-table admin-table">
               <thead>
                 <tr>
                   <th>Ward Name</th>
@@ -97,6 +118,24 @@
               </thead>
               <tbody id="wards-table-body">
                 <!-- Ward rows will be added here via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <hr class="section-divider">
+          <h3>Dispensaries</h3>
+          <div class="dispensaries-table-container table-container">
+            <table class="dispensaries-table wards-table admin-table">
+              <thead>
+                <tr>
+                  <th>Dispensary Name</th>
+                  <th>Description</th>
+                  <th>Hospital</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dispensaries-table-body">
+                <!-- Dispensary rows will be added here via JavaScript -->
               </tbody>
             </table>
           </div>
@@ -437,12 +476,65 @@
       </div>
     </div>
 
+    <!-- Add/Edit Dispensary Modal -->
+    <div class="modal" id="dispensary-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="dispensary-modal-title">Add New Dispensary</h3>
+          <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="dispensary-form">
+            <input type="hidden" id="dispensary-id" />
+            <div class="form-group">
+              <label for="dispensary-name">Dispensary Name</label>
+              <input type="text" id="dispensary-name" name="dispensary-name" required class="form-input" />
+            </div>
+            <div class="form-group">
+              <label for="dispensary-description">Description</label>
+              <textarea id="dispensary-description" name="dispensary-description" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="dispensary-hospital-id">Associated Hospital</label>
+              <select id="dispensary-hospital-id" name="hospital_id" class="form-input">
+                <option value="">None</option>
+                <!-- Hospital options will be populated here -->
+              </select>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="save-dispensary-btn">Save Dispensary</button>
+              <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Dispensary Confirmation Modal -->
+    <div class="modal" id="confirm-delete-dispensary-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Confirm Delete Dispensary</h3>
+          <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete this dispensary? This action cannot be undone.</p>
+          <input type="hidden" id="delete-dispensary-id" />
+          <div class="form-actions">
+            <button class="btn btn-danger" id="confirm-delete-dispensary-btn">Delete Dispensary</button>
+            <button class="btn btn-secondary close-modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="../js/lib/crypto-js.js"></script>
     <script src="../js/auth-utils.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/nav-controller.js"></script>
     <script src="../js/admin.js"></script>
     <script src="../js/admin-wards.js"></script>
+    <script src="../js/admin-dispensaries.js"></script>
     <script src="../js/admin-navigation.js"></script>
   </body>
 </html>

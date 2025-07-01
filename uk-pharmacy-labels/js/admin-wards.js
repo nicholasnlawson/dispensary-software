@@ -135,11 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (response.success) {
         populateHospitalDropdown(response.hospitals);
+        displayHospitalsTable(response.hospitals); // Display hospitals in table
       } else {
         console.error('Error loading hospitals:', response.message);
+        showAlert(wardAlertBox, 'Error loading hospitals', 'error');
       }
     } catch (error) {
       console.error('Error loading hospitals:', error);
+      showAlert(wardAlertBox, 'Error loading hospitals: ' + error.message, 'error');
     }
   }
 
@@ -446,74 +449,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   }
 
-  // Add hospital management to the wards table
-  function addHospitalManagementUI() {
-    // Create a hospitals section above the wards table
-    const hospitalsSection = document.createElement('div');
-    hospitalsSection.className = 'hospitals-section';
-    hospitalsSection.innerHTML = `
-      <h3>Hospitals</h3>
-      <div class="hospitals-list" id="hospitals-list">
-        <!-- Hospitals will be added here -->
-      </div>
-    `;
-    
-    // Insert before the wards table
-    const wardsTableContainer = document.querySelector('.wards-table-container');
-    wardsTableContainer.parentNode.insertBefore(hospitalsSection, wardsTableContainer);
-    
-    // Load hospitals into the list (only once during initialization)
-    updateHospitalsList();
-  }
-
   /**
-   * Update the hospitals list UI
+   * Display hospitals in the table
+   * @param {Array} hospitals - List of hospitals
    */
-  async function updateHospitalsList() {
-    const hospitalsList = document.getElementById('hospitals-list');
-    if (!hospitalsList) return;
+  function displayHospitalsTable(hospitals) {
+    const hospitalsTableBody = document.getElementById('hospitals-table-body');
+    if (!hospitalsTableBody) return;
     
-    try {
-      const response = await window.apiClient.getAllHospitals();
-      
-      if (response.success) {
-        hospitalsList.innerHTML = '';
-        
-        if (response.hospitals.length === 0) {
-          hospitalsList.innerHTML = '<p class="empty-list">No hospitals found</p>';
-          return;
-        }
-        
-        response.hospitals.forEach(hospital => {
-          const hospitalItem = document.createElement('div');
-          hospitalItem.className = 'hospital-item';
-          hospitalItem.dataset.id = hospital.id; // Add data-id attribute for easier reference
-          hospitalItem.innerHTML = `
-            <div class="hospital-details">
-              <h4>${hospital.name}</h4>
-              <p>${hospital.address || 'No address'}</p>
-            </div>
-            <div class="hospital-actions">
-              <button class="btn btn-sm btn-edit">Edit</button>
-              <button class="btn btn-sm btn-danger">Delete</button>
-            </div>
-          `;
-          
-          // Add event listeners
-          const editBtn = hospitalItem.querySelector('.btn-edit');
-          const deleteBtn = hospitalItem.querySelector('.btn-danger');
-          
-          editBtn.addEventListener('click', () => openEditHospitalModal(hospital.id));
-          deleteBtn.addEventListener('click', () => openDeleteHospitalModal(hospital.id));
-          
-          hospitalsList.appendChild(hospitalItem);
-        });
-      }
-    } catch (error) {
-      console.error('Error loading hospitals list:', error);
+    hospitalsTableBody.innerHTML = '';
+    
+    if (hospitals.length === 0) {
+      hospitalsTableBody.innerHTML = '<tr><td colspan="3">No hospitals found</td></tr>';
+      return;
     }
+    
+    hospitals.forEach(hospital => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${hospital.name}</td>
+        <td>${hospital.address || 'No address'}</td>
+        <td class="actions">
+          <button class="btn btn-sm btn-secondary edit-hospital-btn" data-id="${hospital.id}">Edit</button>
+          <button class="btn btn-sm btn-danger delete-hospital-btn" data-id="${hospital.id}">Delete</button>
+        </td>
+      `;
+      
+      // Add event listeners
+      const editBtn = row.querySelector('.edit-hospital-btn');
+      const deleteBtn = row.querySelector('.delete-hospital-btn');
+      
+      editBtn.addEventListener('click', () => openEditHospitalModal(hospital.id));
+      deleteBtn.addEventListener('click', () => openDeleteHospitalModal(hospital.id));
+      
+      hospitalsTableBody.appendChild(row);
+    });
   }
 
-  // Initialize hospital management UI
-  addHospitalManagementUI();
+
+
+
 });

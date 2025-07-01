@@ -6,7 +6,7 @@
 class ApiClient {
   constructor() {
     // API base URL - change this to match your server configuration
-    this.baseUrl = 'http://localhost:3000/api';
+    this.baseUrl = '/api';
     this.token = localStorage.getItem('token');
   }
 
