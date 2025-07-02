@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node start-with-db.js",
     "test": "mocha server/tests/**/*.test.js",
-    "postinstall": "mkdir -p server/db/sqlite"
+    "postinstall": "mkdir -p server/db/sqlite && npm rebuild sqlite3 --build-from-source"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -24,6 +24,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "node-gyp": "^9.0.0"
   }
 }

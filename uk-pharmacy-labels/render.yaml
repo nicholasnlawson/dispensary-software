@@ -13,8 +13,20 @@ services:
         sync: false
       - key: TOKEN_EXPIRY
         value: 24h
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/server/db/sqlite/pharmacy_system.db
     healthCheckPath: /api/status
     autoDeploy: true
+    buildFilter:
+      paths:
+      - package.json
+      - package-lock.json
+      - server/**
+      - js/**
+      - remote-ordering/**
+      - *.js
+      - *.html
+      - css/**
     disk:
       name: pharmacy-data
       mountPath: /opt/render/project/src/server/db/sqlite
