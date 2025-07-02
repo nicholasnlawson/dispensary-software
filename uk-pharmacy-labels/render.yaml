@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: pharmacy-dispensing-system
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        sync: false
+      - key: TOKEN_EXPIRY
+        value: 24h
+    healthCheckPath: /api/status
+    autoDeploy: true
+    disk:
+      name: pharmacy-data
+      mountPath: /opt/render/project/src/server/db/sqlite
+      sizeGB: 1
