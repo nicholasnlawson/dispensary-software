@@ -27,7 +27,7 @@ app.use(helmet.contentSecurityPolicy({
     scriptSrc: ["'self'", "'unsafe-inline'"], // Required for some functionality
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", 'data:'],
-    connectSrc: ["'self'", 'localhost:3001', 'http://localhost:3001'],
+    connectSrc: ["'self'", 'localhost:3001', 'http://localhost:3001', 'localhost:3000', 'http://localhost:3000', 'localhost:10000', 'http://localhost:10000'],
     fontSrc: ["'self'"],
     objectSrc: ["'none'"],
     mediaSrc: ["'self'"],
@@ -78,6 +78,7 @@ app.use('/api/users', generalLimiter, require('./routes/users'));
 app.use('/api/patients', generalLimiter, require('./routes/patients'));
 app.use('/api/wards', generalLimiter, require('./routes/wards'));
 app.use('/api/dispensaries', generalLimiter, require('./routes/dispensaries'));
+app.use('/dispensaries', generalLimiter, require('./routes/dispensaries')); // Added for frontend fallback compatibility
 app.use('/api/hospitals', generalLimiter, require('./routes/hospitals'));
 app.use('/api/test-hospitals', generalLimiter, require('./routes/test-hospitals'));
 app.use('/api/orders', generalLimiter, require('./routes/orders'));

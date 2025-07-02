@@ -2598,7 +2598,22 @@ async function fetchDispensaries() {
         // Try each endpoint until one works
         for (const endpoint of endpoints) {
             try {
-                const response = await fetch(endpoint);
+                // Get the authentication token from localStorage
+                const token = localStorage.getItem('token');
+                
+                // Include the token in the request headers
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+                }
+                
+                const response = await fetch(endpoint, {
+                    headers: headers
+                });
+                
                 if (response.ok) {
                     const data = await response.json();
                     if (data && Array.isArray(data.dispensaries)) {
