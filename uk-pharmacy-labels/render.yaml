@@ -2,7 +2,8 @@ services:
   - type: web
     name: pharmacy-dispensing-system
     env: node
-    buildCommand: ./render-build.sh
+    runtime: node
+    buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
