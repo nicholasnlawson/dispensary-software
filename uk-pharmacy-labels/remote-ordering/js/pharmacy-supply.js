@@ -18,7 +18,117 @@ let groupSelectionMode = false;
 let orderGroups = [];
 let selectedOrders = [];
 let orderGroupsHistory = [];
+// Currently selected dispensary (pharmacy) ID
 let selectedDispensaryId = null;
+
+/**
+ * Fetch list of dispensaries from the backend API.
+ * @returns {Promise<Array>} Array of dispensary objects {id, name, description}
+ */
+async function fetchDispensaries() {
+    try {
+        if (window.apiClient && typeof window.apiClient.get === 'function') {
+            // Try primary endpoint first
+            const res = await window.apiClient.get('/dispensaries');
+            if (res && res.success && Array.isArray(res.dispensaries)) {
+                return res.dispensaries;
+            }
+            // Fallback to alternative path used elsewhere (/api/dispensaries)
+            const fallback = await window.apiClient.get('/api/dispensaries');
+            if (fallback && fallback.success && Array.isArray(fallback.dispensaries)) {
+                return fallback.dispensaries;
+            }
+        }
+    } catch (e) {
+        console.error('Error fetching dispensaries:', e);
+    }
+    return [];
+}
+
+/**
+ * Populate the footer dropdown with dispensary options and set change listener.
+ */
+async function loadDispensaryOptions() {
+    const footerSelect = document.getElementById('dispensary-selector');
+    if (!footerSelect) return;
+
+    // Clear existing options
+    footerSelect.innerHTML = '';
+
+    const dispensaries = await fetchDispensaries();
+    dispensaries.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        footerSelect.appendChild(opt);
+    });
+
+    // Set current value if already selected
+    if (selectedDispensaryId) {
+        footerSelect.value = selectedDispensaryId;
+    }
+
+    // Change handler
+    footerSelect.addEventListener('change', () => {
+        selectedDispensaryId = footerSelect.value;
+        sessionStorage.setItem('selectedDispensaryId', selectedDispensaryId);
+        // Refresh orders with new context
+        if (typeof loadOrders === 'function') {
+            loadOrders();
+        }
+    });
+}
+
+/**
+ * Ensure a dispensary is selected. Shows a modal to prompt the user on first visit.
+ */
+async function ensureDispensarySelected() {
+    // Retrieve previous selection
+    selectedDispensaryId = sessionStorage.getItem('selectedDispensaryId');
+    if (selectedDispensaryId) {
+        return; // Already chosen in this session
+    }
+
+    const modal = document.getElementById('select-dispensary-modal');
+    const selectEl = document.getElementById('initial-dispensary-select');
+    const confirmBtn = document.getElementById('confirm-dispensary-btn');
+
+    if (!modal || !selectEl || !confirmBtn) {
+        console.warn('Dispensary selection elements missing in DOM');
+        return;
+    }
+
+    // Populate list
+    const dispensaries = await fetchDispensaries();
+    dispensaries.forEach(disp => {
+        const opt = document.createElement('option');
+        opt.value = disp.id;
+        opt.textContent = disp.name;
+        selectEl.appendChild(opt);
+    });
+
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+
+    // Confirm handler
+    const handler = () => {
+        selectedDispensaryId = selectEl.value;
+        sessionStorage.setItem('selectedDispensaryId', selectedDispensaryId);
+        // Sync footer dropdown if rendered
+        const footerSelect = document.getElementById('dispensary-selector');
+        if (footerSelect) footerSelect.value = selectedDispensaryId;
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        confirmBtn.removeEventListener('click', handler);
+    };
+    confirmBtn.addEventListener('click', handler);
+}
+
+// Expose helper for debugging if needed
+if (typeof window !== 'undefined') {
+    window.ensureDispensarySelected = ensureDispensarySelected;
+}
 
 // Flag to prevent modals from automatically opening on page load
 window.isInitialPageLoad = true;
@@ -715,88 +825,13 @@ function toggleGroupSelectionMode() {
     }
 }
 
-/**
- * Loads dispensary options and initializes the dispensary selector
- */
-async function initializeDispensarySelector() {
-  const dispensarySelector = document.getElementById('dispensary-selector');
-  if (!dispensarySelector) {
-    console.error('Dispensary selector not found');
-    return;
-  }
-
-  // First, restore any previously selected dispensary from local storage
-  selectedDispensaryId = localStorage.getItem('selectedDispensaryId');
-  
-  try {
-    // Fetch all dispensaries from API
-    console.log('Loading dispensaries...');
-    const response = await window.apiClient.getAllDispensaries();
-    
-    if (response && response.dispensaries && Array.isArray(response.dispensaries)) {
-      // Clear existing options except the first placeholder
-      while (dispensarySelector.options.length > 1) {
-        dispensarySelector.remove(1);
-      }
-      
-      // Add dispensary options
-      response.dispensaries.forEach(dispensary => {
-        const option = document.createElement('option');
-        option.value = dispensary.id;
-        option.textContent = dispensary.name;
-        dispensarySelector.appendChild(option);
-        
-        // If this is the first load and we have no selected dispensary,
-        // use the first one as default
-        if (!selectedDispensaryId && dispensary === response.dispensaries[0]) {
-          selectedDispensaryId = dispensary.id;
-          localStorage.setItem('selectedDispensaryId', selectedDispensaryId);
-        }
-      });
-      
-      // Set the selected dispensary if we have one
-      if (selectedDispensaryId) {
-        dispensarySelector.value = selectedDispensaryId;
-      }
-      
-      // Add event listener for dispensary changes
-      dispensarySelector.addEventListener('change', handleDispensaryChange);
-      
-      console.log(`Loaded ${response.dispensaries.length} dispensaries`); 
-    } else {
-      console.error('Invalid dispensaries response:', response);
-    }
-  } catch (error) {
-    console.error('Error loading dispensaries:', error);
-  }
-}
-
-/**
- * Handle change of selected dispensary
- */
-function handleDispensaryChange(event) {
-  const newDispensaryId = event.target.value;
-  console.log(`Dispensary changed to: ${newDispensaryId}`);
-  
-  // Save the selected dispensary ID
-  selectedDispensaryId = newDispensaryId;
-  localStorage.setItem('selectedDispensaryId', selectedDispensaryId);
-  
-  // You can add additional logic here, such as refreshing the orders list
-  // or updating other UI elements based on the selected dispensary
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     // Add the animation class to the container on load
     const ordersList = document.getElementById('orders-list');
-    if (ordersList) ordersList.classList.add('fade-transition');
-    
-    // Initialize filter controls
-    initializeOrderFilters();
-    
-    // Initialize dispensary selector
-    initializeDispensarySelector();
-    
+    if (ordersList) {
+        ordersList.classList.add('orders-container-fade');
+    }
+
     // Force-hide all modals on page load and apply display:none style
     const allModals = document.querySelectorAll('.modal');
     allModals.forEach(modal => {
@@ -919,7 +954,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    async function initializePage() {
+    // cleanJsonDisplay function is defined later in the file
+
+async function initializePage() {
+    // Ensure user has selected a dispensary first (will show modal if not)
+    await ensureDispensarySelected();
         const wardFilter = document.getElementById('filter-ward');
         const searchInput = document.getElementById('search-orders');
         const refreshBtn = document.getElementById('refresh-orders-btn');
@@ -936,6 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         await loadWardOptions();
+    await loadDispensaryOptions();
         // Load all data in parallel and wait for it to complete
         await Promise.all([
             loadOrders(), 
@@ -1193,6 +1233,9 @@ function getFilters() {
         filters.searchText = searchText.trim();
     }
     
+        if (selectedDispensaryId) {
+        filters.dispensaryId = selectedDispensaryId;
+    }
     return filters;
 }
 
@@ -2389,67 +2432,89 @@ function showCancellationModal(orderId) {
  * View order history/audit trail
  * @param {string} orderId - Order ID
  */
-async function viewOrderHistory(orderId) {
+function viewOrderHistory(orderId) {
     console.log('[HISTORY] Viewing history for order:', orderId);
     
     if (!orderId) {
-        console.error('[HISTORY] No order ID provided');
+        console.error('[HISTORY] No orderId provided for history view');
         return;
     }
     
     try {
-        // Check if API client has the required method
-        if (window.apiClient && typeof window.apiClient.getOrderHistory === 'function') {
-            console.log('[HISTORY] Fetching order history from API');
-            
-            // Show loading state
-            const historyBtn = document.getElementById('view-history-btn');
-            if (historyBtn) {
-                historyBtn.textContent = 'Loading...';
-                historyBtn.disabled = true;
-            }
-            
-            // Fetch order history
-            const response = await window.apiClient.getOrderHistory(orderId);
-            console.log('[HISTORY] History data:', response);
-            
-            // Extract history array from the response
-            // API now returns {success: true, history: [array], pagination: {...}}
-            const historyArray = response.history && Array.isArray(response.history) ? response.history : [];
-            console.log('[HISTORY] Extracted history array:', historyArray);
-            
-            // Log the first history entry for debugging if available
-            if (historyArray.length > 0) {
-                console.log('[HISTORY] First history entry:', historyArray[0]);
-                if (historyArray[0].previousData) {
-                    console.log('[HISTORY] First entry has previousData:', historyArray[0].previousData);
-                }
-                if (historyArray[0].newData) {
-                    console.log('[HISTORY] First entry has newData:', historyArray[0].newData);
-                }
-            }
-            
-            // Create and show history modal
-            showHistoryModal(orderId, historyArray);
-            
-            // Reset button
-            if (historyBtn) {
-                historyBtn.textContent = 'View Audit Trail';
-                historyBtn.disabled = false;
-            }
-        } else {
-            console.error('[HISTORY] API client or getOrderHistory method not available');
-            alert('Order history functionality not available');
+        // Show loading state
+        const historyBtn = document.getElementById('view-history-btn');
+        if (historyBtn) {
+            historyBtn.textContent = 'Loading...';
+            historyBtn.disabled = true;
         }
+        
+        console.log('[HISTORY] Fetching order history from API');
+        window.apiClient.getOrderHistory(orderId)
+            .then(data => {
+                console.log('[HISTORY] History data:', data);
+                
+                if (data && data.success && Array.isArray(data.history)) {
+                    const historyArray = data.history;
+                    console.log('[HISTORY] Extracted history array:', historyArray);
+                    
+                    if (historyArray.length > 0) {
+                        console.log('[HISTORY] First history entry:', historyArray[0]);
+                        if (historyArray[0].previousData) console.log('[HISTORY] First entry has previousData:', historyArray[0].previousData);
+                        if (historyArray[0].newData) console.log('[HISTORY] First entry has newData:', historyArray[0].newData);
+                    }
+                    
+                    showHistoryModal(orderId, historyArray);
+                } else {
+                    console.error('[HISTORY] Invalid history data format:', data);
+                    showHistoryModal(orderId, []);
+                }
+                
+                // Reset button
+                if (historyBtn) {
+                    historyBtn.textContent = 'View Audit Trail';
+                    historyBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error('[HISTORY] Error viewing history:', err);
+                // Reset button
+                if (historyBtn) {
+                    historyBtn.textContent = 'View Audit Trail';
+                    historyBtn.disabled = false;
+                }
+                
+                // Show error message
+                try {
+                    if (typeof showToastNotification === 'function') {
+                        showToastNotification('Error loading order history', 'error');
+                    } else {
+                        alert('Error loading order history');
+                    }
+                } catch (e) {
+                    console.error('Failed to show notification:', e);
+                    alert('Error loading order history');
+                }
+            });
     } catch (error) {
         console.error('[HISTORY] Error viewing history:', error);
-        showToastNotification('Error loading audit trail: ' + (error.message || 'Unknown error'), 'error');
         
         // Reset button
         const historyBtn = document.getElementById('view-history-btn');
         if (historyBtn) {
             historyBtn.textContent = 'View Audit Trail';
             historyBtn.disabled = false;
+        }
+        
+        // Show error message
+        try {
+            if (typeof showToastNotification === 'function') {
+                showToastNotification('Error loading audit trail: ' + (error.message || 'Unknown error'), 'error');
+            } else {
+                alert('Error loading audit trail: ' + (error.message || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error('Failed to show notification:', e);
+            alert('Error loading audit trail');
         }
     }
 }
@@ -2460,6 +2525,216 @@ async function viewOrderHistory(orderId) {
  * @param {Object} newObj - New state object
  * @returns {string} - HTML string showing the differences
  */
+/**
+ * Get dispensary name from audit data object
+ * @param {Object} dataObj - Data object from audit trail
+ * @returns {string} - Dispensary name or 'Unknown'
+ */
+async function getDispensaryNameById(dispensaryId) {
+    if (!dispensaryId) return 'Unknown';
+    
+    // Try to get from cache first
+    const cachedDispensaries = JSON.parse(sessionStorage.getItem('cachedDispensaries') || '[]');
+    const cached = cachedDispensaries.find(d => d.id.toString() === dispensaryId.toString());
+    if (cached) return cached.name;
+    
+    // If not in cache, fetch from API
+    try {
+        const dispensaries = await fetchDispensaries();
+        if (dispensaries && dispensaries.length > 0) {
+            // Cache for future use
+            sessionStorage.setItem('cachedDispensaries', JSON.stringify(dispensaries));
+            const found = dispensaries.find(d => d.id.toString() === dispensaryId.toString());
+            if (found) return found.name;
+        }
+    } catch (e) {
+        console.error('Error fetching dispensary name:', e);
+    }
+    
+    return `Dispensary ${dispensaryId}`;
+}
+
+/**
+ * Extract dispensary name from audit data object
+ * @param {Object} dataObj - Data object from audit trail
+ * @returns {string} - Dispensary name or 'Unknown'
+ */
+function getDispensaryName(dataObj) {
+    if (!dataObj) return 'Unknown';
+    
+    // Extract dispensaryId from the object
+    const dispensaryId = dataObj.dispensaryId;
+    if (!dispensaryId) return 'Unknown';
+    
+    // Get cached dispensary name if available
+    const cachedDispensaries = JSON.parse(sessionStorage.getItem('cachedDispensaries') || '[]');
+    const dispensary = cachedDispensaries.find(d => d.id.toString() === dispensaryId.toString());
+    
+    return dispensary ? dispensary.name : `Dispensary ${dispensaryId}`;
+}
+
+/**
+ * Fetch dispensaries from the API
+ * @returns {Promise<Array>} - Array of dispensary objects
+ */
+async function fetchDispensaries() {
+    try {
+        // Try the API client first if available
+        if (window.apiClient && typeof window.apiClient.getDispensaries === 'function') {
+            console.log('[DISPENSARY] Using API client to fetch dispensaries');
+            const response = await window.apiClient.getDispensaries();
+            if (response && response.success && Array.isArray(response.dispensaries)) {
+                return response.dispensaries;
+            }
+        }
+        
+        // Fallback to direct fetch
+        console.log('[DISPENSARY] Falling back to direct fetch for dispensaries');
+        const endpoints = [
+            '/api/dispensaries',
+            '/dispensaries'
+        ];
+        
+        // Try each endpoint until one works
+        for (const endpoint of endpoints) {
+            try {
+                const response = await fetch(endpoint);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && Array.isArray(data.dispensaries)) {
+                        return data.dispensaries;
+                    } else if (data && Array.isArray(data)) {
+                        return data;
+                    }
+                }
+            } catch (innerErr) {
+                console.warn(`[DISPENSARY] Failed to fetch from ${endpoint}:`, innerErr);
+                // Continue to next endpoint
+            }
+        }
+        
+        // If all endpoints fail, return empty array
+        console.error('[DISPENSARY] All dispensary endpoints failed');
+        return [];
+    } catch (e) {
+        console.error('[DISPENSARY] Error fetching dispensaries:', e);
+        return [];
+    }
+}
+
+/**
+ * Load dispensaries and cache them for future use
+ * @returns {Promise<Array>} - Array of dispensary objects
+ */
+async function loadAndCacheDispensaries() {
+    try {
+        // Check if we already have dispensaries cached in this session
+        const cachedData = sessionStorage.getItem('cachedDispensaries');
+        if (cachedData) {
+            const dispensaries = JSON.parse(cachedData);
+            if (Array.isArray(dispensaries) && dispensaries.length > 0) {
+                console.log('[DISPENSARY] Using cached dispensaries:', dispensaries.length);
+                return dispensaries;
+            }
+        }
+        
+        // If not cached or empty, fetch from API
+        console.log('[DISPENSARY] Fetching dispensaries from API');
+        const dispensaries = await fetchDispensaries();
+        
+        if (Array.isArray(dispensaries) && dispensaries.length > 0) {
+            // Cache for future use
+            sessionStorage.setItem('cachedDispensaries', JSON.stringify(dispensaries));
+            console.log('[DISPENSARY] Cached dispensaries:', dispensaries.length);
+            return dispensaries;
+        } else {
+            console.warn('[DISPENSARY] No dispensaries returned from API');
+            return [];
+        }
+    } catch (e) {
+        console.error('[DISPENSARY] Error loading dispensaries:', e);
+        return [];
+    }
+}
+
+/**
+ * Extract dispensary name from audit trail entry
+ * @param {Object} entry - Audit trail entry
+ * @returns {string} - Dispensary name or 'Unknown'
+ */
+function getDispensaryNameFromEntry(entry) {
+    if (!entry) return 'Unknown';
+    
+    // Try to get dispensaryId from newData first, then previousData
+    let dispensaryId = null;
+    
+    try {
+        // Check newData
+        if (entry.newData) {
+            const newData = typeof entry.newData === 'string' ? 
+                JSON.parse(entry.newData) : entry.newData;
+            dispensaryId = newData.dispensaryId;
+        }
+        
+        // If not found, check new_data (snake_case)
+        if (!dispensaryId && entry.new_data) {
+            const newData = typeof entry.new_data === 'string' ? 
+                JSON.parse(entry.new_data) : entry.new_data;
+            dispensaryId = newData.dispensaryId;
+        }
+        
+        // If still not found, check previousData
+        if (!dispensaryId && entry.previousData) {
+            const prevData = typeof entry.previousData === 'string' ? 
+                JSON.parse(entry.previousData) : entry.previousData;
+            dispensaryId = prevData.dispensaryId;
+        }
+        
+        // If still not found, check previous_data (snake_case)
+        if (!dispensaryId && entry.previous_data) {
+            const prevData = typeof entry.previous_data === 'string' ? 
+                JSON.parse(entry.previous_data) : entry.previous_data;
+            dispensaryId = prevData.dispensaryId;
+        }
+        
+        if (!dispensaryId) {
+            return 'Unknown';
+        }
+        
+        // Get cached dispensary name if available
+        const cachedDispensaries = JSON.parse(sessionStorage.getItem('cachedDispensaries') || '[]');
+        const dispensary = cachedDispensaries.find(d => d.id && d.id.toString() === dispensaryId.toString());
+        
+        if (dispensary && dispensary.name) {
+            return dispensary.name;
+        }
+        
+        // If we couldn't find the name in the cache, try to load fresh dispensaries
+        // We'll return a placeholder for now, but update the UI when data is available
+        const placeholder = `Loading... (ID: ${dispensaryId})`;
+        
+        // Load dispensaries asynchronously and update the display when ready
+        loadAndCacheDispensaries().then(dispensaries => {
+            const foundDispensary = dispensaries.find(d => d.id && d.id.toString() === dispensaryId.toString());
+            if (foundDispensary && foundDispensary.name) {
+                // Find the cell that needs updating
+                const cells = document.querySelectorAll(`td[data-dispensary-id="${dispensaryId}"]`);
+                cells.forEach(cell => {
+                    cell.textContent = foundDispensary.name;
+                    cell.classList.add('updated');
+                });
+            }
+        }).catch(err => {
+            console.error('[DISPENSARY] Error updating dispensary name:', err);
+        });
+        
+        return placeholder;
+    } catch (e) {
+        console.error('Error extracting dispensary name from entry:', e);
+        return 'Unknown';
+    }
+}
+
 function generateReadableDiff(prevObj, newObj) {
     // Initialize the HTML output
     let diffHTML = '<div class="changes-table">';
@@ -2652,6 +2927,53 @@ function formatValueForDisplay(value) {
 }
 
 /**
+ * Clean JSON display by removing dispensaryId from the displayed JSON
+ * and formatting status values to be user-friendly
+ * @param {string|object} jsonStr - JSON string or object to clean
+ * @returns {string} - Cleaned JSON string or formatted status
+ */
+function cleanJsonDisplay(jsonStr) {
+    try {
+        // If jsonStr is already a string, try to parse it
+        const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+        
+        // If it's not an object, return as is
+        if (!obj || typeof obj !== 'object') {
+            return typeof jsonStr === 'string' ? jsonStr : JSON.stringify(jsonStr, null, 2);
+        }
+        
+        // Special case for status-only objects (most common in audit trail)
+        if (Object.keys(obj).length === 1 && obj.status) {
+            return formatStatusDisplay(obj.status);
+        }
+        
+        // If it's an object with dispensaryId, create a copy without it
+        const cleanedObj = { ...obj };
+        
+        // Remove dispensaryId if present
+        if ('dispensaryId' in cleanedObj) {
+            delete cleanedObj.dispensaryId;
+        }
+        
+        // Format status if present
+        if (cleanedObj.status) {
+            cleanedObj.status = formatStatusDisplay(cleanedObj.status);
+        }
+        
+        // If after cleaning we have just a status, return it directly
+        if (Object.keys(cleanedObj).length === 1 && cleanedObj.status) {
+            return cleanedObj.status;
+        }
+        
+        // Otherwise return the cleaned object as JSON
+        return JSON.stringify(cleanedObj, null, 2);
+    } catch (e) {
+        console.error('Error cleaning JSON display:', e);
+        return jsonStr; // Return original if there's an error
+    }
+}
+
+/**
  * Create and show history modal
  * @param {string} orderId - Order ID
  * @param {Array} historyData - Array of history entries
@@ -2760,6 +3082,7 @@ function showHistoryModal(orderId, historyData) {
                         <th>Date/Time</th>
                         <th>Action</th>
                         <th>User</th>
+                        <th>Location</th>
                         <th>Reason</th>
                         <th>Details</th>
                     </tr>
@@ -2857,11 +3180,31 @@ function showHistoryModal(orderId, historyData) {
                         // Generate a unique ID for this history entry
                         const entryId = 'history-entry-' + (entry.id || Math.random().toString(36).substr(2, 9));
                         
+                        // Extract dispensary ID for data attribute
+                        let dispensaryId = null;
+                        try {
+                            if (entry.newData && entry.newData.dispensaryId) {
+                                dispensaryId = typeof entry.newData === 'string' ? 
+                                    JSON.parse(entry.newData).dispensaryId : entry.newData.dispensaryId;
+                            } else if (entry.previousData && entry.previousData.dispensaryId) {
+                                dispensaryId = typeof entry.previousData === 'string' ? 
+                                    JSON.parse(entry.previousData).dispensaryId : entry.previousData.dispensaryId;
+                            }
+                        } catch (e) {
+                            console.error('Error extracting dispensary ID for data attribute:', e);
+                        }
+                        
+                        const dispensaryName = getDispensaryNameFromEntry(entry);
+                        const locationCell = dispensaryId ? 
+                            `<td data-dispensary-id="${dispensaryId}">${dispensaryName}</td>` : 
+                            `<td>${dispensaryName}</td>`;
+                        
                         return `
                         <tr class="history-main-row" data-entry-id="${entryId}">
                             <td>${new Date(timestamp).toLocaleString()}</td>
                             <td>${actionDisplay}</td>
                             <td>${modifiedBy}</td>
+                            ${locationCell}
                             <td>${reason}</td>
                             <td>
                                 ${previousData || newData ? 
@@ -2871,7 +3214,7 @@ function showHistoryModal(orderId, historyData) {
                         </tr>
                         ${previousData || newData ? `
                         <tr class="history-details-row" id="${entryId}-details">
-                            <td colspan="5">
+                            <td colspan="6">
                                 <div class="history-details p-3">
                                     ${changesHTML || `
                                         <div class="changes-summary">
@@ -2880,8 +3223,8 @@ function showHistoryModal(orderId, historyData) {
                                                 <thead><tr><th>Previous State</th><th>Current State</th></tr></thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td>${previousData ? `<pre>${previousData}</pre>` : '-'}</td>
-                                                        <td>${newData ? `<pre>${newData}</pre>` : '-'}</td>
+                                                        <td>${previousData ? `<pre>${cleanJsonDisplay(previousData)}</pre>` : '-'}</td>
+                                                        <td>${newData ? `<pre>${cleanJsonDisplay(newData)}</pre>` : '-'}</td>
                                                     </tr>
                                                 </tbody>
                                             </table>

@@ -19,6 +19,16 @@ class ApiClient {
       'Content-Type': 'application/json'
     };
 
+    // Include selected dispensary in header so server can log it
+    try {
+      const selectedDispensaryId = sessionStorage.getItem('selectedDispensaryId');
+      if (selectedDispensaryId) {
+        headers['X-Dispensary-Id'] = selectedDispensaryId;
+      }
+    } catch (_) {
+      // sessionStorage might be unavailable in some contexts; ignore silently
+    }
+
     if (this.token) {
       headers['Authorization'] = this.token;
     }
@@ -752,51 +762,6 @@ class ApiClient {
         message: error.message || 'Failed to fetch order history' 
       };
     }
-  }
-  
-  /**
-   * Get all dispensaries
-   * @returns {Promise} - Promise resolving to dispensaries list
-   */
-  async getAllDispensaries() {
-    return await this.get('/dispensaries');
-  }
-
-  /**
-   * Get dispensary by ID
-   * @param {number} id - Dispensary ID
-   * @returns {Promise} - Promise resolving to dispensary data
-   */
-  async getDispensaryById(id) {
-    return await this.get(`/dispensaries/${id}`);
-  }
-
-  /**
-   * Create a new dispensary
-   * @param {Object} dispensaryData - Dispensary data
-   * @returns {Promise} - Promise resolving to created dispensary
-   */
-  async createDispensary(dispensaryData) {
-    return await this.post('/dispensaries', dispensaryData);
-  }
-
-  /**
-   * Update dispensary
-   * @param {number} id - Dispensary ID
-   * @param {Object} dispensaryData - Dispensary data to update
-   * @returns {Promise} - Promise resolving to updated dispensary
-   */
-  async updateDispensary(id, dispensaryData) {
-    return await this.put(`/dispensaries/${id}`, dispensaryData);
-  }
-
-  /**
-   * Delete dispensary
-   * @param {number} id - Dispensary ID
-   * @returns {Promise} - Promise resolving to success message
-   */
-  async deleteDispensary(id) {
-    return await this.delete(`/dispensaries/${id}`);
   }
 }
 

@@ -277,9 +277,9 @@ router.put('/:id/status', hasRole(['pharmacy', 'ordering']), async (req, res) =>
 
     // Determine user for audit trail
     const modifiedBy = req.user ? req.user.username : 'system';
-    
+    const dispensaryIdHeader = req.get('X-Dispensary-Id') || null;
     // Update order via model (now handles audit trail internally)
-    const updateResult = await OrderModel.updateOrder(orderId, { status, modifiedBy, reason });
+    const updateResult = await OrderModel.updateOrder(orderId, { status, modifiedBy, reason, dispensaryId: dispensaryIdHeader });
 
     if (!updateResult.success) {
       return res.status(404).json({
@@ -339,6 +339,8 @@ router.put('/:id/status', hasRole(['pharmacy', 'ordering']), async (req, res) =>
 // PUT /api/orders/:id – full/partial order update
 // ---------------------------------------------
 router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
+  // Capture selected dispensary from custom header for audit trail
+  const dispensaryIdHeader = req.get('X-Dispensary-Id') || null;
   try {
     const orderId = req.params.id;
     const { status, processedBy, checkedBy, processingNotes, medications, notes } = req.body;
@@ -369,6 +371,7 @@ router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
     }
 
     // Track if we need to update medications separately
+    const commonAuditFields = { dispensaryId: dispensaryIdHeader };
     let medicationsUpdated = false;
     let basicUpdateResult = { success: true };
     
@@ -382,7 +385,8 @@ router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
         const medResult = await OrderModel.updateOrderMedications(orderId, {
           medications,
           modifiedBy,
-          reason: 'Medication details updated via API'
+          reason: 'Medication details updated via API',
+          ...commonAuditFields
         });
         
         if (!medResult.success) {
@@ -412,7 +416,8 @@ router.put('/:id', hasRole(['pharmacy', 'ordering']), async (req, res) => {
         processedBy,
         checkedBy,
         processingNotes,
-        notes // Add notes to update payload
+        notes, // Add notes to update payload
+        ...commonAuditFields
       });
       
       if (!basicUpdateResult.success && !medicationsUpdated) {
@@ -478,6 +483,7 @@ router.put('/:id/cancel', hasRole(['admin', 'pharmacy', 'ordering']), async (req
   try {
     const orderId = req.params.id;
     const { reason, cancelledBy, timestamp } = req.body;
+    const dispensaryIdHeader = req.get('X-Dispensary-Id') || null;
 
     // Validate required fields
     if (!reason || !cancelledBy) {
@@ -491,7 +497,8 @@ router.put('/:id/cancel', hasRole(['admin', 'pharmacy', 'ordering']), async (req
     const result = await OrderModel.cancelOrder(orderId, {
       reason,
       cancelledBy,
-      timestamp: timestamp || new Date().toISOString()
+      timestamp: timestamp || new Date().toISOString(),
+      dispensaryId: dispensaryIdHeader
     });
 
     if (!result.success) {
@@ -545,11 +552,13 @@ router.put('/:id/medications', hasRole(['pharmacy', 'ordering']), async (req, re
     }
 
     // Update the order medications
+    const dispensaryIdHeader = req.get('X-Dispensary-Id') || null;
     const result = await OrderModel.updateOrderMedications(orderId, {
       medications,
       modifiedBy,
       reason,
-      timestamp: timestamp || new Date().toISOString()
+      timestamp: timestamp || new Date().toISOString(),
+      dispensaryId: dispensaryIdHeader
     });
 
     if (!result.success) {

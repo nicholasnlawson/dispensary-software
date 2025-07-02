@@ -403,7 +403,7 @@ const OrderModel = {
   // Update order status and processing details
   async updateOrder(orderId, updateData) {
   // Extract audit info first so they are not written to the orders table
-const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
+const { modifiedBy = 'system', reason = null, dispensaryId = null, ...fieldsToUpdate } = updateData;
 
   // Fetch current order for audit comparison once before we start SQL operations
   let existingOrder = null;
@@ -486,7 +486,7 @@ const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
                 modifiedBy,
                 reason || `Status changed to ${status}`,
                 JSON.stringify({ status: previousStatus }),
-                JSON.stringify({ status })
+                JSON.stringify({ status, dispensaryId })
               ],
               (err2) => {
                 if (err2) {
@@ -805,7 +805,7 @@ const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
                   cancelledBy,
                   reason,
                   JSON.stringify({ status: previousStatus }),
-                  JSON.stringify({ status: 'cancelled' })
+                  JSON.stringify({ status: 'cancelled', dispensaryId })
                 ],
                 function(err) {
                   if (err) {
@@ -878,7 +878,7 @@ const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
         }
         
         // Validate required data
-        const { medications, modifiedBy, reason, timestamp } = updateData;
+        const { medications, modifiedBy, reason, timestamp, dispensaryId = null } = updateData;
         if (!medications || !Array.isArray(medications) || !modifiedBy || !reason) {
           return resolve({ 
             success: false, 
@@ -972,7 +972,7 @@ const { modifiedBy = 'system', reason = null, ...fieldsToUpdate } = updateData;
                     modifiedBy,
                     reason,
                     JSON.stringify({ medications: previousMedications }),
-                    JSON.stringify({ medications: medications })
+                    JSON.stringify({ medications: medications, dispensaryId })
                   ],
                   function(err) {
                     if (err) {

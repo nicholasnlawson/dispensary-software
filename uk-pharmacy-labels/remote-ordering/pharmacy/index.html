@@ -142,18 +142,6 @@
             >
           </div>
         </div>
-        
-        <!-- Dispensary Selector -->
-        <div class="dispensary-selector-section">
-          <h2>Current Dispensary</h2>
-          <div class="dispensary-selector-container">
-            <select id="dispensary-selector" class="form-control">
-              <option value="">Select Dispensary</option>
-              <!-- Dispensaries will be loaded dynamically -->
-            </select>
-          </div>
-          <p class="dispensary-selector-help">The selected dispensary will be used for processing orders.</p>
-        </div>
       </div>
 
       <!-- Order Detail Modal (Hidden by default) -->
@@ -276,7 +264,24 @@
         </div>
       </div>
 
-      <!-- View Notes Modal (Hidden by default) -->
+      <!-- Dispensary Selection Modal (Hidden by default) -->
+       <div id="select-dispensary-modal" class="modal hidden">
+         <div class="modal-content">
+           <div class="modal-header">
+             <h3 class="modal-title">Select Dispensary</h3>
+             <span class="modal-close" onclick="this.closest('.modal').style.display='none';">&times;</span>
+           </div>
+           <div class="modal-body">
+             <p>Please choose the dispensary you are currently working in:</p>
+             <select id="initial-dispensary-select" class="form-control"></select>
+           </div>
+           <div class="modal-footer">
+             <button id="confirm-dispensary-btn" type="button" class="btn btn-primary">Confirm</button>
+           </div>
+         </div>
+       </div>
+
+       <!-- View Notes Modal (Hidden by default) -->
       <div id="view-notes-modal" class="modal hidden">
         <div class="modal-content">
           <div class="modal-header">
@@ -297,7 +302,13 @@
     </main>
 
     <footer>
-      <!-- Footer content removed as requested -->
+      <div class="footer-utilities container">
+        <div class="footer-dispensary-select">
+            <label for="dispensary-selector">Dispensary:</label>
+            <select id="dispensary-selector" class="form-control"></select>
+          </div>
+        </div>
+      </div>
     </footer>
 
     <!-- Load shared dependencies first -->

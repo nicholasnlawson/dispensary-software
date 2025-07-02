@@ -714,6 +714,55 @@ button[type="reset"]:hover,
   display: none;
 }
 
+/* Footer Utilities Section */
+.footer-utilities {
+  background-color: white;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid var(--gray-light);
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+}
+
+.footer-utilities h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+  color: var(--primary-color);
+}
+
+.footer-utilities .utility-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.footer-utilities .utility-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.footer-utilities .utility-link:hover {
+  color: var(--secondary-color);
+}
+
+.footer-dispensary-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-dispensary-select label {
+  font-weight: 600;
+  color: var(--gray-dark);
+}
+
+.footer-dispensary-select select {
+  min-width: 220px;
+  padding: 0.5rem 0.75rem;
+}
+
 /* Statistics Panel */
 .statistics-panel {
   background-color: white;
