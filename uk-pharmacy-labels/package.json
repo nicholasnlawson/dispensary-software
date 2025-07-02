@@ -6,13 +6,14 @@
   "scripts": {
     "start": "node start-with-db.js",
     "test": "mocha server/tests/**/*.test.js",
-    "postinstall": "mkdir -p server/db/sqlite && npm rebuild sqlite3 --build-from-source"
+    "postinstall": "mkdir -p server/db/sqlite"
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "better-sqlite3": "^8.0.0",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
@@ -20,11 +21,12 @@
     "express": "^4.18.2",
     "express-rate-limit": "^6.7.0",
     "helmet": "^7.0.0",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^5.1.6",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
     "node-fetch": "^2.7.0",
-    "node-gyp": "^9.0.0"
+    "node-gyp": "^9.0.0",
+    "node-pre-gyp": "^0.17.0"
   }
 }
