@@ -1,17 +1,17 @@
 [
   {
-    "name": ["Abemaciclib"],
+    "name": ["Abemaciclib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 25]
   },
   {
-    "name": ["Abiraterone Acetate"],
+    "name": ["Abiraterone-Acetate"],
     "formulation": ["Oral tablet"],
     "label_number": [23]
   },
   {
-    "name": ["Acamprosate Calcium"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Acamprosate-Calcium"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 21, 25]
   },
   {
@@ -80,12 +80,12 @@
     "label_number": [11]
   },
   {
-    "name": ["Adapalene/Benzoyl Peroxide"],
+    "name": ["Adapalene-With-Benzoyl-Peroxide"],
     "formulation": ["Cutaneous gel"],
     "label_number": [11]
   },
   {
-    "name": ["Afatinib"],
+    "name": ["Afatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -100,22 +100,22 @@
     "label_number": [9]
   },
   {
-    "name": ["Alectinib"],
+    "name": ["Alectinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [11, 21]
   },
   {
-    "name": ["Alfuzosin "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Alfuzosin-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Alimemazine Tartrate"],
+    "name": ["Alimemazine-Tartrate"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Alimemazine Tartrate"],
+    "name": ["Alimemazine-Tartrate"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
@@ -135,12 +135,12 @@
     "label_number": [3]
   },
   {
-    "name": ["Alogliptin/Metformin"],
+    "name": ["Alogliptin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Alpelisib"],
+    "name": ["Alpelisib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
@@ -150,7 +150,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Aluminium Chloride Hexahydrate"],
+    "name": ["Aluminium-Chloride-Hexahydrate"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
@@ -160,12 +160,12 @@
     "label_number": [3, 21]
   },
   {
-    "name": ["Aminosalicylic Acid"],
-    "formulation": ["Gastro resistant granules"],
+    "name": ["Aminosalicylic-Acid"],
+    "formulation": ["Gastro-resistant granules"],
     "label_number": [9, 25]
   },
   {
-    "name": ["Amiodarone "],
+    "name": ["Amiodarone-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [11]
   },
@@ -180,12 +180,12 @@
     "label_number": [2]
   },
   {
-    "name": ["Amitriptyline "],
+    "name": ["Amitriptyline-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Amitriptyline "],
+    "name": ["Amitriptyline-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
@@ -220,16 +220,6 @@
     "label_number": [10]
   },
   {
-    "name": ["Apomorphine "],
-    "formulation": ["Solution for injection"],
-    "label_number": [10]
-  },
-  {
-    "name": ["Apomorphine "],
-    "formulation": ["Solution for infusion"],
-    "label_number": [10]
-  },
-  {
     "name": ["Apremilast"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
@@ -245,17 +235,27 @@
     "label_number": [2]
   },
   {
-    "name": ["Artemether/Lumefantrine"],
+    "name": ["Aripiprazole"],
+    "formulation": ["Orodispersible tablet"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Aripiprazole"],
+    "formulation": ["Oral solution"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Artemether-With-Lumefantrine"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Asciminib"],
+    "name": ["Asciminib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Ascorbic Acid"],
+    "name": ["Ascorbic-Acid"],
     "formulation": ["Chewable tablet"],
     "label_number": [24]
   },
@@ -276,7 +276,7 @@
   },
   {
     "name": ["Aspirin"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 25, 32]
   },
   {
@@ -325,7 +325,7 @@
     "label_number": [21]
   },
   {
-    "name": ["Atovaquone/Proguanil "],
+    "name": ["Atovaquone-With-Proguanil-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -335,7 +335,7 @@
     "label_number": [21, 25]
   },
   {
-    "name": ["Avapritinib"],
+    "name": ["Avapritinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23, 25]
   },
@@ -345,12 +345,12 @@
     "label_number": [21]
   },
   {
-    "name": ["Axitinib"],
+    "name": ["Axitinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Azacitidine"],
+    "name": ["Azacitidine-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -385,52 +385,52 @@
     "label_number": [2, 8, 21]
   },
   {
-    "name": ["Balsalazide Sodium"],
+    "name": ["Balsalazide-Sodium"],
     "formulation": ["Oral capsule"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Beclometasone Dipropionate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Beclometasone-Dipropionate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Beclometasone Dipropionate"],
+    "name": ["Beclometasone-Dipropionate"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Beclometasone Dipropionate"],
+    "name": ["Beclometasone-Dipropionate"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Beclometasone Dipropionate"],
+    "name": ["Beclometasone-Dipropionate"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Beclometasone Dipropionate"],
+    "name": ["Beclometasone-Dipropionate"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Beclometasone/Formoterol"],
+    "name": ["Beclometasone-With-Formoterol"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Beclometasone/Formoterol"],
+    "name": ["Beclometasone-With-Formoterol"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Beclometasone/Formoterol/Glycopyrronium"],
+    "name": ["Beclometasone-With-Formoterol-And-Glycopyrronium"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Beclometasone/Formoterol/Glycopyrronium"],
+    "name": ["Beclometasone-With-Formoterol-And-Glycopyrronium"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
@@ -445,12 +445,17 @@
     "label_number": [21]
   },
   {
+    "name": ["Benperidol"],
+    "formulation": ["Oral tablet"],
+    "label_number": [2]
+  },
+  {
     "name": ["Berotralstat"],
     "formulation": ["Oral capsule"],
     "label_number": [21]
   },
   {
-    "name": ["Betahistine Dihydrochloride"],
+    "name": ["Betahistine-Dihydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -485,47 +490,47 @@
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Clioquinol"],
+    "name": ["Betamethasone-With-Clioquinol"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Clioquinol"],
+    "name": ["Betamethasone-With-Clioquinol"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Clotrimazole"],
+    "name": ["Betamethasone-With-Clotrimazole"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Fusidic Acid"],
+    "name": ["Betamethasone-With-Fusidic-Acid"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Neomycin"],
+    "name": ["Betamethasone-With-Neomycin"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Neomycin"],
+    "name": ["Betamethasone-With-Neomycin"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Salicylic Acid"],
+    "name": ["Betamethasone-With-Salicylic-Acid"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Betamethasone/Salicylic Acid"],
+    "name": ["Betamethasone-With-Salicylic-Acid"],
     "formulation": ["Cutaneous solution"],
     "label_number": [28]
   },
   {
-    "name": ["Bethanechol Chloride"],
+    "name": ["Bethanechol-Chloride"],
     "formulation": ["Oral tablet"],
     "label_number": [22]
   },
@@ -536,11 +541,11 @@
   },
   {
     "name": ["Bezafibrate"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Bictegravir/Emtricitabine/Tenofovir Alafenamide"],
+    "name": ["Bictegravir-With-Emtricitabine-And-Tenofovir-Alafenamide"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -550,57 +555,57 @@
     "label_number": [23]
   },
   {
-    "name": ["Binimetinib"],
+    "name": ["Binimetinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
     "name": ["Bisacodyl"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 25]
   },
   {
-    "name": ["Bismuth Potassium/Metronidazole/Tetracycline"],
+    "name": ["Bismuth-Potassium-With-Metronidazole-And-Tetracycline-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [4, 7, 9, 27]
   },
   {
-    "name": ["Bismuth Subsalicylate"],
+    "name": ["Bismuth-Subsalicylate"],
     "formulation": ["Chewable tablet"],
     "label_number": [12, 24]
   },
   {
-    "name": ["Bismuth Subsalicylate"],
+    "name": ["Bismuth-Subsalicylate"],
     "formulation": ["Oral suspension"],
     "label_number": [12]
   },
   {
-    "name": ["Bisoprolol Fumarate"],
+    "name": ["Bisoprolol-Fumarate"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
   {
-    "name": ["Bosutinib"],
+    "name": ["Bosutinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Brigatinib"],
+    "name": ["Brigatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Brigatinib"],
+    "name": ["Brigatinib-Specialist-Drug"],
     "formulation": ["Form unstated"],
     "label_number": [25]
   },
   {
-    "name": ["Brimonidine Tartrate"],
+    "name": ["Brimonidine-Tartrate"],
     "formulation": ["Cutaneous gel"],
     "label_number": [28]
   },
   {
-    "name": ["Brinzolamide/Brimonidine"],
+    "name": ["Brinzolamide-With-Brimonidine"],
     "formulation": ["Eye drops"],
     "label_number": [3]
   },
@@ -631,22 +636,22 @@
   },
   {
     "name": ["Budesonide"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [10, 25]
   },
   {
     "name": ["Budesonide"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [10, 25]
   },
   {
     "name": ["Budesonide"],
-    "formulation": ["Gastro resistant capsule"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [5, 10, 22, 25]
   },
   {
     "name": ["Budesonide"],
-    "formulation": ["Gastro resistant granules"],
+    "formulation": ["Gastro-resistant granules"],
     "label_number": [5, 10, 22, 25]
   },
   {
@@ -660,12 +665,12 @@
     "label_number": [8, 10]
   },
   {
-    "name": ["Budesonide/Formoterol"],
+    "name": ["Budesonide-With-Formoterol"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Budesonide/Formoterol"],
+    "name": ["Budesonide-With-Formoterol"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
@@ -685,13 +690,13 @@
     "label_number": [2]
   },
   {
-    "name": ["Buprenorphine/Naloxone"],
+    "name": ["Buprenorphine-With-Naloxone"],
     "formulation": ["Sublingual tablet"],
     "label_number": [2, 26]
   },
   {
-    "name": ["Bupropion "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Bupropion-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -700,87 +705,87 @@
     "label_number": [10, 21]
   },
   {
-    "name": ["Cabozantinib"],
+    "name": ["Cabozantinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Cabozantinib"],
+    "name": ["Cabozantinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Cabozantinib"],
+    "name": ["Cabozantinib-Specialist-Drug"],
     "formulation": ["Form unstated"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Calamine/Zinc Oxide"],
+    "name": ["Calamine-With-Zinc-Oxide"],
     "formulation": ["Cutaneous cream"],
     "label_number": [15]
   },
   {
-    "name": ["Calcipotriol/Betamethasone"],
+    "name": ["Calcipotriol-With-Betamethasone"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Calcipotriol/Betamethasone"],
+    "name": ["Calcipotriol-With-Betamethasone"],
     "formulation": ["Cutaneous foam"],
     "label_number": [15, 28]
   },
   {
-    "name": ["Calcipotriol/Betamethasone"],
+    "name": ["Calcipotriol-With-Betamethasone"],
     "formulation": ["Cutaneous gel"],
     "label_number": [28]
   },
   {
-    "name": ["Calcipotriol/Betamethasone"],
+    "name": ["Calcipotriol-With-Betamethasone"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Calcium Acetate"],
+    "name": ["Calcium-Acetate"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Calcium Acetate/Magnesium Carbonate"],
+    "name": ["Calcium-Acetate-With-Magnesium-Carbonate"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Calcium Carbonate"],
+    "name": ["Calcium-Carbonate"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Calcium Carbonate"],
+    "name": ["Calcium-Carbonate"],
     "formulation": ["Chewable tablet"],
     "label_number": [24]
   },
   {
-    "name": ["Calcium Carbonate"],
+    "name": ["Calcium-Carbonate"],
     "formulation": ["Effervescent tablet"],
     "label_number": [13]
   },
   {
-    "name": ["Calcium Carbonate/Calcium Lactate Gluconate"],
+    "name": ["Calcium-Carbonate-With-Calcium-Lactate-Gluconate"],
     "formulation": ["Effervescent tablet"],
     "label_number": [13]
   },
   {
-    "name": ["Calcium Gluconate"],
+    "name": ["Calcium-Gluconate"],
     "formulation": ["Effervescent tablet"],
     "label_number": [13]
   },
   {
-    "name": ["Calcium Polystyrene Sulfonate"],
+    "name": ["Calcium-Polystyrene-Sulfonate"],
     "formulation": ["Powder for oral or rectal suspension"],
     "label_number": [13]
   },
   {
-    "name": ["Canagliflozin/Metformin"],
+    "name": ["Canagliflozin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -790,17 +795,17 @@
     "label_number": [2, 8]
   },
   {
-    "name": ["Cannabis Extract"],
+    "name": ["Cannabis-Extract"],
     "formulation": ["Spray"],
     "label_number": [2]
   },
   {
-    "name": ["Capecitabine"],
+    "name": ["Capecitabine-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Capivasertib"],
+    "name": ["Capivasertib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -811,7 +816,7 @@
   },
   {
     "name": ["Carbamazepine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [3, 8, 25]
   },
   {
@@ -830,7 +835,7 @@
     "label_number": [3, 8]
   },
   {
-    "name": ["Carglumic Acid"],
+    "name": ["Carglumic-Acid"],
     "formulation": ["Dispersible tablet"],
     "label_number": [13]
   },
@@ -841,7 +846,7 @@
   },
   {
     "name": ["Cefaclor"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [9, 21, 25]
   },
   {
@@ -895,7 +900,7 @@
     "label_number": [9, 21]
   },
   {
-    "name": ["Celiprolol "],
+    "name": ["Celiprolol-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [8, 22]
   },
@@ -905,22 +910,22 @@
     "label_number": [2, 8]
   },
   {
-    "name": ["Ceritinib"],
+    "name": ["Ceritinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Certolizumab Pegol"],
+    "name": ["Certolizumab-Pegol"],
     "formulation": ["Solution for injection"],
     "label_number": [10]
   },
   {
-    "name": ["Chloral Hydrate"],
+    "name": ["Chloral-Hydrate"],
     "formulation": ["Oral solution"],
     "label_number": [1, 19, 27]
   },
   {
-    "name": ["Chlordiazepoxide "],
+    "name": ["Chlordiazepoxide-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
@@ -930,7 +935,7 @@
     "label_number": [15]
   },
   {
-    "name": ["Chlorhexidine Gluconate/Isopropyl Alcohol"],
+    "name": ["Chlorhexidine-Gluconate-With-Isopropyl-Alcohol"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
@@ -945,32 +950,32 @@
     "label_number": [5]
   },
   {
-    "name": ["Chlorphenamine "],
+    "name": ["Chlorphenamine-Maleate"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Chlorphenamine "],
+    "name": ["Chlorphenamine-Maleate"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
-    "name": ["Chlorpromazine "],
+    "name": ["Chlorpromazine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 11]
   },
   {
-    "name": ["Chlorpromazine "],
+    "name": ["Chlorpromazine-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2, 11]
   },
   {
-    "name": ["Chlorpromazine "],
+    "name": ["Chlorpromazine-Hydrochloride"],
     "formulation": ["Suppository"],
     "label_number": [2, 11]
   },
   {
-    "name": ["Cholic Acid"],
+    "name": ["Cholic-Acid"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -1010,7 +1015,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Cinnarizine/Dimenhydrinate"],
+    "name": ["Cinnarizine-With-Dimenhydrinate"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 21]
   },
@@ -1025,12 +1030,12 @@
     "label_number": [7, 9]
   },
   {
-    "name": ["Citric Acid/Magnesium Carbonate"],
+    "name": ["Citric-Acid-With-Magnesium-Carbonate"],
     "formulation": ["Effervescent powder"],
     "label_number": [10, 13]
   },
   {
-    "name": ["Citric Acid/Potassium Citrate"],
+    "name": ["Citric-Acid-With-Potassium-Citrate"],
     "formulation": ["Oral solution"],
     "label_number": [27]
   },
@@ -1041,7 +1046,7 @@
   },
   {
     "name": ["Clarithromycin"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [9, 21, 25]
   },
   {
@@ -1065,47 +1070,47 @@
     "label_number": [2, 8]
   },
   {
-    "name": ["Clobetasol Propionate"],
+    "name": ["Clobetasol-Propionate"],
     "formulation": ["Shampoo"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasol Propionate"],
+    "name": ["Clobetasol-Propionate"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasol Propionate"],
+    "name": ["Clobetasol-Propionate"],
     "formulation": ["Cutaneous liquid"],
     "label_number": [15, 28]
   },
   {
-    "name": ["Clobetasol Propionate"],
+    "name": ["Clobetasol-Propionate"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasol Propionate/Neomycin Sulfate/Nystatin"],
+    "name": ["Clobetasol-Propionate-With-Neomycin-Sulfate-And-Nystatin"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasol Propionate/Neomycin Sulfate/Nystatin"],
+    "name": ["Clobetasol-Propionate-With-Neomycin-Sulfate-And-Nystatin"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasone Butyrate"],
+    "name": ["Clobetasone-Butyrate"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasone Butyrate"],
+    "name": ["Clobetasone-Butyrate"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Clobetasone Butyrate/Nystatin/Oxytetracycline"],
+    "name": ["Clobetasone-Butyrate-With-Nystatin-And-Oxytetracycline"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
@@ -1125,7 +1130,7 @@
     "label_number": [19]
   },
   {
-    "name": ["Clomipramine "],
+    "name": ["Clomipramine-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
@@ -1140,7 +1145,7 @@
     "label_number": [2, 8]
   },
   {
-    "name": ["Clonidine "],
+    "name": ["Clonidine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 8]
   },
@@ -1186,7 +1191,7 @@
   },
   {
     "name": ["Co-Beneldopa"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [5, 10, 14, 25]
   },
   {
@@ -1196,7 +1201,7 @@
   },
   {
     "name": ["Co-Careldopa"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [10, 14, 25]
   },
   {
@@ -1250,17 +1255,17 @@
     "label_number": [9]
   },
   {
-    "name": ["Coal Tar/Salicylic Acid"],
+    "name": ["Coal-Tar-With-Salicylic-Acid"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [15]
   },
   {
-    "name": ["Coal Tar/Zinc Oxide"],
+    "name": ["Coal-Tar-With-Zinc-Oxide"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [15]
   },
   {
-    "name": ["Coal Tar/Zinc Oxide"],
+    "name": ["Coal-Tar-With-Zinc-Oxide"],
     "formulation": ["Cutaneous paste"],
     "label_number": [15]
   },
@@ -1270,12 +1275,12 @@
     "label_number": [21]
   },
   {
-    "name": ["Codeine Phosphate"],
+    "name": ["Codeine-Phosphate"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Codeine Phosphate"],
+    "name": ["Codeine-Phosphate"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
@@ -1287,15 +1292,40 @@
   {
     "name": ["Colecalciferol"],
     "formulation": ["Oral solution"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Colecalciferol"],
+    "formulation": ["Oral drops"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Colecalciferol"],
+    "formulation": ["Form unstated"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Colecalciferol"],
+    "formulation": ["Oral solution"],
     "label_number": [21]
   },
   {
-    "name": ["Colecalciferol/Calcium Carbonate"],
+    "name": ["Colecalciferol-With-Calcium-Carbonate"],
     "formulation": ["Chewable tablet"],
     "label_number": [24]
   },
   {
-    "name": ["Colesevelam "],
+    "name": ["Colecalciferol-With-Calcium-Carbonate"],
+    "formulation": ["Effervescent tablet"],
+    "label_number": [13]
+  },
+  {
+    "name": ["Colecalciferol-With-Calcium-Carbonate"],
+    "formulation": ["Effervescent granules"],
+    "label_number": [13]
+  },
+  {
+    "name": ["Colesevelam-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -1305,7 +1335,7 @@
     "label_number": [13]
   },
   {
-    "name": ["Crizotinib"],
+    "name": ["Crizotinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [11, 25]
   },
@@ -1325,22 +1355,22 @@
     "label_number": [2, 8]
   },
   {
-    "name": ["Cyproheptadine "],
+    "name": ["Cyproheptadine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Cyproterone Acetate"],
+    "name": ["Cyproterone-Acetate"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Dabigatran Etexilate"],
+    "name": ["Dabigatran-Etexilate"],
     "formulation": ["Oral capsule"],
     "label_number": [10, 25]
   },
   {
-    "name": ["Dabrafenib"],
+    "name": ["Dabrafenib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [23, 25]
   },
@@ -1355,12 +1385,12 @@
     "label_number": [21]
   },
   {
-    "name": ["Dantrolene Sodium"],
+    "name": ["Dantrolene-Sodium"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
   {
-    "name": ["Dapagliflozin/Metformin"],
+    "name": ["Dapagliflozin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -1381,7 +1411,7 @@
   },
   {
     "name": ["Darifenacin"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [3, 25]
   },
   {
@@ -1400,27 +1430,27 @@
     "label_number": [21]
   },
   {
-    "name": ["Darunavir/Cobicistat"],
+    "name": ["Darunavir-With-Cobicistat"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Darunavir/Cobicistat/Emtricitabine/Tenofovir Alafenamide"],
+    "name": ["Darunavir-With-Cobicistat-Emtricitabine-And-Tenofovir-Alafenamide"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Dasatinib"],
+    "name": ["Dasatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [5, 25]
   },
   {
-    "name": ["Dasatinib"],
+    "name": ["Dasatinib-Specialist-Drug"],
     "formulation": ["Oral suspension"],
     "label_number": [5]
   },
   {
-    "name": ["Decitabine/Cedazuridine"],
+    "name": ["Decitabine-With-Cedazuridine-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -1450,7 +1480,12 @@
     "label_number": [8, 21]
   },
   {
-    "name": ["Demeclocycline "],
+    "name": ["Delgocitinib"],
+    "formulation": ["Cutaneous cream"],
+    "label_number": [15, 28]
+  },
+  {
+    "name": ["Demeclocycline-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [7, 9, 11, 23]
   },
@@ -1490,6 +1525,16 @@
     "label_number": [10]
   },
   {
+    "name": ["Dexamethasone"],
+    "formulation": ["Eye drops"],
+    "label_number": [2, 10, 13, 21]
+  },
+  {
+    "name": ["Dexamethasone"],
+    "formulation": ["Prolonged-release intravitreal implant"],
+    "label_number": [2, 10, 13, 21]
+  },
+  {
     "name": ["Dexketoprofen"],
     "formulation": ["Oral tablet"],
     "label_number": [22]
@@ -1515,83 +1560,83 @@
     "label_number": [2]
   },
   {
-    "name": ["Diclofenac Potassium"],
+    "name": ["Diclofenac-Potassium"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Diclofenac Sodium"],
+    "name": ["Diclofenac-Sodium"],
     "formulation": ["Dispersible tablet"],
     "label_number": [13, 21]
   },
   {
-    "name": ["Diclofenac Sodium"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Diclofenac-Sodium"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Diclofenac Sodium"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Diclofenac-Sodium"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 25]
   },
   {
-    "name": ["Diclofenac Sodium"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Diclofenac-Sodium"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Diclofenac Sodium"],
+    "name": ["Diclofenac-Sodium"],
     "formulation": ["Cutaneous gel"],
     "label_number": [11, 15]
   },
   {
-    "name": ["Diclofenac Sodium/Misoprostol"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Diclofenac-Sodium-With-Misoprostol"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Diethyl Phthalate/Methyl Salicylate"],
+    "name": ["Diethyl-Phthalate-With-Methyl-Salicylate"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
   {
-    "name": ["Dihydrocodeine Tartrate"],
+    "name": ["Dihydrocodeine-Tartrate"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Dihydrocodeine Tartrate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Dihydrocodeine-Tartrate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
-    "name": ["Dihydrocodeine Tartrate"],
+    "name": ["Dihydrocodeine-Tartrate"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
-    "name": ["Dihydrocodeine/Paracetamol"],
+    "name": ["Dihydrocodeine-With-Paracetamol"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 29, 30]
   },
   {
-    "name": ["Diltiazem "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Diltiazem-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Diltiazem "],
-    "formulation": ["Modified release capsule"],
+    "name": ["Diltiazem-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Dimethyl Fumarate"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Dimethyl-Fumarate"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Dimethyl Fumarate"],
-    "formulation": ["Gastro resistant capsule"],
+    "name": ["Dimethyl-Fumarate"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [21, 25]
   },
   {
@@ -1601,22 +1646,22 @@
   },
   {
     "name": ["Dipyridamole"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Diroximel Fumarate"],
-    "formulation": ["Gastro resistant capsule"],
+    "name": ["Diroximel-Fumarate"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Disodium Hydrogen Citrate/Glucose Potassium Chloride/Sodium Chloride"],
+    "name": ["Disodium-Hydrogen-Citrate-With-Glucose-Potassium-Chloride-And-Sodium-Chloride"],
     "formulation": ["Powder for oral solution"],
     "label_number": [13]
   },
   {
     "name": ["Disopyramide"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -1630,12 +1675,12 @@
     "label_number": [28]
   },
   {
-    "name": ["Dithranol/Salicylic Acid/Zinc Oxide"],
+    "name": ["Dithranol-With-Salicylic-Acid-And-Zinc-Oxide"],
     "formulation": ["Paste"],
     "label_number": [28]
   },
   {
-    "name": ["Dolutegravir/Rilpivirine"],
+    "name": ["Dolutegravir-With-Rilpivirine"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -1655,18 +1700,18 @@
     "label_number": [3, 25]
   },
   {
-    "name": ["Dosulepin "],
+    "name": ["Dosulepin-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Dosulepin "],
+    "name": ["Dosulepin-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
   {
     "name": ["Doxazosin"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -1696,12 +1741,12 @@
   },
   {
     "name": ["Doxycycline"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [6, 11, 27]
   },
   {
-    "name": ["Doxylamine/Pyridoxine"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Doxylamine-With-Pyridoxine"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [2, 23, 25]
   },
   {
@@ -1711,7 +1756,7 @@
   },
   {
     "name": ["Duloxetine"],
-    "formulation": ["Gastro resistant capsule"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [2]
   },
   {
@@ -1730,7 +1775,7 @@
     "label_number": [23]
   },
   {
-    "name": ["Efavirenz/Emtricitabine/Tenofovir Disoproxil"],
+    "name": ["Efavirenz-With-Emtricitabine-And-Tenofovir-Disoproxil"],
     "formulation": ["Oral tablet"],
     "label_number": [23, 25]
   },
@@ -1740,7 +1785,7 @@
     "label_number": [21]
   },
   {
-    "name": ["Elbasvir/Grazoprevir"],
+    "name": ["Elbasvir-With-Grazoprevir"],
     "formulation": ["Oral tablet"],
     "label_number": [3]
   },
@@ -1760,167 +1805,177 @@
     "label_number": [13]
   },
   {
-    "name": ["Elvitegravir/Cobicistat/Emtricitabine/Tenofovir Alafenamide"],
+    "name": ["Elvitegravir-With-Cobicistat-Emtricitabine-And-Tenofovir-Alafenamide"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Elvitegravir/Cobicistat/Emtricitabine/Tenofovir Disoproxil"],
+    "name": ["Elvitegravir-With-Cobicistat-Emtricitabine-And-Tenofovir-Disoproxil"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Emollient Bath And Shower Products Antimicrobial Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Antimicrobial-Containing"],
     "formulation": ["Bath additive"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Antimicrobial Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Antimicrobial-Containing"],
     "formulation": ["Cutaneous emulsion"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Paraffin Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Paraffin-Containing"],
     "formulation": ["Bath additive"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Paraffin Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Paraffin-Containing"],
     "formulation": ["Cutaneous wash"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Paraffin Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Paraffin-Containing"],
     "formulation": ["Cutaneous cream"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Paraffin Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Paraffin-Containing"],
     "formulation": ["Cutaneous gel"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Paraffin Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Paraffin-Containing"],
     "formulation": ["Form unstated"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Paraffin Containing"],
-    "formulation": ["Products /out form"],
+    "name": ["Emollient-Bath-And-Shower-Products-Paraffin-Containing"],
+    "formulation": ["Products without form"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Bath And Shower Products Soya Bean Oil Containing"],
+    "name": ["Emollient-Bath-And-Shower-Products-Soya-Bean-Oil-Containing"],
     "formulation": ["Bath additive"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Antimicrobial Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Antimicrobial-Containing"],
     "formulation": ["Cutaneous cream"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Antimicrobial Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Antimicrobial-Containing"],
     "formulation": ["Cutaneous emulsion"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Colloidal Oatmeal Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Colloidal-Oatmeal-Containing"],
     "formulation": ["Cream"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Colloidal Oatmeal Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Colloidal-Oatmeal-Containing"],
     "formulation": ["Form unstated"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Colloidal Oatmeal Containing"],
-    "formulation": ["Products  /out form"],
+    "name": ["Emollient-Creams-And-Ointments-Colloidal-Oatmeal-Containing"],
+    "formulation": ["Products without form"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Hydrogenated Castor Oil Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Hydrogenated-Castor-Oil-Containing"],
     "formulation": ["Ointment"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Cream"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Ointment"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Spray"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Cutaneous cream"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Cutaneous emulsion"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Cutaneous gel"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
   {
-    "name": ["Emollient Creams And Ointments Paraffin Containing"],
-    "formulation": ["Products  /out form"],
+    "name": ["Emollient-Creams-And-Ointments-Paraffin-Containing"],
+    "formulation": ["Products without form"],
     "label_number": [15]
   },
   {
-    "name": ["Emollients Urea Containing"],
+    "name": ["Emollients-Urea-Containing"],
     "formulation": ["Cutaneous cream"],
     "label_number": [15]
   },
   {
-    "name": ["Emollients Urea Containing"],
-    "formulation": ["Products  /out form"],
+    "name": ["Emollients-Urea-Containing"],
+    "formulation": ["Products without form"],
     "label_number": [15]
   },
   {
-    "name": ["Empagliflozin/Metformin"],
+    "name": ["Empagliflozin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Emtricitabine/Rilpivirine/Tenofovir Alafenamide"],
+    "name": ["Emtricitabine-With-Rilpivirine-And-Tenofovir-Alafenamide"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 21]
   },
   {
-    "name": ["Emtricitabine/Rilpivirine/Tenofovir Disoproxil"],
+    "name": ["Emtricitabine-With-Rilpivirine-And-Tenofovir-Disoproxil"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Emtricitabine/Tenofovir Disoproxil"],
+    "name": ["Emtricitabine-With-Tenofovir-Alafenamide"],
+    "formulation": ["Oral tablet"],
+    "label_number": [25]
+  },
+  {
+    "name": ["Emtricitabine-With-Tenofovir-Alafenamide"],
+    "formulation": ["Oral tablet"],
+    "label_number": [25]
+  },
+  {
+    "name": ["Emtricitabine-With-Tenofovir-Disoproxil"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Encorafenib"],
+    "name": ["Encorafenib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -1930,7 +1985,7 @@
     "label_number": [14]
   },
   {
-    "name": ["Entrectinib"],
+    "name": ["Entrectinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -1945,12 +2000,12 @@
     "label_number": [21]
   },
   {
-    "name": ["Erdafitinib"],
+    "name": ["Erdafitinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Erlotinib"],
+    "name": ["Erlotinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23]
   },
@@ -1961,7 +2016,7 @@
   },
   {
     "name": ["Erythromycin"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 9, 25]
   },
   {
@@ -1975,18 +2030,18 @@
     "label_number": [2, 10]
   },
   {
-    "name": ["Eslicarbazepine Acetate"],
+    "name": ["Eslicarbazepine-Acetate"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
   {
-    "name": ["Eslicarbazepine Acetate"],
+    "name": ["Eslicarbazepine-Acetate"],
     "formulation": ["Oral suspension"],
     "label_number": [8]
   },
   {
     "name": ["Esomeprazole"],
-    "formulation": ["Gastro resistant granules"],
+    "formulation": ["Gastro-resistant granules"],
     "label_number": [25]
   },
   {
@@ -2000,6 +2055,11 @@
     "label_number": [15]
   },
   {
+    "name": ["Eszopiclone"],
+    "formulation": ["Oral tablet"],
+    "label_number": [19]
+  },
+  {
     "name": ["Etanercept"],
     "formulation": ["Solution for injection"],
     "label_number": [10]
@@ -2010,7 +2070,7 @@
     "label_number": [10]
   },
   {
-    "name": ["Ethambutol "],
+    "name": ["Ethambutol-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
@@ -2026,11 +2086,11 @@
   },
   {
     "name": ["Etodolac"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Etoposide"],
+    "name": ["Etoposide-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [23]
   },
@@ -2056,7 +2116,7 @@
   },
   {
     "name": ["Exenatide"],
-    "formulation": ["Prolonged release suspension for injection"],
+    "formulation": ["Prolonged-release suspension for injection"],
     "label_number": [10]
   },
   {
@@ -2066,17 +2126,17 @@
   },
   {
     "name": ["Fampridine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Fedratinib"],
+    "name": ["Fedratinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
     "name": ["Felodipine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -2120,32 +2180,32 @@
     "label_number": [2]
   },
   {
-    "name": ["Ferric Maltol"],
+    "name": ["Ferric-Maltol"],
     "formulation": ["Oral capsule"],
     "label_number": [23]
   },
   {
-    "name": ["Ferrous Sulfate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Ferrous-Sulfate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Ferrous Sulfate/Ascorbic Acid"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Ferrous-Sulfate-With-Ascorbic-Acid"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Ferrous Sulfate/Folic Acid"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Ferrous-Sulfate-With-Folic-Acid"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Fesoterodine Fumarate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Fesoterodine-Fumarate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [3, 25]
   },
   {
-    "name": ["Fexofenadine "],
+    "name": ["Fexofenadine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [5]
   },
@@ -2170,7 +2230,7 @@
     "label_number": [25]
   },
   {
-    "name": ["Flavoxate "],
+    "name": ["Flavoxate-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [3]
   },
@@ -2195,7 +2255,7 @@
     "label_number": [9]
   },
   {
-    "name": ["Fludrocortisone Acetate"],
+    "name": ["Fludrocortisone-Acetate"],
     "formulation": ["Oral tablet"],
     "label_number": [10]
   },
@@ -2205,17 +2265,17 @@
     "label_number": [28]
   },
   {
-    "name": ["Fluocinolone Acetonide"],
+    "name": ["Fluocinolone-Acetonide"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Fluocinolone Acetonide"],
+    "name": ["Fluocinolone-Acetonide"],
     "formulation": ["Cutaneous gel"],
     "label_number": [28]
   },
   {
-    "name": ["Fluocinolone Acetonide"],
+    "name": ["Fluocinolone-Acetonide"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
@@ -2245,7 +2305,7 @@
     "label_number": [11]
   },
   {
-    "name": ["Fluorouracil/Salicylic Acid"],
+    "name": ["Fluorouracil-With-Salicylic-Acid"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
@@ -2290,37 +2350,37 @@
     "label_number": [28]
   },
   {
-    "name": ["Fluticasone/Formoterol"],
+    "name": ["Fluticasone-With-Formoterol"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Fluticasone/Salmeterol"],
+    "name": ["Fluticasone-With-Salmeterol"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Fluticasone/Salmeterol"],
+    "name": ["Fluticasone-With-Salmeterol"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Fluticasone/Umeclidinium/Vilanterol"],
+    "name": ["Fluticasone-With-Umeclidinium-And-Vilanterol"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Fluticasone/Vilanterol"],
+    "name": ["Fluticasone-With-Vilanterol"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
   {
     "name": ["Fluvastatin"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Formoterol Fumarate/Glycopyrronium/Budesonide"],
+    "name": ["Formoterol-Fumarate-With-Glycopyrronium-And-Budesonide"],
     "formulation": ["Pressurised inhalation"],
     "label_number": [8, 10]
   },
@@ -2330,13 +2390,13 @@
     "label_number": [9, 13, 23]
   },
   {
-    "name": ["Foslevodopa/Foscarbidopa"],
+    "name": ["Foslevodopa-With-Foscarbidopa"],
     "formulation": ["Solution for infusion"],
     "label_number": [10]
   },
   {
     "name": ["Fostemsavir"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -2345,19 +2405,24 @@
     "label_number": [3]
   },
   {
-    "name": ["Fruquintinib"],
+    "name": ["Fruquintinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Fusidic Acid"],
+    "name": ["Fusidic-Acid"],
     "formulation": ["Oral tablet"],
     "label_number": [9]
   },
   {
-    "name": ["Fusidic Acid"],
+    "name": ["Fusidic-Acid"],
     "formulation": ["Oral suspension"],
     "label_number": [9]
+  },
+  {
+    "name": ["Futibatinib-Specialist-Drug"],
+    "formulation": ["Oral tablet"],
+    "label_number": [25]
   },
   {
     "name": ["Gabapentin"],
@@ -2381,7 +2446,7 @@
   },
   {
     "name": ["Galantamine"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [3, 21, 25]
   },
   {
@@ -2400,22 +2465,37 @@
     "label_number": [22]
   },
   {
-    "name": ["Gilteritinib"],
+    "name": ["Gilteritinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Glecaprevir/Pibrentasvir"],
+    "name": ["Givinostat"],
+    "formulation": ["Oral suspension"],
+    "label_number": [21]
+  },
+  {
+    "name": ["Givinostat"],
+    "formulation": ["Oral suspension"],
+    "label_number": [21]
+  },
+  {
+    "name": ["Glecaprevir-With-Pibrentasvir"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
   {
     "name": ["Gliclazide"],
-    "formulation": ["Modified release tablet"],
-    "label_number": [25]
+    "formulation": ["Oral tablet"],
+    "label_number": [21]
   },
   {
-    "name": ["Glyceryl Trinitrate"],
+    "name": ["Gliclazide"],
+    "formulation": ["Modified-release tablet"],
+    "label_number": [21, 25]
+  },
+  {
+    "name": ["Glyceryl-Trinitrate"],
     "formulation": ["Sublingual tablet"],
     "label_number": [16]
   },
@@ -2431,7 +2511,7 @@
   },
   {
     "name": ["Guanfacine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
@@ -2456,12 +2536,12 @@
   },
   {
     "name": ["Hydrocortisone"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [10, 22, 25]
   },
   {
     "name": ["Hydrocortisone"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [10, 23, 25]
   },
   {
@@ -2490,68 +2570,68 @@
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone Butyrate"],
+    "name": ["Hydrocortisone-Butyrate"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone Butyrate"],
+    "name": ["Hydrocortisone-Butyrate"],
     "formulation": ["Cutaneous emulsion"],
     "label_number": [15, 28]
   },
   {
-    "name": ["Hydrocortisone Butyrate"],
+    "name": ["Hydrocortisone-Butyrate"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone Butyrate"],
+    "name": ["Hydrocortisone-Butyrate"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15, 28]
   },
   {
-    "name": ["Hydrocortisone/Benzalkonium Chloride/Dimeticone/Nystatin"],
+    "name": ["Hydrocortisone-With-Benzalkonium-Chloride-Dimeticone-And-Nystatin"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone/Chlorhexidine/Nystatin"],
+    "name": ["Hydrocortisone-With-Chlorhexidine-Hydrochloride-And-Nystatin"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone/Chlorhexidine/Nystatin"],
+    "name": ["Hydrocortisone-With-Chlorhexidine-Hydrochloride-And-Nystatin"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone/Clotrimazole"],
+    "name": ["Hydrocortisone-With-Clotrimazole"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone/Fusidic Acid"],
+    "name": ["Hydrocortisone-With-Fusidic-Acid"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone/Miconazole"],
+    "name": ["Hydrocortisone-With-Miconazole"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Hydrocortisone/Oxytetracycline"],
+    "name": ["Hydrocortisone-With-Oxytetracycline"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
   {
-    "name": ["Hydromorphone "],
+    "name": ["Hydromorphone-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
   {
-    "name": ["Hydromorphone "],
-    "formulation": ["Modified release capsule"],
+    "name": ["Hydromorphone-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [2]
   },
   {
@@ -2560,27 +2640,32 @@
     "label_number": [27]
   },
   {
-    "name": ["Hydroxychloroquine Sulfate"],
+    "name": ["Hydroxychloroquine-Sulfate"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Hydroxyzine "],
+    "name": ["Hydroxyzine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Hydroxyzine "],
+    "name": ["Hydroxyzine-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
-    "name": ["Hyoscine Hydrobromide"],
+    "name": ["Hyoscine-Hydrobromide"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Ibrutinib"],
+    "name": ["Hyoscine-Hydrobromide"],
+    "formulation": ["Transdermal patch"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Ibrutinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -2591,7 +2676,7 @@
   },
   {
     "name": ["Ibuprofen"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25, 27]
   },
   {
@@ -2605,12 +2690,12 @@
     "label_number": [21]
   },
   {
-    "name": ["Icosapent Ethyl"],
+    "name": ["Icosapent-Ethyl"],
     "formulation": ["Oral capsule"],
     "label_number": [21]
   },
   {
-    "name": ["Idarubicin "],
+    "name": ["Idarubicin-Hydrochloride-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -2620,22 +2705,22 @@
     "label_number": [14, 21]
   },
   {
-    "name": ["Idelalisib"],
+    "name": ["Idelalisib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Imatinib"],
+    "name": ["Imatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 27]
   },
   {
-    "name": ["Imipramine "],
+    "name": ["Imipramine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Imipramine "],
+    "name": ["Imipramine-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
@@ -2646,7 +2731,7 @@
   },
   {
     "name": ["Indapamide"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -2670,14 +2755,19 @@
     "label_number": [10]
   },
   {
-    "name": ["Inosine Pranobex"],
+    "name": ["Inosine-Pranobex"],
     "formulation": ["Oral tablet"],
     "label_number": [9]
   },
   {
-    "name": ["Insulin Glargine/Lixisenatide"],
+    "name": ["Insulin-Glargine-With-Lixisenatide"],
     "formulation": ["Solution for injection"],
     "label_number": [10]
+  },
+  {
+    "name": ["Iodide-With-Iodine"],
+    "formulation": ["Oral solution"],
+    "label_number": [27]
   },
   {
     "name": ["Iodine"],
@@ -2710,23 +2800,23 @@
     "label_number": [8, 22]
   },
   {
-    "name": ["Isosorbide Dinitrate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Isosorbide-Dinitrate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Isosorbide Mononitrate"],
+    "name": ["Isosorbide-Mononitrate"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Isosorbide Mononitrate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Isosorbide-Mononitrate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Isosorbide Mononitrate"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Isosorbide-Mononitrate"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [25]
   },
   {
@@ -2735,12 +2825,12 @@
     "label_number": [10, 11, 21]
   },
   {
-    "name": ["Ispaghula Husk"],
+    "name": ["Ispaghula-Husk"],
     "formulation": ["Effervescent granules"],
     "label_number": [13]
   },
   {
-    "name": ["Ispaghula Husk"],
+    "name": ["Ispaghula-Husk"],
     "formulation": ["Granules for oral suspension"],
     "label_number": [13]
   },
@@ -2765,7 +2855,7 @@
     "label_number": [25]
   },
   {
-    "name": ["Ivacaftor/Tezacaftor/Elexacaftor"],
+    "name": ["Ivacaftor-With-Tezacaftor-And-Elexacaftor"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -2775,7 +2865,7 @@
     "label_number": [28]
   },
   {
-    "name": ["Ixazomib"],
+    "name": ["Ixazomib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [23, 25]
   },
@@ -2786,13 +2876,13 @@
   },
   {
     "name": ["Ketoprofen"],
-    "formulation": ["Modified release capsule"],
-    "label_number": [21, 25]
+    "formulation": ["Cutaneous gel"],
+    "label_number": [11]
   },
   {
     "name": ["Ketoprofen"],
-    "formulation": ["Cutaneous gel"],
-    "label_number": [11]
+    "formulation": ["Modified-release capsule"],
+    "label_number": [21, 25]
   },
   {
     "name": ["Ketotifen"],
@@ -2805,7 +2895,7 @@
     "label_number": [2, 21]
   },
   {
-    "name": ["Labetalol "],
+    "name": ["Labetalol-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [8, 21]
   },
@@ -2820,7 +2910,7 @@
     "label_number": [8]
   },
   {
-    "name": ["Lamivudine/Tenofovir Disoproxil/Doravirine"],
+    "name": ["Lamivudine-With-Tenofovir-Disoproxil-And-Doravirine"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 25]
   },
@@ -2841,7 +2931,7 @@
   },
   {
     "name": ["Lansoprazole"],
-    "formulation": ["Gastro resistant capsule"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [5, 22, 25]
   },
   {
@@ -2855,17 +2945,17 @@
     "label_number": [21]
   },
   {
-    "name": ["Larotrectinib"],
+    "name": ["Larotrectinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Ledipasvir/Sofosbuvir"],
+    "name": ["Ledipasvir-With-Sofosbuvir"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Ledipasvir/Sofosbuvir"],
+    "name": ["Ledipasvir-With-Sofosbuvir"],
     "formulation": ["Oral granules"],
     "label_number": [25]
   },
@@ -2875,17 +2965,17 @@
     "label_number": [4]
   },
   {
-    "name": ["Lenalidomide"],
+    "name": ["Lenalidomide-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Lenvatinib"],
+    "name": ["Lenvatinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Lercanidipine "],
+    "name": ["Lercanidipine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [22]
   },
@@ -2915,12 +3005,22 @@
     "label_number": [3, 8]
   },
   {
-    "name": ["Levodopa/Carbidopa/Entacapone"],
+    "name": ["Levetiracetam"],
+    "formulation": ["Oral granules"],
+    "label_number": [2, 3, 8]
+  },
+  {
+    "name": ["Levetiracetam"],
+    "formulation": ["Solution for infusion"],
+    "label_number": [2, 3, 8]
+  },
+  {
+    "name": ["Levodopa-With-Carbidopa-And-Entacapone"],
     "formulation": ["Oral tablet"],
     "label_number": [10, 14]
   },
   {
-    "name": ["Levodopa/Carbidopa/Entacapone"],
+    "name": ["Levodopa-With-Carbidopa-And-Entacapone"],
     "formulation": ["Intestinal gel"],
     "label_number": [10, 14]
   },
@@ -2928,6 +3028,26 @@
     "name": ["Levofloxacin"],
     "formulation": ["Oral tablet"],
     "label_number": [6, 9, 25]
+  },
+  {
+    "name": ["Levofloxacin"],
+    "formulation": ["Infusion"],
+    "label_number": [2, 6, 9, 25]
+  },
+  {
+    "name": ["Levofloxacin"],
+    "formulation": ["Solution for infusion"],
+    "label_number": [2, 6, 9, 25]
+  },
+  {
+    "name": ["Levofloxacin"],
+    "formulation": ["Nebuliser liquid"],
+    "label_number": [2, 6, 9, 25]
+  },
+  {
+    "name": ["Levofloxacin"],
+    "formulation": ["Eye drops"],
+    "label_number": [2, 6, 9, 25]
   },
   {
     "name": ["Levomepromazine"],
@@ -2940,7 +3060,7 @@
     "label_number": [22]
   },
   {
-    "name": ["Linagliptin/Metformin"],
+    "name": ["Linagliptin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -2955,22 +3075,22 @@
     "label_number": [9, 10]
   },
   {
-    "name": ["Lisdexamfetamine Mesilate"],
+    "name": ["Lisdexamfetamine-Mesilate"],
     "formulation": ["Oral capsule"],
     "label_number": [3]
   },
   {
-    "name": ["Lithium Carbonate"],
+    "name": ["Lithium-Carbonate"],
     "formulation": ["Oral tablet"],
     "label_number": [10]
   },
   {
-    "name": ["Lithium Carbonate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Lithium-Carbonate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [10, 25]
   },
   {
-    "name": ["Lithium Citrate"],
+    "name": ["Lithium-Citrate"],
     "formulation": ["Oral solution"],
     "label_number": [10]
   },
@@ -2985,12 +3105,12 @@
     "label_number": [2]
   },
   {
-    "name": ["Lopinavir/Ritonavir"],
+    "name": ["Lopinavir-With-Ritonavir"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Lopinavir/Ritonavir"],
+    "name": ["Lopinavir-With-Ritonavir"],
     "formulation": ["Oral solution"],
     "label_number": [21]
   },
@@ -3010,7 +3130,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Lorlatinib"],
+    "name": ["Lorlatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -3020,12 +3140,12 @@
     "label_number": [19]
   },
   {
-    "name": ["Lumacaftor/Ivacaftor"],
+    "name": ["Lumacaftor-With-Ivacaftor"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Lurasidone "],
+    "name": ["Lurasidone-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 21, 25]
   },
@@ -3038,11 +3158,6 @@
     "name": ["Macitentan"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
-  },
-  {
-    "name": ["Transisoft"],
-    "formulation": ["Powder for oral solution"],
-    "label_number": [13]
   },
   {
     "name": ["Macrogol"],
@@ -3060,32 +3175,52 @@
     "label_number": [10, 13]
   },
   {
-    "name": ["Magnesium Citrate/Sodium Picosulfate"],
+    "name": ["Macrogol-3350"],
+    "formulation": ["Powder for oral solution"],
+    "label_number": [13]
+  },
+  {
+    "name": ["Macrogol-3350-With-Anhydrous-Sodium-Sulfate-Ascorbic-Acid-Potassium-Chloride-Sodium-Ascorbate-And-Sodium-Chloride"],
+    "formulation": ["Form unstated"],
+    "label_number": [10, 13]
+  },
+  {
+    "name": ["Macrogol-3350-With-Potassium-Chloride-Sodium-Bicarbonate-And-Sodium-Chloride"],
+    "formulation": ["Oral solution"],
+    "label_number": [13]
+  },
+  {
+    "name": ["Macrogol-3350-With-Potassium-Chloride-Sodium-Bicarbonate-And-Sodium-Chloride"],
     "formulation": ["Powder for oral solution"],
     "label_number": [10, 13]
   },
   {
-    "name": ["Mebeverine"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Magnesium-Citrate-With-Sodium-Picosulfate"],
+    "formulation": ["Powder for oral solution"],
+    "label_number": [10, 13]
+  },
+  {
+    "name": ["Mebeverine-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Mebeverine/Ispaghula Husk"],
+    "name": ["Mebeverine-With-Ispaghula-Husk"],
     "formulation": ["Effervescent granules"],
     "label_number": [13, 22]
   },
   {
-    "name": ["Mefenamic Acid"],
+    "name": ["Mefenamic-Acid"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Mefenamic Acid"],
+    "name": ["Mefenamic-Acid"],
     "formulation": ["Oral capsule"],
     "label_number": [21]
   },
   {
-    "name": ["Mefenamic Acid"],
+    "name": ["Mefenamic-Acid"],
     "formulation": ["Oral suspension"],
     "label_number": [21]
   },
@@ -3101,7 +3236,7 @@
   },
   {
     "name": ["Melatonin"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 21, 25]
   },
   {
@@ -3110,12 +3245,17 @@
     "label_number": [2]
   },
   {
+    "name": ["Melatonin"],
+    "formulation": ["Oral solution"],
+    "label_number": [2, 21, 25]
+  },
+  {
     "name": ["Meloxicam"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Mepacrine"],
+    "name": ["Mepacrine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [4, 9, 14, 21]
   },
@@ -3131,51 +3271,51 @@
   },
   {
     "name": ["Mercaptamine"],
-    "formulation": ["Gastro resistant capsule"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [25]
   },
   {
     "name": ["Mesalazine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
     "name": ["Mesalazine"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 25]
   },
   {
     "name": ["Mesalazine"],
-    "formulation": ["Modified release granules"],
+    "formulation": ["Modified-release granules"],
     "label_number": [25]
   },
   {
-    "name": ["Metformin"],
+    "name": ["Metformin-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Metformin"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Metformin-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Metformin"],
+    "name": ["Metformin-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [21]
   },
   {
-    "name": ["Metformin"],
+    "name": ["Metformin-Hydrochloride"],
     "formulation": ["Powder for oral solution"],
     "label_number": [13]
   },
   {
-    "name": ["Methadone"],
+    "name": ["Methadone-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Methadone"],
+    "name": ["Methadone-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
@@ -3205,13 +3345,13 @@
     "label_number": [3, 8]
   },
   {
-    "name": ["Methylphenidate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Methylphenidate-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Methylphenidate"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Methylphenidate-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [25]
   },
   {
@@ -3230,7 +3370,7 @@
     "label_number": [10]
   },
   {
-    "name": ["Metoprolol Tartrate"],
+    "name": ["Metoprolol-Tartrate"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
@@ -3260,7 +3400,7 @@
     "label_number": [21]
   },
   {
-    "name": ["Mianserin"],
+    "name": ["Mianserin-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 25]
   },
@@ -3280,7 +3420,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Midostaurin"],
+    "name": ["Midostaurin-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [21, 25]
   },
@@ -3301,7 +3441,7 @@
   },
   {
     "name": ["Minocycline"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [6, 25]
   },
   {
@@ -3316,7 +3456,7 @@
   },
   {
     "name": ["Mirabegron"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -3340,7 +3480,7 @@
     "label_number": [21]
   },
   {
-    "name": ["Mitotane"],
+    "name": ["Mitotane-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 10, 21]
   },
@@ -3355,22 +3495,22 @@
     "label_number": [9]
   },
   {
-    "name": ["Mometasone Furoate"],
+    "name": ["Mometasone-Furoate"],
     "formulation": ["Inhalation powder"],
     "label_number": [8, 10]
   },
   {
-    "name": ["Mometasone Furoate"],
+    "name": ["Mometasone-Furoate"],
     "formulation": ["Cutaneous cream"],
     "label_number": [28]
   },
   {
-    "name": ["Mometasone Furoate"],
+    "name": ["Mometasone-Furoate"],
     "formulation": ["Cutaneous liquid"],
     "label_number": [28]
   },
   {
-    "name": ["Mometasone Furoate"],
+    "name": ["Mometasone-Furoate"],
     "formulation": ["Cutaneous ointment"],
     "label_number": [28]
   },
@@ -3386,22 +3526,22 @@
   },
   {
     "name": ["Morphine"],
-    "formulation": ["Oral solution"],
+    "formulation": ["Orodispersible tablet"],
     "label_number": [2]
   },
   {
     "name": ["Morphine"],
-    "formulation": ["Modified release capsule"],
-    "label_number": [2]
-  },
-  {
-    "name": ["Morphine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
     "name": ["Morphine"],
-    "formulation": ["Orodispersible tablet"],
+    "formulation": ["Modified-release capsule"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Morphine"],
+    "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
@@ -3415,8 +3555,8 @@
     "label_number": [3]
   },
   {
-    "name": ["Mycophenolate Mofetil"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Mycophenolate-Mofetil"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [25]
   },
   {
@@ -3440,7 +3580,7 @@
     "label_number": [10]
   },
   {
-    "name": ["Naftidrofuryl Oxalate"],
+    "name": ["Naftidrofuryl-Oxalate"],
     "formulation": ["Oral capsule"],
     "label_number": [25, 27]
   },
@@ -3455,8 +3595,8 @@
     "label_number": [23]
   },
   {
-    "name": ["Naltrexone/Bupropion"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Naltrexone-With-Bupropion"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
@@ -3466,12 +3606,12 @@
   },
   {
     "name": ["Naproxen"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 25]
   },
   {
-    "name": ["Naproxen/Esomeprazole"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Naproxen-With-Esomeprazole"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [22, 25]
   },
   {
@@ -3485,18 +3625,18 @@
     "label_number": [8]
   },
   {
-    "name": ["Nefopam "],
+    "name": ["Nefopam-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 14]
   },
   {
-    "name": ["Neratinib"],
+    "name": ["Neratinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
   {
     "name": ["Nevirapine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -3506,16 +3646,16 @@
   },
   {
     "name": ["Nifedipine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
     "name": ["Nifedipine"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Nilotinib"],
+    "name": ["Nilotinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25, 27]
   },
@@ -3525,12 +3665,12 @@
     "label_number": [21, 25]
   },
   {
-    "name": ["Niraparib"],
+    "name": ["Niraparib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Nirmatrelvir/Ritonavir"],
+    "name": ["Nirmatrelvir-With-Ritonavir"],
     "formulation": ["Form unstated"],
     "label_number": [9]
   },
@@ -3552,6 +3692,21 @@
   {
     "name": ["Nitrofurantoin"],
     "formulation": ["Oral tablet"],
+    "label_number": [9, 14, 21]
+  },
+  {
+    "name": ["Nitrofurantoin"],
+    "formulation": ["Oral capsule"],
+    "label_number": [9, 14, 21]
+  },
+  {
+    "name": ["Nitrofurantoin"],
+    "formulation": ["Modified-release capsule"],
+    "label_number": [9, 14, 21, 25]
+  },
+  {
+    "name": ["Nitrofurantoin"],
+    "formulation": ["Oral suspension"],
     "label_number": [9, 14, 21]
   },
   {
@@ -3580,33 +3735,33 @@
     "label_number": [2]
   },
   {
-    "name": ["Olaparib"],
+    "name": ["Olaparib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Olsalazine Sodium"],
+    "name": ["Olsalazine-Sodium"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Olsalazine Sodium"],
+    "name": ["Olsalazine-Sodium"],
     "formulation": ["Oral capsule"],
     "label_number": [21]
   },
   {
-    "name": ["Omega 3 Acid Ethyl Esters"],
+    "name": ["Omega-3-Acid-Ethyl-Esters"],
     "formulation": ["Oral capsule"],
     "label_number": [21]
   },
   {
     "name": ["Omeprazole"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [25]
   },
   {
     "name": ["Omeprazole"],
-    "formulation": ["Gastro resistant capsule"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [25]
   },
   {
@@ -3650,53 +3805,53 @@
     "label_number": [3, 8]
   },
   {
-    "name": ["Oxybutynin "],
+    "name": ["Oxybutynin-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [3]
   },
   {
-    "name": ["Oxybutynin "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Oxybutynin-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [3, 25]
   },
   {
-    "name": ["Oxybutynin "],
+    "name": ["Oxybutynin-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [3]
   },
   {
-    "name": ["Oxybutynin "],
+    "name": ["Oxybutynin-Hydrochloride"],
     "formulation": ["Transdermal patch"],
     "label_number": [3]
   },
   {
-    "name": ["Oxybutynin "],
+    "name": ["Oxybutynin-Hydrochloride"],
     "formulation": ["Intravesical solution"],
     "label_number": [3]
   },
   {
-    "name": ["Oxycodone "],
+    "name": ["Oxycodone-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Oxycodone "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Oxycodone-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
-    "name": ["Oxycodone "],
+    "name": ["Oxycodone-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
   {
-    "name": ["Oxycodone "],
+    "name": ["Oxycodone-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
-    "name": ["Oxycodone/Naloxone"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Oxycodone-With-Naloxone"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
@@ -3705,33 +3860,33 @@
     "label_number": [7, 9, 23]
   },
   {
-    "name": ["Palbociclib"],
+    "name": ["Palbociclib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
     "name": ["Paliperidone"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
-    "name": ["Palonosetron/Netupitant"],
+    "name": ["Palonosetron-With-Netupitant"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
     "name": ["Pancreatin"],
-    "formulation": ["Gastro resistant granules"],
+    "formulation": ["Gastro-resistant granules"],
     "label_number": [25]
   },
   {
-    "name": ["Panobinostat"],
+    "name": ["Panobinostat-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
     "name": ["Pantoprazole"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [25]
   },
   {
@@ -3770,12 +3925,12 @@
     "label_number": [30]
   },
   {
-    "name": ["Paracetamol/Buclizine/Codeine"],
+    "name": ["Paracetamol-With-Buclizine-Hydrochloride-And-Codeine-Phosphate"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 17, 30]
   },
   {
-    "name": ["Paracetamol/Isometheptene"],
+    "name": ["Paracetamol-With-Isometheptene"],
     "formulation": ["Oral capsule"],
     "label_number": [30]
   },
@@ -3790,27 +3945,27 @@
     "label_number": [5, 21]
   },
   {
-    "name": ["Patiromer Calcium"],
+    "name": ["Patiromer-Calcium"],
     "formulation": ["Powder for oral suspension"],
     "label_number": [13]
   },
   {
-    "name": ["Pazopanib"],
+    "name": ["Pazopanib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Peanut Protein"],
+    "name": ["Peanut-Protein"],
     "formulation": ["Oral powder"],
     "label_number": [21]
   },
   {
-    "name": ["Peanut Protein"],
+    "name": ["Peanut-Protein"],
     "formulation": ["Form unstated"],
     "label_number": [21]
   },
   {
-    "name": ["Pemigatinib"],
+    "name": ["Pemigatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
@@ -3830,23 +3985,23 @@
     "label_number": [2, 21]
   },
   {
-    "name": ["Pentosan Polysulfate Sodium"],
+    "name": ["Pentosan-Polysulfate-Sodium"],
     "formulation": ["Oral capsule"],
     "label_number": [23]
   },
   {
     "name": ["Pentoxifylline"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Peppermint Oil"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Peppermint-Oil"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [5, 22, 25]
   },
   {
-    "name": ["Peppermint Oil"],
-    "formulation": ["Gastro resistant capsule"],
+    "name": ["Peppermint-Oil"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [5, 22, 25]
   },
   {
@@ -3870,17 +4025,17 @@
     "label_number": [2]
   },
   {
-    "name": ["Perindopril Arginine"],
+    "name": ["Perindopril-Arginine"],
     "formulation": ["Oral tablet"],
     "label_number": [22]
   },
   {
-    "name": ["Perindopril Arginine/Indapamide"],
+    "name": ["Perindopril-Arginine-With-Indapamide"],
     "formulation": ["Oral tablet"],
     "label_number": [22]
   },
   {
-    "name": ["Perindopril Erbumine"],
+    "name": ["Perindopril-Erbumine"],
     "formulation": ["Oral tablet"],
     "label_number": [22]
   },
@@ -3890,7 +4045,7 @@
     "label_number": [10]
   },
   {
-    "name": ["Pethidine "],
+    "name": ["Pethidine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
@@ -3957,7 +4112,7 @@
   {
     "name": ["Pimecrolimus"],
     "formulation": ["Cutaneous cream"],
-    "label_number": [4, 11, 28]
+    "label_number": [4, 11, 15, 28]
   },
   {
     "name": ["Pimozide"],
@@ -3965,7 +4120,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Pioglitazone/Metformin"],
+    "name": ["Pioglitazone-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -3990,7 +4145,7 @@
     "label_number": [21]
   },
   {
-    "name": ["Pivmecillinam "],
+    "name": ["Pivmecillinam-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [9, 21, 27]
   },
@@ -4005,62 +4160,62 @@
     "label_number": [15]
   },
   {
-    "name": ["Pomalidomide"],
+    "name": ["Pomalidomide-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [3, 25]
   },
   {
-    "name": ["Ponatinib"],
+    "name": ["Ponatinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 25]
   },
   {
     "name": ["Posaconazole"],
-    "formulation": ["Gastro resistant tablet"],
-    "label_number": [3, 9, 25]
+    "formulation": ["Gastro-resistant tablet"],
+    "label_number": [3, 9, 11, 25]
   },
   {
     "name": ["Posaconazole"],
     "formulation": ["Oral suspension"],
-    "label_number": [3, 9, 21]
+    "label_number": [3, 9, 11, 21]
   },
   {
-    "name": ["Potassium Aminobenzoate"],
+    "name": ["Potassium-Aminobenzoate"],
     "formulation": ["Powder for oral solution"],
     "label_number": [13, 21]
   },
   {
-    "name": ["Potassium Chloride"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Potassium-Chloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25, 27]
   },
   {
-    "name": ["Potassium Chloride"],
+    "name": ["Potassium-Chloride"],
     "formulation": ["Oral solution"],
     "label_number": [21]
   },
   {
-    "name": ["Potassium Chloride/Potassium Bicarbonate"],
+    "name": ["Potassium-Chloride-With-Potassium-Bicarbonate"],
     "formulation": ["Effervescent tablet"],
     "label_number": [13, 21]
   },
   {
-    "name": ["Potassium Chloride/Rice Powder/Sodium Chloride/Sodium Citrate"],
+    "name": ["Potassium-Chloride-With-Rice-Powder-Sodium-Chloride-And-Sodium-Citrate"],
     "formulation": ["Powder for oral solution"],
     "label_number": [13]
   },
   {
-    "name": ["Potassium Citrate/Potassium Bicarbonate"],
-    "formulation": ["Modified release granules"],
+    "name": ["Potassium-Citrate-With-Potassium-Bicarbonate"],
+    "formulation": ["Modified-release granules"],
     "label_number": [25, 27]
   },
   {
-    "name": ["Potassium Permanganate"],
+    "name": ["Potassium-Permanganate"],
     "formulation": ["Tablet for cutaneous solution"],
     "label_number": [10]
   },
   {
-    "name": ["Povidone Iodine"],
+    "name": ["Povidone-Iodine"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
@@ -4071,7 +4226,7 @@
   },
   {
     "name": ["Pramipexole"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [10, 25]
   },
   {
@@ -4086,7 +4241,7 @@
   },
   {
     "name": ["Prednisolone"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 10, 25]
   },
   {
@@ -4105,12 +4260,17 @@
     "label_number": [3, 8]
   },
   {
+    "name": ["Pregabalin"],
+    "formulation": ["Oral solution"],
+    "label_number": [3, 8]
+  },
+  {
     "name": ["Primidone"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 8]
   },
   {
-    "name": ["Procarbazine"],
+    "name": ["Procarbazine-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [4]
   },
@@ -4125,62 +4285,67 @@
     "label_number": [2]
   },
   {
-    "name": ["Promazine "],
+    "name": ["Prochlorperazine"],
+    "formulation": ["Solution for injection"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Promazine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Promazine "],
+    "name": ["Promazine-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
-    "name": ["Promethazine "],
+    "name": ["Promethazine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Promethazine "],
+    "name": ["Promethazine-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2]
   },
   {
-    "name": ["Promethazine Teoclate"],
+    "name": ["Promethazine-Teoclate"],
     "formulation": ["Oral tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Propafenone "],
+    "name": ["Propafenone-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Propantheline Bromide"],
+    "name": ["Propantheline-Bromide"],
     "formulation": ["Oral tablet"],
     "label_number": [23]
   },
   {
-    "name": ["Propiverine "],
+    "name": ["Propiverine-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [3]
   },
   {
-    "name": ["Propiverine "],
-    "formulation": ["Modified release capsule"],
+    "name": ["Propiverine-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [3, 25]
   },
   {
-    "name": ["Propranolol "],
+    "name": ["Propranolol-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
   {
-    "name": ["Propranolol "],
-    "formulation": ["Modified release capsule"],
+    "name": ["Propranolol-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [8, 25]
   },
   {
-    "name": ["Propranolol "],
+    "name": ["Propranolol-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [8]
   },
@@ -4196,7 +4361,7 @@
   },
   {
     "name": ["Quetiapine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 23, 25]
   },
   {
@@ -4210,13 +4375,13 @@
     "label_number": [10, 21]
   },
   {
-    "name": ["Rabeprazole"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Rabeprazole-Sodium"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Rabeprazole"],
-    "formulation": ["tablet"],
+    "name": ["Rabeprazole-Sodium"],
+    "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
@@ -4226,11 +4391,11 @@
   },
   {
     "name": ["Ranolazine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Regorafenib"],
+    "name": ["Regorafenib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -4245,7 +4410,7 @@
     "label_number": [21]
   },
   {
-    "name": ["Ribociclib"],
+    "name": ["Ribociclib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 25]
   },
@@ -4265,17 +4430,17 @@
     "label_number": [8, 14, 23]
   },
   {
-    "name": ["Rifampicin/Ethambutol/Isoniazid/Pyrazinamide"],
+    "name": ["Rifampicin-With-Ethambutol-Isoniazid-And-Pyrazinamide"],
     "formulation": ["Oral tablet"],
     "label_number": [8, 14, 22]
   },
   {
-    "name": ["Rifampicin/Isoniazid"],
+    "name": ["Rifampicin-With-Isoniazid"],
     "formulation": ["Oral tablet"],
     "label_number": [8, 14, 23]
   },
   {
-    "name": ["Rifampicin/Isoniazid/Pyrazinamide"],
+    "name": ["Rifampicin-With-Isoniazid-And-Pyrazinamide"],
     "formulation": ["Oral tablet"],
     "label_number": [8, 14, 22]
   },
@@ -4295,7 +4460,7 @@
     "label_number": [5]
   },
   {
-    "name": ["Ripretinib"],
+    "name": ["Ripretinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 11, 25]
   },
@@ -4307,6 +4472,21 @@
   {
     "name": ["Risperidone"],
     "formulation": ["Oral tablet"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Risperidone"],
+    "formulation": ["Orodispersible tablet"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Risperidone"],
+    "formulation": ["Oral solution"],
+    "label_number": [2]
+  },
+  {
+    "name": ["Risperidone"],
+    "formulation": ["Powder and solvent for prolonged-release suspension for inj"],
     "label_number": [2]
   },
   {
@@ -4351,7 +4531,7 @@
   },
   {
     "name": ["Ropinirole"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [10, 25]
   },
   {
@@ -4375,22 +4555,22 @@
     "label_number": [8, 21]
   },
   {
-    "name": ["Salicylic Acid"],
+    "name": ["Salicylic-Acid"],
     "formulation": ["Cutaneous solution"],
     "label_number": [15]
   },
   {
-    "name": ["Salicylic Acid/Lactic Acid"],
+    "name": ["Salicylic-Acid-With-Lactic-Acid"],
     "formulation": ["Cutaneous gel"],
     "label_number": [15]
   },
   {
-    "name": ["Salicylic Acid/Lactic Acid"],
+    "name": ["Salicylic-Acid-With-Lactic-Acid"],
     "formulation": ["Cutaneous paint"],
     "label_number": [15]
   },
   {
-    "name": ["Sapropterin Dihydrochloride"],
+    "name": ["Sapropterin-Dihydrochloride"],
     "formulation": ["Soluble tablet"],
     "label_number": [13, 21]
   },
@@ -4400,7 +4580,7 @@
     "label_number": [10]
   },
   {
-    "name": ["Saxagliptin/Metformin"],
+    "name": ["Saxagliptin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -4410,12 +4590,12 @@
     "label_number": [21, 25]
   },
   {
-    "name": ["Selinexor"],
+    "name": ["Selinexor-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Selpercatinib"],
+    "name": ["Selpercatinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -4425,9 +4605,19 @@
     "label_number": [25]
   },
   {
-    "name": ["Senna/Ispaghula Husk"],
+    "name": ["Senna-With-Ispaghula-Husk"],
     "formulation": ["Oral granules"],
     "label_number": [25]
+  },
+  {
+    "name": ["Sertraline"],
+    "formulation": ["Concentrate for oral solution"],
+    "label_number": [13]
+  },
+  {
+    "name": ["Sertraline"],
+    "formulation": ["Concentrate for oral solution"],
+    "label_number": [13]
   },
   {
     "name": ["Sevelamer"],
@@ -4445,72 +4635,102 @@
     "label_number": [11]
   },
   {
-    "name": ["Sitagliptin/Metformin"],
+    "name": ["Sitagliptin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Sodium Acid Phosphate/Sodium Phosphate"],
+    "name": ["Sodium-Acid-Phosphate-With-Sodium-Phosphate"],
     "formulation": ["Oral solution"],
     "label_number": [10]
   },
   {
-    "name": ["Sodium Chloride"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Sodium Clodronate"],
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Infusion"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Solution for infusion"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Nebuliser liquid"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Eye drops"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Eye ointment"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Sodium-Chloride"],
+    "formulation": ["Nasal drops"],
+    "label_number": [2, 25]
+  },
+  {
+    "name": ["Sodium-Clodronate"],
     "formulation": ["Oral tablet"],
     "label_number": [10]
   },
   {
-    "name": ["Sodium Cromoglicate"],
+    "name": ["Sodium-Cromoglicate"],
     "formulation": ["Oral capsule"],
     "label_number": [22]
   },
   {
-    "name": ["Sodium Oxybate"],
+    "name": ["Sodium-Oxybate"],
     "formulation": ["Oral solution"],
     "label_number": [13, 19]
   },
   {
-    "name": ["Sodium Polystyrene Sulfonate"],
+    "name": ["Sodium-Polystyrene-Sulfonate"],
     "formulation": ["Powder for oral or rectal suspension"],
     "label_number": [13]
   },
   {
-    "name": ["Sodium Valproate"],
+    "name": ["Sodium-Valproate"],
     "formulation": ["Oral tablet"],
     "label_number": [8, 10, 21]
   },
   {
-    "name": ["Sodium Valproate"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Sodium-Valproate"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [8, 10, 21, 25]
   },
   {
-    "name": ["Sodium Valproate"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Sodium-Valproate"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 8, 10, 25]
   },
   {
-    "name": ["Sodium Valproate"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Sodium-Valproate"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [8, 10, 21, 25]
   },
   {
-    "name": ["Sodium Valproate"],
-    "formulation": ["Modified release granules"],
+    "name": ["Sodium-Valproate"],
+    "formulation": ["Modified-release granules"],
     "label_number": [8, 10, 21, 25]
   },
   {
-    "name": ["Sodium Valproate"],
+    "name": ["Sodium-Valproate"],
     "formulation": ["Oral solution"],
     "label_number": [8, 10, 21]
   },
   {
-    "name": ["Sodium Zirconium Cyclosilicate"],
+    "name": ["Sodium-Zirconium-Cyclosilicate"],
     "formulation": ["Powder for oral suspension"],
     "label_number": [13]
   },
@@ -4525,42 +4745,42 @@
     "label_number": [21, 25]
   },
   {
-    "name": ["Sofosbuvir/Velpatasvir"],
+    "name": ["Sofosbuvir-With-Velpatasvir"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Sofosbuvir/Velpatasvir"],
+    "name": ["Sofosbuvir-With-Velpatasvir"],
     "formulation": ["Oral granules"],
     "label_number": [25]
   },
   {
-    "name": ["Sofosbuvir/Velpatasvir/Voxilaprevir"],
+    "name": ["Sofosbuvir-With-Velpatasvir-And-Voxilaprevir"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Solifenacin Succinate"],
+    "name": ["Solifenacin-Succinate"],
     "formulation": ["Oral tablet"],
     "label_number": [3]
   },
   {
-    "name": ["Solifenacin Succinate"],
+    "name": ["Solifenacin-Succinate"],
     "formulation": ["Oral suspension"],
     "label_number": [3]
   },
   {
-    "name": ["Solifenacin Succinate"],
+    "name": ["Solifenacin-Succinate"],
     "formulation": ["Oral solution"],
     "label_number": [3]
   },
   {
-    "name": ["Sorafenib"],
+    "name": ["Sorafenib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23]
   },
   {
-    "name": ["Sotalol "],
+    "name": ["Sotalol-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
@@ -4611,7 +4831,7 @@
   },
   {
     "name": ["Sulfasalazine"],
-    "formulation": ["Gastro resistant tablet"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [5, 14, 25]
   },
   {
@@ -4642,26 +4862,31 @@
   {
     "name": ["Sumatriptan"],
     "formulation": ["Oral tablet"],
-    "label_number": [3, 10]
+    "label_number": [3]
   },
   {
     "name": ["Sumatriptan"],
     "formulation": ["Solution for injection"],
-    "label_number": [3, 10]
+    "label_number": [3]
   },
   {
     "name": ["Sumatriptan"],
     "formulation": ["Spray"],
-    "label_number": [3, 10]
+    "label_number": [3]
   },
   {
-    "name": ["Sunitinib"],
+    "name": ["Sumatriptan-With-Naproxen"],
+    "formulation": ["Oral tablet"],
+    "label_number": [3]
+  },
+  {
+    "name": ["Sunitinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [14]
   },
   {
     "name": ["Tacrolimus"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [23, 25]
   },
   {
@@ -4671,7 +4896,7 @@
   },
   {
     "name": ["Tacrolimus"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [23, 25]
   },
   {
@@ -4690,28 +4915,28 @@
     "label_number": [25]
   },
   {
-    "name": ["Talazoparib"],
+    "name": ["Talazoparib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Tamsulosin "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Tamsulosin-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Tamsulosin "],
-    "formulation": ["Modified release capsule"],
+    "name": ["Tamsulosin-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Tamsulosin/Dutasteride"],
+    "name": ["Tamsulosin-With-Dutasteride"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Tamsulosin/Solifenacin"],
-    "formulation": ["Modified release tablet"],
+    "name": ["Tamsulosin-With-Solifenacin"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [3, 25]
   },
   {
@@ -4721,12 +4946,12 @@
   },
   {
     "name": ["Tapentadol"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
     "name": ["Tapentadol"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [2]
   },
   {
@@ -4735,7 +4960,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Telotristat Ethyl"],
+    "name": ["Telotristat-Ethyl"],
     "formulation": ["Oral tablet"],
     "label_number": [3, 21]
   },
@@ -4750,27 +4975,27 @@
     "label_number": [19]
   },
   {
-    "name": ["Temozolomide"],
+    "name": ["Temozolomide-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Tenofovir Alafenamide"],
+    "name": ["Tenofovir-Alafenamide"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Tenofovir Disoproxil"],
+    "name": ["Tenofovir-Disoproxil"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Tenofovir Disoproxil"],
+    "name": ["Tenofovir-Disoproxil"],
     "formulation": ["Oral granules"],
     "label_number": [21]
   },
   {
-    "name": ["Tepotinib"],
+    "name": ["Tepotinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
@@ -4795,18 +5020,18 @@
     "label_number": [7, 9, 23]
   },
   {
-    "name": ["Tezacaftor/Ivacaftor"],
+    "name": ["Tezacaftor-With-Ivacaftor"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Thalidomide"],
+    "name": ["Thalidomide-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
   {
     "name": ["Theophylline"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -4815,17 +5040,17 @@
     "label_number": [21]
   },
   {
-    "name": ["Tiaprofenic Acid"],
+    "name": ["Tiaprofenic-Acid"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Timolol "],
+    "name": ["Timolol-Maleate"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
   {
-    "name": ["Timolol/Bendroflumethiazide"],
+    "name": ["Timolol-With-Bendroflumethiazide"],
     "formulation": ["Oral tablet"],
     "label_number": [8]
   },
@@ -4840,7 +5065,7 @@
     "label_number": [10]
   },
   {
-    "name": ["Tivozanib"],
+    "name": ["Tivozanib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -4851,7 +5076,7 @@
   },
   {
     "name": ["Tofacitinib"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -4860,18 +5085,18 @@
     "label_number": [14, 25]
   },
   {
-    "name": ["Tolfenamic Acid"],
+    "name": ["Tolfenamic-Acid"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Tolterodine Tartrate"],
+    "name": ["Tolterodine-Tartrate"],
     "formulation": ["Oral tablet"],
     "label_number": [3]
   },
   {
-    "name": ["Tolterodine Tartrate"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Tolterodine-Tartrate"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [3, 25]
   },
   {
@@ -4895,52 +5120,52 @@
     "label_number": [2, 8]
   },
   {
-    "name": ["Topotecan"],
+    "name": ["Topotecan-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Tramadol "],
+    "name": ["Tramadol-Hydrochloride"],
     "formulation": ["Soluble tablet"],
     "label_number": [2, 13]
   },
   {
-    "name": ["Tramadol "],
+    "name": ["Tramadol-Hydrochloride"],
     "formulation": ["Orodispersible tablet"],
     "label_number": [2]
   },
   {
-    "name": ["Tramadol "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Tramadol-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 25]
   },
   {
-    "name": ["Tramadol "],
+    "name": ["Tramadol-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2]
   },
   {
-    "name": ["Tramadol "],
-    "formulation": ["Modified release capsule"],
+    "name": ["Tramadol-Hydrochloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [2, 25]
   },
   {
-    "name": ["Tramadol/Dexketoprofen"],
+    "name": ["Tramadol-With-Dexketoprofen"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 22]
   },
   {
-    "name": ["Tramadol/Paracetamol"],
+    "name": ["Tramadol-With-Paracetamol"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 25, 29, 30]
   },
   {
-    "name": ["Tramadol/Paracetamol"],
+    "name": ["Tramadol-With-Paracetamol"],
     "formulation": ["Effervescent tablet"],
     "label_number": [2, 13, 29, 30]
   },
   {
-    "name": ["Trametinib"],
+    "name": ["Trametinib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [23, 25]
   },
@@ -4950,47 +5175,47 @@
     "label_number": [3, 10]
   },
   {
-    "name": ["Trazodone "],
+    "name": ["Trazodone-Hydrochloride"],
     "formulation": ["Oral tablet"],
     "label_number": [2, 21]
   },
   {
-    "name": ["Trazodone "],
+    "name": ["Trazodone-Hydrochloride"],
     "formulation": ["Oral capsule"],
     "label_number": [2, 21]
   },
   {
-    "name": ["Trazodone "],
+    "name": ["Trazodone-Hydrochloride"],
     "formulation": ["Oral solution"],
     "label_number": [2, 21]
   },
   {
-    "name": ["Tree Pollen Extract"],
+    "name": ["Tree-Pollen-Extract"],
     "formulation": ["Oral lyophilisate"],
     "label_number": [26]
   },
   {
-    "name": ["Tretinoin"],
+    "name": ["Tretinoin-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Tretinoin/Clindamycin"],
+    "name": ["Tretinoin-With-Clindamycin"],
     "formulation": ["Cutaneous gel"],
     "label_number": [11]
   },
   {
-    "name": ["Tretinoin/Erythromycin"],
+    "name": ["Tretinoin-With-Erythromycin"],
     "formulation": ["Cutaneous solution"],
     "label_number": [11]
   },
   {
-    "name": ["Triamcinolone Acetonide"],
+    "name": ["Triamcinolone-Acetonide"],
     "formulation": ["Suspension for injection"],
     "label_number": [10]
   },
   {
-    "name": ["Triamterene/Chlortalidone"],
+    "name": ["Triamterene-With-Chlortalidone"],
     "formulation": ["Oral tablet"],
     "label_number": [14, 21]
   },
@@ -5015,7 +5240,7 @@
     "label_number": [2]
   },
   {
-    "name": ["Trifluridine/Tipiracil"],
+    "name": ["Trifluridine-With-Tipiracil-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
@@ -5040,37 +5265,37 @@
     "label_number": [2]
   },
   {
-    "name": ["Trospium Chloride"],
+    "name": ["Trospium-Chloride"],
     "formulation": ["Oral tablet"],
     "label_number": [23]
   },
   {
-    "name": ["Trospium Chloride"],
-    "formulation": ["Modified release capsule"],
+    "name": ["Trospium-Chloride"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [23, 25]
   },
   {
-    "name": ["Typhoid Vaccine Live"],
-    "formulation": ["Gastro resistant capsule"],
+    "name": ["Typhoid-Vaccine-Live"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [25]
   },
   {
     "name": ["Upadacitinib"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Ursodeoxycholic Acid"],
+    "name": ["Ursodeoxycholic-Acid"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Ursodeoxycholic Acid"],
+    "name": ["Ursodeoxycholic-Acid"],
     "formulation": ["Oral capsule"],
     "label_number": [21]
   },
   {
-    "name": ["Ursodeoxycholic Acid"],
+    "name": ["Ursodeoxycholic-Acid"],
     "formulation": ["Oral suspension"],
     "label_number": [21]
   },
@@ -5100,13 +5325,13 @@
     "label_number": [21]
   },
   {
-    "name": ["Valproic Acid"],
-    "formulation": ["Gastro resistant tablet"],
+    "name": ["Valproic-Acid"],
+    "formulation": ["Gastro-resistant tablet"],
     "label_number": [10, 21, 25]
   },
   {
-    "name": ["Valproic Acid"],
-    "formulation": ["Gastro resistant capsule"],
+    "name": ["Valproic-Acid"],
+    "formulation": ["Gastro-resistant capsule"],
     "label_number": [8, 10, 21, 25]
   },
   {
@@ -5130,12 +5355,12 @@
     "label_number": [10]
   },
   {
-    "name": ["Vemurafenib"],
+    "name": ["Vemurafenib-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [25]
   },
   {
-    "name": ["Venetoclax"],
+    "name": ["Venetoclax-Specialist-Drug"],
     "formulation": ["Oral tablet"],
     "label_number": [21, 25]
   },
@@ -5146,12 +5371,12 @@
   },
   {
     "name": ["Venlafaxine"],
-    "formulation": ["Modified release tablet"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [2, 21, 25]
   },
   {
     "name": ["Venlafaxine"],
-    "formulation": ["Modified release capsule"],
+    "formulation": ["Modified-release capsule"],
     "label_number": [2, 21, 25]
   },
   {
@@ -5160,8 +5385,8 @@
     "label_number": [2, 21]
   },
   {
-    "name": ["Verapamil "],
-    "formulation": ["Modified release tablet"],
+    "name": ["Verapamil-Hydrochloride"],
+    "formulation": ["Modified-release tablet"],
     "label_number": [25]
   },
   {
@@ -5180,17 +5405,17 @@
     "label_number": [3, 8, 13]
   },
   {
-    "name": ["Vildagliptin/Metformin"],
+    "name": ["Vildagliptin-With-Metformin"],
     "formulation": ["Oral tablet"],
     "label_number": [21]
   },
   {
-    "name": ["Vinorelbine"],
+    "name": ["Vinorelbine-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [21, 25]
   },
   {
-    "name": ["Vismodegib"],
+    "name": ["Vismodegib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
@@ -5205,32 +5430,32 @@
     "label_number": [9, 11, 23]
   },
   {
-    "name": ["Warfarin Sodium"],
+    "name": ["Warfarin-Sodium"],
     "formulation": ["Oral tablet"],
     "label_number": [10]
   },
   {
-    "name": ["Warfarin Sodium"],
+    "name": ["Warfarin-Sodium"],
     "formulation": ["Oral suspension"],
     "label_number": [10]
   },
   {
-    "name": ["Zanubrutinib"],
+    "name": ["Zanubrutinib-Specialist-Drug"],
     "formulation": ["Oral capsule"],
     "label_number": [25]
   },
   {
-    "name": ["Zinc Acetate"],
+    "name": ["Zinc-Acetate"],
     "formulation": ["Oral capsule"],
     "label_number": [23]
   },
   {
-    "name": ["Zinc Sulfate"],
+    "name": ["Zinc-Sulfate"],
     "formulation": ["Effervescent tablet"],
     "label_number": [13, 21]
   },
   {
-    "name": ["Zolpidem Tartrate"],
+    "name": ["Zolpidem-Tartrate"],
     "formulation": ["Oral tablet"],
     "label_number": [19]
   },
